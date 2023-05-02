@@ -1,0 +1,15 @@
+setup.py
+datawagon/__init__.py
+datawagon/__main__.py
+datawagon/csv_file_info.py
+datawagon/database_handler.py
+datawagon/file_scanner.py
+datawagon/gzipped_csv_loader.py
+datawagon/main.py
+datawagon/postgres_database_manager.py
+datawagon.egg-info/PKG-INFO
+datawagon.egg-info/SOURCES.txt
+datawagon.egg-info/dependency_links.txt
+datawagon.egg-info/entry_points.txt
+datawagon.egg-info/requires.txt
+datawagon.egg-info/top_level.txt

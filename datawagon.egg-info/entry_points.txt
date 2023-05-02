@@ -1,0 +1,2 @@
+[console_scripts]
+datawagon = datawagon.main:cli
