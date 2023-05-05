@@ -15,15 +15,15 @@ class CsvFileInfo:
     file_date_key: int
     file_date: date
     table_name: str
-    file_size_in_bytes: int
-    file_size: str
+    # file_size_in_bytes: int
+    # file_size: str
 
     @classmethod
     def build_data_item(cls, input_file: Path) -> "CsvFileInfo":
         file_path = input_file
 
-        file_size_in_bytes = file_path.stat().st_size
-        file_size = human_readable_size(file_size_in_bytes)
+        # file_size_in_bytes = file_path.stat().st_size
+        # file_size = human_readable_size(file_size_in_bytes)
 
         file_dir = str(input_file.parent)
 
@@ -61,8 +61,8 @@ class CsvFileInfo:
             file_date_key,
             date_key_to_date(file_date_key),
             table_name,
-            file_size_in_bytes,
-            file_size,
+            # file_size_in_bytes,
+            # file_size,
         )
 
         return data_item

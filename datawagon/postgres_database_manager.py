@@ -16,8 +16,6 @@ class PostgresDatabaseManager(DatabaseHandler):
         except psycopg2.OperationalError as e:
             self.connection_error = str(e)
 
-        # self.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
     def test_connection(self) -> bool:
         if self.connection_error:
             print(f"Connection error: {self.connection_error}")
@@ -30,10 +28,10 @@ class PostgresDatabaseManager(DatabaseHandler):
             return False
 
     def check_schema(self) -> bool:
-        query = f"select exists(select 1 from pg_namespace where nspname = '{self.schema}');"
-        print(query)
+        query = SQL("select exists(select 1 from pg_namespace where nspname = %s);")
+
         with self.connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, (self.schema,))
             results = cursor.fetchone()
 
             exists = results[0] if results is not None else False
@@ -41,13 +39,14 @@ class PostgresDatabaseManager(DatabaseHandler):
         return exists
 
     def get_tables_and_row_counts(self) -> List[Tuple[str, int]]:
-        query = f"""
+        query = """
         select table_name, (xpath('/row/cnt/text()', xml_count))[1]::text::int as row_count
         from (
             select table_name, query_to_xml(
-                'select count(*) as cnt from ' || table_schema || '.' || table_name, false, true, '') as xml_count
+                'select count(*) as cnt 
+                from ' || table_schema || '.' || table_name, false, true, '') as xml_count
             from information_schema.tables
-            where table_schema = '{self.schema}'
+            where table_schema = %s
         ) sub;
         """
         with self.connection.cursor() as cursor:
