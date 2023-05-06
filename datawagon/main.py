@@ -1,11 +1,14 @@
 import click
+from dotenv import load_dotenv
 import collections
 from pathlib import Path
 from typing import List
-from .gzipped_csv_loader import GzippedCSVLoader
-from .postgres_database_manager import PostgresDatabaseManager
-from .csv_file_info import CsvFileInfo
-from .file_utils import FileUtils
+# from .gzipped_csv_loader import GzippedCSVLoader
+from postgres_database_manager import PostgresDatabaseManager
+from csv_file_info import CsvFileInfo
+from file_utils import FileUtils
+
+load_dotenv()
 
 
 @click.group()
@@ -17,10 +20,19 @@ def cli() -> None:
 @click.option(
     "--db-url", type=str, help="PostgreSQL database URL.", envvar="POSTGRES_DB_URL"
 )
+@click.option(
+    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_SCHEMA_NAME"
+)
 def test_db_connection(db_url: str, schema_name: str) -> None:
     """Test the connection to the database."""
 
     if not valid_url(db_url):
+        return
+    
+    print(db_url)
+    print(schema_name)
+
+    if not valid_schema(schema_name):
         return
 
     db_manager = PostgresDatabaseManager(db_url, schema_name)

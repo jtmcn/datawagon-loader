@@ -6,15 +6,16 @@ setup(
     packages=find_packages(),
     install_requires=[
         "click",
-        "psycopg2",
+        "psycopg2-binary",
+        "python-dotenv",
     ],
     entry_points={
         "console_scripts": [
             "datawagon = datawagon.main:cli",
         ],
     },
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Joel M",
+    author_email="jtmcn.dev@gmail.com",
     description="A command-line tool for loading compressed CSV files into a PostgreSQL database.",
     license="MIT",
     keywords="csv database postgresql",
