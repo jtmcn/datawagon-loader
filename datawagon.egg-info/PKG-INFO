@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: datawagon
-Version: 0.1.0
-Summary: A command-line tool for loading compressed CSV files into a PostgreSQL database.
-Author: Your Name
-Author-email: your.email@example.com
-License: MIT
-Keywords: csv database postgresql
