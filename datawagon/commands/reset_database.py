@@ -10,7 +10,7 @@ from datawagon.postgres_database_manager import PostgresDatabaseManager
 )
 def reset_database(db_url: str, schema_name: str):
     """Reset the database by dropping all tables and views in the selected schema."""
-    click.echo(click.style("This command will drop all tables and views in the selected schema.", bg="yellow"))
+    click.echo(click.style(f"This command will drop all tables and views in the selected schema: '{schema_name}'", bg="yellow"))
     if not click.confirm("Are you sure you want to continue?"):
         return
 

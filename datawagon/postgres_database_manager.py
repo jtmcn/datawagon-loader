@@ -16,14 +16,14 @@ class PostgresDatabaseManager(DatabaseHandler):
         except psycopg2.OperationalError as e:
             self.connection_error = str(e)
 
-    @staticmethod
-    def get_file_version(file_name: str) -> str:
-        file_version_pattern = r"_v\d+(-\d+)?"
-        match = re.search(file_version_pattern, file_name)
-        if match:
-            return match.group(0).lstrip("_")  # Remove the leading underscore
-        else:
-            return ""
+    # @staticmethod
+    # def get_file_version(file_name: str) -> str:
+    #     file_version_pattern = r"_v\d+(-\d+)?"
+    #     match = re.search(file_version_pattern, file_name)
+    #     if match:
+    #         return match.group(0).lstrip("_")  # Remove the leading underscore
+    #     else:
+    #         return ""
 
     def test_connection(self) -> bool:
         if self.connection_error:
