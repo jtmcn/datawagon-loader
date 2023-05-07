@@ -1,11 +1,11 @@
 
 from pathlib import Path
 import click
-from datawagon.csv_file_info import CsvFileInfo
-from datawagon.csv_loader import CSVLoader
-from datawagon.file_utils import FileUtils
-from datawagon.postgres_database_manager import PostgresDatabaseManager
-from datawagon.validate_parameters import valid_schema, valid_source_dir, valid_url
+from csv_file_info import CsvFileInfo
+from csv_loader import CSVLoader
+from file_utils import FileUtils
+from database.postgres_database_manager import PostgresDatabaseManager
+from validate_parameters import valid_schema, valid_source_dir, valid_url
 
 
 @click.command()
@@ -30,7 +30,6 @@ def import_csv(db_url: str, schema_name: str, source_dir: str) -> None:
 
     if not valid_source_dir(source_dir):
         return
-
 
     source_path = Path(source_dir)
     file_utils = FileUtils()

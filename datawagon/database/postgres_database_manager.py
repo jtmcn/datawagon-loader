@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2.sql import SQL, Identifier
 from typing import List, Tuple
-from database_handler import DatabaseHandler
+from database.database_handler import DatabaseHandler
 
 
 class PostgresDatabaseManager(DatabaseHandler):
@@ -48,11 +48,12 @@ class PostgresDatabaseManager(DatabaseHandler):
         return exists
 
     def get_tables_and_row_counts(self) -> List[Tuple[str, int]]:
+        # noqa: E501
         query = """
         select table_name, (xpath('/row/cnt/text()', xml_count))[1]::text::int as row_count
         from (
             select table_name, query_to_xml(
-                'select count(*) as cnt 
+                'select count(*) as cnt
                 from ' || table_schema || '.' || table_name, false, true, '') as xml_count
             from information_schema.tables
             where table_schema = %s
@@ -90,7 +91,6 @@ class PostgresDatabaseManager(DatabaseHandler):
 
     def close(self) -> None:
         self.connection.close()
-
 
     def drop_all_tables_and_views(self) -> None:
         with self.connection.cursor() as cursor:

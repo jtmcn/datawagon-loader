@@ -1,6 +1,6 @@
 import click
 
-from datawagon.postgres_database_manager import PostgresDatabaseManager
+from database.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()
@@ -10,7 +10,8 @@ from datawagon.postgres_database_manager import PostgresDatabaseManager
 )
 def reset_database(db_url: str, schema_name: str):
     """Reset the database by dropping all tables and views in the selected schema."""
-    click.echo(click.style(f"This command will drop all tables and views in the selected schema: '{schema_name}'", bg="yellow"))
+    click.echo(click.style(f"""This command will drop all tables and views in the selected schema: '{schema_name}'""",
+                           bg="yellow"))
     if not click.confirm("Are you sure you want to continue?"):
         return
 
@@ -21,6 +22,9 @@ def reset_database(db_url: str, schema_name: str):
 
     db_manager.drop_all_tables_and_views()
     click.echo(f"All tables and views in schema '{schema_name}' have been dropped.")
+
+    db_manager.close()
+
 
 if __name__ == "__main__":
     reset_database()

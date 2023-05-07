@@ -30,7 +30,9 @@ def check_files(source_dir: str) -> None:
     ]
 
     if len(list_of_file_info) == 0:
-        click.echo(click.style(f"No .csv.gz or .csv.zip files found in source_dir:{source_dir}", fg="red"))
+        click.echo(click.style(f"""
+            No .csv.gz or .csv.zip files found in source_dir:{source_dir}
+            """, fg="red"))
         return
 
     duplicates = file_utils.check_for_duplicate_files(list_of_file_info)
@@ -45,17 +47,19 @@ def check_files(source_dir: str) -> None:
         )
         return
 
+    different_file_versions = file_utils.check_for_different_file_versions(
+        list_of_file_info)
 
-    different_file_versions = file_utils.check_for_different_file_versions(list_of_file_info)
     if different_file_versions:
-        click.echo(click.style("Different file versions found for the same table name:", fg="red"))
+        click.echo(click.style("Different file versions found for the same table name:",
+                               fg="red"))
         for file_infos in different_file_versions:
             click.echo(f"Table name: {file_infos[0].table_name}")
             file_infos.sort(key=lambda x: x.file_version)
             for file_info in file_infos:
                 click.echo(f"  - {file_info.file_name} ({file_info.file_version})")
         return
-        
+
     grouped_files = file_utils.group_by_table_name(list_of_file_info)
 
     click.echo(click.style("Number of files grouped by table_name:", bg="blue"))

@@ -5,13 +5,14 @@ import zipfile
 from pathlib import Path
 from typing import List, Tuple
 
+
 class CSVLoader:
     def __init__(self, file_path: Path) -> None:
         self.file_path = file_path
 
     def load_data(self) -> Tuple[List[List[str]], List[str]]:
         file_extension = self.file_path.suffix.lower()
-        
+
         if file_extension == ".gz":
             return self._load_gzipped_csv()
         elif file_extension == ".zip":

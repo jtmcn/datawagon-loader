@@ -25,7 +25,6 @@ class FileUtils:
         duplicate_files = [file_info for file_info in file_info_list if file_info.file_name in duplicate_file_names]
         return duplicate_files
 
-
     def scan_for_csv_files(self, source_path: Path) -> List[Path]:
         return list(source_path.glob("**/*.csv.gz")) + list(source_path.glob("**/*.csv.zip"))
 

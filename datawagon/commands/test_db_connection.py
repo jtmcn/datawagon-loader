@@ -1,8 +1,9 @@
 
 import click
 
-from datawagon.postgres_database_manager import PostgresDatabaseManager
-from datawagon.validate_parameters import valid_schema, valid_url
+from database.postgres_database_manager import PostgresDatabaseManager
+from validate_parameters import valid_schema, valid_url
+
 
 @click.command()
 @click.option(
@@ -27,4 +28,3 @@ def test_db_connection(db_url: str, schema_name: str) -> None:
         db_manager.close()
     else:
         click.echo(click.style("Failed to connect to the database.", fg="red"))
-

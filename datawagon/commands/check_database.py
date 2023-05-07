@@ -2,8 +2,9 @@
 
 import click
 
-from datawagon.postgres_database_manager import PostgresDatabaseManager
-from datawagon.validate_parameters import valid_schema, valid_url
+from database.postgres_database_manager import PostgresDatabaseManager
+from validate_parameters import valid_schema, valid_url
+
 
 @click.command()
 @click.option("--db-url", type=str, help="Database URL", envvar="POSTGRES_DB_URL")

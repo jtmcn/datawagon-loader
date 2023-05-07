@@ -77,7 +77,7 @@ class CsvFileInfo:
         )
 
         return data_item
-    
+
     @staticmethod
     def get_file_version(file_name: str) -> str:
         file_version_pattern = r"_v\d+(-\d+)?"
@@ -86,7 +86,6 @@ class CsvFileInfo:
             return match.group(0).lstrip("_")  # Remove the leading underscore
         else:
             return ""
-
 
     @staticmethod
     def date_key_to_date(date_key: int) -> date:
