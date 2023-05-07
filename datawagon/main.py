@@ -3,13 +3,16 @@ from dotenv import load_dotenv
 import collections
 from pathlib import Path
 from typing import List
+from datawagon.commands.reset_database import reset_database
+from datawagon.csv_loader import CSVLoader
+from datawagon.gzipped_csv_loader import GzippedCSVLoader
+from datawagon.zipped_csv_loader import ZippedCSVLoader
 # from .gzipped_csv_loader import GzippedCSVLoader
 from postgres_database_manager import PostgresDatabaseManager
 from csv_file_info import CsvFileInfo
 from file_utils import FileUtils
 
 load_dotenv()
-
 
 @click.group()
 def cli() -> None:
@@ -21,16 +24,13 @@ def cli() -> None:
     "--db-url", type=str, help="PostgreSQL database URL.", envvar="POSTGRES_DB_URL"
 )
 @click.option(
-    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_SCHEMA_NAME"
+    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_DB_SCHEMA"
 )
 def test_db_connection(db_url: str, schema_name: str) -> None:
     """Test the connection to the database."""
 
     if not valid_url(db_url):
         return
-    
-    print(db_url)
-    print(schema_name)
 
     if not valid_schema(schema_name):
         return
@@ -47,7 +47,7 @@ def test_db_connection(db_url: str, schema_name: str) -> None:
 @cli.command()
 @click.option("--db-url", type=str, help="Database URL", envvar="POSTGRES_DB_URL")
 @click.option(
-    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_SCHEMA_NAME"
+    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_DB_SCHEMA"
 )
 def check_database(db_url: str, schema_name: str) -> None:
     """Check if the schema exists and display existing tables and number of rows."""
@@ -93,7 +93,7 @@ def check_database(db_url: str, schema_name: str) -> None:
 @click.option(
     "--source-dir",
     type=click.Path(exists=True),
-    help="Source directory containing .csv.gz files.",
+    help="Source directory containing .csv.gz and/or .csv.zip files.",
     envvar="CSV_SOURCE_DIR",
 )
 def check_files(source_dir: str) -> None:
@@ -111,87 +111,90 @@ def check_files(source_dir: str) -> None:
         CsvFileInfo.build_data_item(csv_file) for csv_file in csv_files
     ]
 
+    if len(list_of_file_info) == 0:
+        click.echo(click.style(f"No .csv.gz or .csv.zip files found in source_dir:{source_dir}", fg="red"))
+        return
+
     duplicates = file_utils.check_for_duplicate_files(list_of_file_info)
 
     if len(duplicates) > 0:
         click.echo(click.style("Duplicate files found:", fg="red"))
         for duplicate in duplicates:
-            click.echo(f"  - {duplicate}")
+            click.echo(f"  - {duplicate.file_path}")
 
         click.echo(
             click.style("Please remove duplicate files and try again.", fg="red")
         )
         return
 
+
+    different_file_versions = file_utils.check_for_different_file_versions(list_of_file_info)
+    if different_file_versions:
+        click.echo(click.style("Different file versions found for the same table name:", fg="red"))
+        for file_infos in different_file_versions:
+            click.echo(f"Table name: {file_infos[0].table_name}")
+            file_infos.sort(key=lambda x: x.file_version)
+            for file_info in file_infos:
+                click.echo(f"  - {file_info.file_name} ({file_info.file_version})")
+        return
+        
     grouped_files = file_utils.group_by_table_name(list_of_file_info)
 
-    click.echo("Number of files grouped by table_name:")
+    click.echo(click.style("Number of files grouped by table_name:", bg="blue"))
     for table_name, files in grouped_files.items():
         click.echo(f"{table_name}: {len(files)} files")
 
 
-# @click.command()
-# @click.option("--db-url", type=str, help="Database URL", envvar="POSTGRES_DB_URL")
-# @click.option(
-#     "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_SCHEMA_NAME"
-# )
-# @click.option(
-#     "--source-dir",
-#     type=click.Path(exists=True),
-#     help="Source directory containing .csv.gz files.",
-#     envvar="CSV_SOURCE_DIR",
-# )
-# def import_csv(db_url: str, schema_name: str, source_dir: str) -> None:
-#     """Scan a directory for .csv.gz files and import them into a PostgreSQL database."""
+@click.command()
+@click.option("--db-url", type=str, help="Database URL", envvar="POSTGRES_DB_URL")
+@click.option(
+    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_DB_SCHEMA"
+)
+@click.option(
+    "--source-dir",
+    type=click.Path(exists=True),
+    help="Source directory containing .csv.gz files.",
+    envvar="CSV_SOURCE_DIR",
+)
+def import_csv(db_url: str, schema_name: str, source_dir: str) -> None:
+    """Scan a directory for .csv.gz files and import them into a PostgreSQL database."""
 
-#     if not valid_url(db_url):
-#         return
+    if not valid_url(db_url):
+        return
 
-#     if not valid_schema(schema_name):
-#         return
+    if not valid_schema(schema_name):
+        return
 
-#     if not valid_source_dir(source_dir):
-#         return
-
-#     source_path = Path(source_dir)
-#     file_scanner = FileScanner()
-#     csv_files = file_scanner.scan_for_csv_files(source_path)
-
-#     db_manager = PostgresDatabaseManager(db_url, schema_name)
-#     db_manager.ensure_schema_exists()
-
-#     for csv_file in csv_files:
-#         csv_info = CsvFileInfo.build_data_item(csv_file)
-#         loader = GzippedCSVLoader(csv_info.file_path)
-#         data, header = loader.load_data()
-
-#         db_manager.create_table_if_not_exists(csv_info.table_name, header)
-#         db_manager.insert_data(csv_info.table_name, header, data)
-
-#     db_manager.close()
-#     click.echo(
-#         click.style(
-#             f"Successfully imported data from {source_dir} into {db_url}", fg="green"
-#         )
-#     )
-
-# THIS DOESN'T FUCKING WORK!!
+    if not valid_source_dir(source_dir):
+        return
 
 
-# def check_for_duplicate_files(file_info_list: List[CsvFileInfo]) -> bool:
-#     file_names = [file_info.file_name for file_info in file_info_list]
-#     # print(file_names)
-#     duplicates = list(
-#         set([file_name for file_name in file_names if file_names.count(file_name) > 1])
-#     )
-#     print("DUPLICATES", duplicates)
+    source_path = Path(source_dir)
+    file_utils = FileUtils()
+    csv_files = file_utils.scan_for_csv_files(source_path)
 
-#     if duplicates:
-#         click.echo(click.style("Duplicate files found:", fg="red"))
-#         for duplicate in duplicates:
-#             click.echo(f"  - {duplicate}")
-#         return True
-#     return False
+    db_manager = PostgresDatabaseManager(db_url, schema_name)
+    db_manager.ensure_schema_exists()
+
+    csv_file_infos = [
+        CsvFileInfo.build_data_item(csv_file) for csv_file in csv_files
+    ]
+
+    for csv_info in csv_file_infos:
+
+        loader = CSVLoader(csv_info.file_path)
+
+        data, header = loader.load_data()
+
+        db_manager.create_table_if_not_exists(csv_info.table_name, header)
+        db_manager.insert_data(csv_info.table_name, header, data)
+
+    db_manager.close()
+    click.echo(
+        click.style(
+            f"Successfully imported data from {source_dir} into {db_url}", fg="green"
+        )
+    )
 
 
 def valid_url(db_url: str) -> bool:
@@ -234,11 +237,11 @@ def valid_source_dir(schema_name: str) -> bool:
 
 # Add additional utility commands here, e.g., test_connection, reset_database, display_info.
 
-
+cli.add_command(reset_database)
 cli.add_command(test_db_connection)
 cli.add_command(check_database)
 cli.add_command(check_files)
-# cli.add_command(import_csv)
+cli.add_command(import_csv)
 
 if __name__ == "__main__":
     cli()

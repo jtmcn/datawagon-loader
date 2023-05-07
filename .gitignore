@@ -1,3 +1,7 @@
+.DS_Store
+script_menu.py
+script-menu.sh
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

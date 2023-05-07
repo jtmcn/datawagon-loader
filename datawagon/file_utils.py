@@ -1,7 +1,7 @@
 from typing import List, Dict
 from pathlib import Path
 
-from .csv_file_info import CsvFileInfo
+from csv_file_info import CsvFileInfo
 
 
 class FileUtils:
@@ -17,16 +17,28 @@ class FileUtils:
                 grouped_files[file_info.table_name].append(file_info)
         return grouped_files
 
-    def check_for_duplicate_files(self, file_info_list: List[CsvFileInfo]) -> List[str]:
+    def check_for_duplicate_files(self, file_info_list: List[CsvFileInfo]) -> List[CsvFileInfo]:
         file_names = [file_info.file_name for file_info in file_info_list]
-        duplicate_files = set(
+        duplicate_file_names = set(
             [file_name for file_name in file_names if file_names.count(file_name) > 1]
         )
-        return list(duplicate_files)
+        duplicate_files = [file_info for file_info in file_info_list if file_info.file_name in duplicate_file_names]
+        return duplicate_files
+
 
     def scan_for_csv_files(self, source_path: Path) -> List[Path]:
-        return list(source_path.glob("**/*.csv.gz"))
+        return list(source_path.glob("**/*.csv.gz")) + list(source_path.glob("**/*.csv.zip"))
 
+    def check_for_different_file_versions(self, file_info_list: List[CsvFileInfo]) -> List[List[CsvFileInfo]]:
+        grouped_files = self.group_by_table_name(file_info_list)
+        different_file_versions = []
+
+        for table_name, file_infos in grouped_files.items():
+            file_versions = {file_info.file_version for file_info in file_infos}
+            if len(file_versions) > 1:
+                different_file_versions.append(file_infos)
+
+        return different_file_versions
 
 # def list_to_dict(file_info_list: List[CsvFileInfo]) -> Dict[str, List]:
 #     result = {}

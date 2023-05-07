@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
-from .file_utils import FileUtils
-from .csv_file_info import CsvFileInfo
+from ..datawagon.file_utils import FileUtils
+from ..datawagon.csv_file_info import CsvFileInfo
 
 
 class TestFileUtils(unittest.TestCase):

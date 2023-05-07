@@ -2,7 +2,7 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2.sql import SQL, Identifier
 from typing import List, Tuple
-from .database_handler import DatabaseHandler
+from database_handler import DatabaseHandler
 
 
 class PostgresDatabaseManager(DatabaseHandler):
@@ -15,6 +15,15 @@ class PostgresDatabaseManager(DatabaseHandler):
             self.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         except psycopg2.OperationalError as e:
             self.connection_error = str(e)
+
+    @staticmethod
+    def get_file_version(file_name: str) -> str:
+        file_version_pattern = r"_v\d+(-\d+)?"
+        match = re.search(file_version_pattern, file_name)
+        if match:
+            return match.group(0).lstrip("_")  # Remove the leading underscore
+        else:
+            return ""
 
     def test_connection(self) -> bool:
         if self.connection_error:
@@ -81,3 +90,23 @@ class PostgresDatabaseManager(DatabaseHandler):
 
     def close(self) -> None:
         self.connection.close()
+
+
+    def drop_all_tables_and_views(self) -> None:
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                f"""
+                DO $$ DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '{self.schema}')
+                    LOOP
+                        EXECUTE 'DROP TABLE IF EXISTS {self.schema}.' || r.tablename || ' CASCADE';
+                    END LOOP;
+                    FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = '{self.schema}')
+                    LOOP
+                        EXECUTE 'DROP VIEW IF EXISTS {self.schema}.' || r.viewname || ' CASCADE';
+                    END LOOP;
+                END $$;
+                """
+            )

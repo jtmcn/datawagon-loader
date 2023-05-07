@@ -32,3 +32,7 @@ class DatabaseHandler(ABC):
     @abstractmethod
     def close(self) -> None:
         pass
+
+    @abstractmethod
+    def drop_all_tables_and_views(self) -> None:
+        pass
