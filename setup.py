@@ -8,6 +8,8 @@ setup(
         "click",
         "psycopg2-binary",
         "python-dotenv",
+        "pandas",
+        "sqlalchemy"
     ],
     entry_points={
         "console_scripts": [
@@ -20,4 +22,3 @@ setup(
     license="MIT",
     keywords="csv database postgresql",
 )
- 

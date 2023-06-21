@@ -1,30 +1,31 @@
 import click
 
-from database.postgres_database_manager import PostgresDatabaseManager
+from objects.database_manager import DatabaseManager
 
 
 @click.command()
-@click.option("--db-url", type=str, help="Database URL", envvar="POSTGRES_DB_URL")
-@click.option(
-    "--schema-name", type=str, help="Schema name to use", envvar="POSTGRES_DB_SCHEMA"
-)
-def reset_database(db_url: str, schema_name: str):
+@click.pass_context
+def reset_database(ctx: click.Context) -> None:
     """Reset the database by dropping all tables and views in the selected schema."""
-    click.echo(click.style(f"""This command will drop all tables and views in the selected schema: '{schema_name}'""",
-                           bg="yellow"))
+
+    db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
+    schema_name = ctx.obj["CONFIG"].db_schema
+
+    click.secho(
+        f"This command will drop all tables and views in the selected schema: '{schema_name}'"
+        + "\nALL DATA WILL BE LOST!",
+        bg="yellow",
+        bold=True,
+    )
     if not click.confirm("Are you sure you want to continue?"):
         return
 
-    db_manager = PostgresDatabaseManager(db_url, schema_name)
     if not db_manager.test_connection():
-        click.echo("Unable to connect to the database. Please check the connection settings.")
+        click.echo(
+            "Unable to connect to the database. Please check the connection settings."
+        )
         return
 
     db_manager.drop_all_tables_and_views()
     click.echo(f"All tables and views in schema '{schema_name}' have been dropped.")
 
-    db_manager.close()
-
-
-if __name__ == "__main__":
-    reset_database()
