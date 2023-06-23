@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.sql import SQL, Identifier
 import pandas as pd
 from sqlalchemy import create_engine
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Union
 
 
 class DatabaseManager:
@@ -219,7 +219,7 @@ class DatabaseManager:
                 )
                 cursor.close()
 
-    def log_operation(self, operation: str, details: str | None = None) -> None:
+    def log_operation(self, operation: str, details: Union[str, None] = None) -> None:
         query = SQL(
             """
             insert into {} (operation, details)
