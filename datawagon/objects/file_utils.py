@@ -1,7 +1,7 @@
 from typing import List, Dict
 from pathlib import Path
 
-from objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info import CsvFileInfo
 
 
 class FileUtils(object):

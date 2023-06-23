@@ -1,8 +1,8 @@
 from pathlib import Path
 import click
 
-from objects.csv_file_info import CsvFileInfo
-from objects.file_utils import FileUtils
+from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.file_utils import FileUtils
 
 
 @click.command()

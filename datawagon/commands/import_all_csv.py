@@ -1,9 +1,9 @@
 from typing import List
 import click
 from datawagon.commands.compare import compare_files_to_database
-from objects.csv_file_info import CsvFileInfo
-from objects.csv_loader import CSVLoader
-from objects.database_manager import DatabaseManager
+from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_loader import CSVLoader
+from datawagon.objects.database_manager import DatabaseManager
 
 
 @click.command()

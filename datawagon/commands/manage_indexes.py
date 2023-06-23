@@ -1,6 +1,6 @@
 import click
 
-from objects.index_manager import IndexManager
+from datawagon.objects.index_manager import IndexManager
 
 
 @click.group()

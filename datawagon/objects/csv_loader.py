@@ -4,7 +4,7 @@ from io import TextIOWrapper
 import zipfile
 import pandas as pd
 from typing import List, Tuple
-from objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info import CsvFileInfo
 
 
 class CSVLoader(object):

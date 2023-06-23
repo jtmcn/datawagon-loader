@@ -1,6 +1,6 @@
 import click
 
-from objects.database_manager import DatabaseManager
+from datawagon.objects.database_manager import DatabaseManager
 
 
 @click.command()

@@ -1,7 +1,7 @@
 import pandas as pd
 from psycopg2.sql import SQL, Identifier
 
-from database_manager import DatabaseManager
+from datawagon.objects.database_manager import DatabaseManager
 
 
 class IndexManager:
