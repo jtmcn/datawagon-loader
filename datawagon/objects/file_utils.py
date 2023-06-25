@@ -47,9 +47,7 @@ class FileUtils(object):
             if any(file_part in csv_file.name.lower() for file_part in included)
             or all(file_part not in csv_file.name.lower() for file_part in excluded)
         ]
-        filtered_csv_files = [
-            csv_file for csv_file in csv_files if "summary" not in csv_file.name.lower()
-        ]
+
         return filtered_csv_files
 
     def check_for_different_file_versions(

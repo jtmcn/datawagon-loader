@@ -64,7 +64,7 @@ def _current_tables(db_manager: DatabaseManager) -> List[CurrentTableData]:
     ) as table_progress:
         for table in tables:
             table_df = db_manager.files_in_table_df(table)
-            file_list = table_df["file_name"].tolist()
+            file_list = table_df["_file_name"].tolist()
             table_data = CurrentTableData(
                 table, table_df["row_count"].sum(), len(file_list), file_list
             )

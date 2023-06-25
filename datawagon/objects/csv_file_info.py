@@ -1,3 +1,5 @@
+import calendar
+from datetime import date
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +15,9 @@ class CsvFileInfo:
     file_name_without_extension: str
     content_owner: str
     file_date_key: int
-    # file_date: date
+    file_date: date
+    month_end_date: date
+    month_end_date_key: int
     file_version: str
     table_name: str
     file_size_in_bytes: int
@@ -66,8 +70,11 @@ class CsvFileInfo:
             .rstrip("_")
         )
 
-        # file_date = cls.date_key_to_date(file_date_key)
-
+        file_date = cls.date_key_to_date(file_date_key)
+        
+        month_end_date = file_date.replace(day=calendar.monthrange(file_date.year, file_date.month)[1])
+        month_end_date_key = int(month_end_date.strftime("%Y%m%d"))
+        
         if (
             file_name_without_extension is None
             or file_name_without_extension == ""
@@ -85,11 +92,13 @@ class CsvFileInfo:
             file_name_without_extension=file_name_without_extension,
             content_owner=content_owner,
             file_date_key=file_date_key,
-            # file_date=file_date,
+            file_date=file_date,
             file_version=file_version,
             table_name=table_name,
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
+            month_end_date=month_end_date,
+            month_end_date_key=month_end_date_key
         )
 
         return data_item
@@ -103,16 +112,16 @@ class CsvFileInfo:
         else:
             return ""
 
-    # @staticmethod
-    # def date_key_to_date(date_key: int) -> date:
-    #     date_string = str(date_key)
+    @staticmethod
+    def date_key_to_date(date_key: int) -> date:
+        date_string = str(date_key)
 
-    #     # Extract year, month, and day as integers
-    #     year = int(date_string[:4])
-    #     month = int(date_string[4:6])
-    #     day = int(date_string[6:])
+        # Extract year, month, and day as integers
+        year = int(date_string[:4])
+        month = int(date_string[4:6])
+        day = int(date_string[6:]) if len(date_string) > 6 else 1
 
-    #     return date(year, month, day)
+        return date(year, month, day)
 
     @staticmethod
     def human_readable_size(size: int) -> str:

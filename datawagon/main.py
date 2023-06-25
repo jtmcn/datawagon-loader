@@ -35,8 +35,9 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     db_connection = DatabaseManager(db_url, db_schema)
 
+    # if on mac, prevent computer from sleeping
     if 'darwin' in sys.platform:
-        subprocess.Popen('caffeinate')  # dimsu
+        subprocess.Popen('caffeinate')  # dimsu ?
 
     ctx.obj["DB_CONNECTION"] = db_connection
     ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)

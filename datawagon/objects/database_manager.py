@@ -20,7 +20,7 @@ class DatabaseManager:
 
     """
 
-    CNAME_FILE_NAME = "file_name"
+    CNAME_FILE_NAME = "_file_name"
 
     INDEX_COLUMN_NAME = CNAME_FILE_NAME
 
@@ -40,6 +40,11 @@ class DatabaseManager:
             self.engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
         except Exception as e:
             self.connection_error = str(e)
+
+        try:
+            self.create_log_table()
+        except Exception as e:
+            print(f"Failed to create log table: {e}")
 
     def close(self) -> None:
         self.connection.close()
@@ -101,7 +106,10 @@ class DatabaseManager:
                 method=self._df_to_pg_copy,
             )
 
-            self.log_operation(f"Loaded dataframe into {table_name}")
+            self.log_operation(
+                f"Loaded {len(df)} rows into {self.schema}.{table_name}",
+                df.iloc[0][self.CNAME_FILE_NAME],
+            )
 
             return len(df)
 
@@ -140,7 +148,7 @@ class DatabaseManager:
                 do $$ declare
                     r record;
                 begin
-                    for r in (select tablename from pg_tables where schemaname = '{self.schema}')
+                    for r in (select tablename from pg_tables where schemaname = '{self.schema}'
                         and tablename != '{self.LOG_TABLE_NAME}')
                     loop
                         execute 'drop table if exists {self.schema}.' || r.tablename || ' cascade';
@@ -162,7 +170,7 @@ class DatabaseManager:
             with self.connection.cursor() as cursor:
                 table = (self.schema, table_name)
                 query = SQL(
-                    "select exists(select 1 from {} where file_name=%s)"
+                    "select exists(select 1 from {} where _file_name=%s)"
                 ).format(Identifier(*table))
                 cursor.execute(query, (file_name,))
                 result = cursor.fetchone()
@@ -191,10 +199,11 @@ class DatabaseManager:
                 from information_schema.tables
                 where
                     table_schema = %(schema)s
+                    and not table_name = %(log_table_name)s
                 order by
                     table_name
             """
-        params = {"schema": self.schema}
+        params = {"schema": self.schema, "log_table_name": self.LOG_TABLE_NAME}
         df = pd.read_sql_query(query, self.engine, params=params)
         return df["table_name"].tolist()
 
@@ -211,11 +220,7 @@ class DatabaseManager:
             )
             with self.connection.cursor() as cursor:
                 cursor.execute(
-                    query.format(
-                        Identifier(
-                            self.schema, self.LOG_TABLE_NAME
-                        )
-                    )
+                    query.format(Identifier(self.schema, self.LOG_TABLE_NAME))
                 )
                 cursor.close()
 
@@ -228,9 +233,7 @@ class DatabaseManager:
         )
         with self.connection.cursor() as cursor:
             cursor.execute(
-                query.format(
-                    Identifier(self.schema, self.LOG_TABLE_NAME)
-                ),
+                query.format(Identifier(self.schema, self.LOG_TABLE_NAME)),
                 (operation, details),
             )
             cursor.close()
