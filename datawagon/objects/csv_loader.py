@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime, timezone
 import gzip
 from io import TextIOWrapper
 import zipfile
@@ -85,6 +86,7 @@ class CSVLoader(object):
         df["_file_date"] = self.input_file.file_date
         df["_month_end_date"] = self.input_file.month_end_date
         df["_month_end_date_key"] = self.input_file.month_end_date_key
+        df["_file_load_date"] = datetime.now(timezone.utc)
 
         return df
 
