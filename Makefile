@@ -1,21 +1,28 @@
-.PHONY: setup format check test
+.PHONY: all clean lint type test test-cov
 
-PYTHON_VERSIONS := 3.9 3.10 3.11
+CMD:=poetry run
+PYMODULE:=datawagon
+ENTRYPOINT:=main.py
+TESTS:=tests
 
-setup:
-	@for py in $(PYTHON_VERSIONS); do \
-		pdm use -f python$$py; \
-		pdm install; \
-	done
 
-format:
-	pdm run duty format
+run:
+	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
 
-check:
-	pdm run duty check
+lint:
+	$(CMD) flake8 $(PYMODULE) $(TESTS)
+
+type:
+	$(CMD) mypy $(PYMODULE) $(TESTS)
 
 test:
-	@for py in $(PYTHON_VERSIONS); do \
-		pdm use -f python$$py; \
-		pdm run duty test; \
-	done
+	$(CMD) pytest --cov=$(PYMODULE) $(TESTS)
+
+test-cov:
+	$(CMD) pytest --cov=$(PYMODULE) $(TESTS) --cov-report html
+
+isort:
+	$(CMD) isort --recursive $(PYMODULE) $(TESTS)
+
+# clean:
+# 	git clean -Xdf # Delete all files in .gitignore
