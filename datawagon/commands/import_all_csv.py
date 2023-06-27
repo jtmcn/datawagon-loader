@@ -1,5 +1,7 @@
 from typing import List
+
 import click
+
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.csv_loader import CSVLoader

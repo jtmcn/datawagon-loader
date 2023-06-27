@@ -1,8 +1,9 @@
 from typing import List
+
 import click
 
-from datawagon.objects.database_manager import DatabaseManager
 from datawagon.objects.current_table_data import CurrentTableData
+from datawagon.objects.database_manager import DatabaseManager
 
 
 @click.command()

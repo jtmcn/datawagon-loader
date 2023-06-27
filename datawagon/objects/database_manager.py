@@ -1,10 +1,11 @@
-from io import StringIO
 import csv
+from io import StringIO
+from typing import Any, Iterable, List, Union
+
+import pandas as pd
 import psycopg2
 from psycopg2.sql import SQL, Identifier
-import pandas as pd
 from sqlalchemy import create_engine
-from typing import Any, Iterable, List, Union
 
 
 class DatabaseManager:

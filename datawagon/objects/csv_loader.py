@@ -1,10 +1,12 @@
 import csv
-from datetime import datetime, timezone
 import gzip
-from io import TextIOWrapper
 import zipfile
-import pandas as pd
+from datetime import datetime, timezone
+from io import TextIOWrapper
 from typing import Any, List, Tuple
+
+import pandas as pd
+
 from datawagon.objects.csv_file_info import CsvFileInfo
 
 

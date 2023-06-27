@@ -1,5 +1,5 @@
-from typing import List, Dict
 from pathlib import Path
+from typing import Dict, List
 
 from datawagon.objects.csv_file_info import CsvFileInfo
 

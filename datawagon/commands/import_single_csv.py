@@ -1,9 +1,10 @@
 from pathlib import Path
+
 import click
 
-from datawagon.objects.database_manager import DatabaseManager
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.csv_loader import CSVLoader
+from datawagon.objects.database_manager import DatabaseManager
 
 
 @click.command()

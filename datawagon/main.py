@@ -1,17 +1,18 @@
 
-import sys
 import subprocess
-import click
+import sys
 from collections import namedtuple
-from dotenv import load_dotenv
-from commands.reset_database import reset_database
-from commands.check_db_connection import check_db_connection
+
+import click
 from commands.check_database import check_database
+from commands.check_db_connection import check_db_connection
 from commands.check_files import check_files
-from commands.import_all_csv import import_all_csv
-from commands.import_single_csv import import_selected_csv
 # from commands.manage_indexes import create_indexes, drop_indexes, check_indexes
 from commands.compare import compare_files_to_database
+from commands.import_all_csv import import_all_csv
+from commands.import_single_csv import import_selected_csv
+from commands.reset_database import reset_database
+from dotenv import load_dotenv
 from objects.database_manager import DatabaseManager
 from objects.parameter_validator import ParameterValidator
 

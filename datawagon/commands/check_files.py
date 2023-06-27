@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import click
 
 from datawagon.objects.csv_file_info import CsvFileInfo

@@ -1,13 +1,14 @@
 from typing import List
+
 import click
 import pandas as pd
 from tabulate import tabulate
 
+from datawagon.commands.check_database import check_database
 from datawagon.commands.check_files import check_files
-from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.current_table_data import CurrentTableData
-from datawagon.commands.check_database import check_database
+from datawagon.objects.file_utils import FileUtils
 
 
 @click.command()
