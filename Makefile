@@ -1,4 +1,4 @@
-.PHONY: all clean lint type test test-cov
+.PHONY: run setup lint type test test-cov isort
 
 CMD:=poetry run
 PYMODULE:=datawagon
@@ -8,6 +8,9 @@ TESTS:=tests
 
 run:
 	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
+
+setup:
+	poetry install
 
 lint:
 	$(CMD) flake8 $(PYMODULE) $(TESTS)
