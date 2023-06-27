@@ -28,4 +28,3 @@ def reset_database(ctx: click.Context) -> None:
 
     db_manager.drop_all_tables_and_views()
     click.echo(f"All tables and views in schema '{schema_name}' have been dropped.")
-

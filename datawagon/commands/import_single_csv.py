@@ -34,4 +34,3 @@ def import_selected_csv(ctx: click.Context, file_path: str) -> None:
             click.secho("Successfully imported data into database", fg="green")
         else:
             click.secho(f"Import failed for: {csv_info.file_name}", fg="red")
-

@@ -71,10 +71,10 @@ class CsvFileInfo:
         )
 
         file_date = cls.date_key_to_date(file_date_key)
-        
+
         month_end_date = file_date.replace(day=calendar.monthrange(file_date.year, file_date.month)[1])
         month_end_date_key = int(month_end_date.strftime("%Y%m%d"))
-        
+
         if (
             file_name_without_extension is None
             or file_name_without_extension == ""
