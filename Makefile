@@ -1,4 +1,4 @@
-.PHONY: run setup lint type test test-cov isort
+.PHONY: run setup format lint type test test-cov isort
 
 CMD:=poetry run
 PYMODULE:=datawagon
@@ -14,6 +14,9 @@ setup:
 
 lint:
 	$(CMD) flake8 $(PYMODULE) $(TESTS)
+
+format:
+	$(CMD) black $(PYMODULE) $(TESTS)
 
 type:
 	$(CMD) mypy $(PYMODULE) $(TESTS)

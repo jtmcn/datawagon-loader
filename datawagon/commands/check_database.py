@@ -36,9 +36,7 @@ def check_database(ctx: click.Context) -> List[CurrentTableData]:
     return existing_table_files
 
 
-def _ensure_schema_exists(
-    db_manager: DatabaseManager, schema_name: str
-) -> bool:
+def _ensure_schema_exists(db_manager: DatabaseManager, schema_name: str) -> bool:
     if not db_manager.check_schema():
         click.secho(f"Schema '{schema_name}' does not exist in the database.", fg="red")
         if click.confirm("Do you want to create the schema?"):

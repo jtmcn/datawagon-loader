@@ -1,4 +1,3 @@
-
 import subprocess
 import sys
 from collections import namedtuple
@@ -7,6 +6,7 @@ import click
 from commands.check_database import check_database
 from commands.check_db_connection import check_db_connection
 from commands.check_files import check_files
+
 # from commands.manage_indexes import create_indexes, drop_indexes, check_indexes
 from commands.compare import compare_files_to_database
 from commands.import_all_csv import import_all_csv
@@ -28,7 +28,6 @@ from objects.parameter_validator import ParameterValidator
 )
 @click.pass_context
 def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) -> None:
-
     if not ParameterValidator(db_url, db_schema, csv_source_dir).are_valid_parameters:
         ctx.abort()
 
@@ -37,8 +36,8 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
     db_connection = DatabaseManager(db_url, db_schema)
 
     # if on mac, prevent computer from sleeping
-    if 'darwin' in sys.platform:
-        subprocess.Popen('caffeinate')  # dimsu ?
+    if "darwin" in sys.platform:
+        subprocess.Popen("caffeinate")  # dimsu ?
 
     ctx.obj["DB_CONNECTION"] = db_connection
     ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)

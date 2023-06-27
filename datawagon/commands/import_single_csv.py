@@ -8,7 +8,10 @@ from datawagon.objects.database_manager import DatabaseManager
 
 
 @click.command()
-@click.argument("file_path", type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True))
+@click.argument(
+    "file_path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+)
 @click.pass_context
 def import_selected_csv(ctx: click.Context, file_path: str) -> None:
     """Import a single .csv file into the database."""

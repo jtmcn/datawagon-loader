@@ -8,7 +8,7 @@ from datawagon.objects.database_manager import DatabaseManager
 def check_db_connection(ctx: click.Context) -> bool:
     """Test the connection to the database."""
 
-    db_manager: DatabaseManager = ctx.obj['DB_CONNECTION']
+    db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
 
     if db_manager.test_connection():
         click.echo(click.style("Successfully connected to the database.", fg="green"))
