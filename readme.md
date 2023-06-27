@@ -11,6 +11,7 @@ This project was built to replace an existing process which used a bash file to 
 2. Allow for compressed files
 3. Check for duplicate files
 4. Prevent files from being imported more than once
+5. Provide user feedback on the status of the import process
 
 
 ##### Setup

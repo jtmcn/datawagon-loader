@@ -43,6 +43,7 @@ class CsvFileInfo:
         else:
             raise ValueError(f"Invalid file name format: {file_name}")
 
+        # This pattern matches all monthtly YouTube files with dates in formats: YYYYMMDD or YYYYMM
         pattern = r"YouTube_(.+)_M_(\d{8}|\d{6})"
         match = re.search(pattern, file_name)
         if match:
