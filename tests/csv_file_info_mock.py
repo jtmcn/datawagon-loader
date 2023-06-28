@@ -5,10 +5,12 @@ class CsvFileInfoMock:
     def __init__(self, **kwargs):
         self.file_path = kwargs.get(
             "file_path",
-            "/mock/path/YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1.csv.gz"
+            "/mock/path/YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1.csv.gz",
         )
         self.file_dir = kwargs.get("file_dir", "/mock/path")
-        self.file_name = kwargs.get('file_name', "YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1.csv.gz")
+        self.file_name = kwargs.get(
+            "file_name", "YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1.csv.gz"
+        )
         self.file_name_without_extension = kwargs.get(
             "file_name_without_extension",
             "YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1",
