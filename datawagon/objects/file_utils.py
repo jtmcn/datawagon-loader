@@ -35,7 +35,7 @@ class FileUtils(object):
 
     def scan_for_csv_files(self, source_path: Path) -> List[Path]:
         all_csv_files = list(source_path.glob("**/*.csv*"))
-        file_names = [file.name for file in all_csv_files]
+        file_names = [str(file) for file in all_csv_files]
         results = self._filter_csv_files(file_names)
         return [Path(file) for file in results]
 

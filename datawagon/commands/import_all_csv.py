@@ -8,7 +8,7 @@ from datawagon.objects.csv_loader import CSVLoader
 from datawagon.objects.database_manager import DatabaseManager
 
 
-@click.command()
+@click.command(name="import")
 @click.pass_context
 def import_all_csv(ctx: click.Context) -> None:
     """Scan a directory for .csv files and import them into a PostgreSQL database."""
