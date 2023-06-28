@@ -55,7 +55,7 @@ jobs:
       # PATH does not persist between runs.
       - name: Add Poetry to $PATH
         run: |
-          echo "$HOME/.poetry/bin" >> $GITHUB_PATH
+          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
       - name: Get Poetry version
         run: poetry --version
       - name: Check pyproject.toml validity
