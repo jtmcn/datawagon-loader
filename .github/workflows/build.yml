@@ -15,8 +15,8 @@ jobs:
     name: Check formatting
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-python@v2.2.2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
       - uses: psf/black@stable
   build:
     name: Build tool
@@ -33,28 +33,11 @@ jobs:
           - '3.11'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v3
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{matrix.python-version}}
-      # Perma-cache Poetry to speed up builds
-      # - name: Cache Poetry
-      #   id: cache-poetry
-      #   uses: actions/cache@v2.1.6
-      #   with:
-      #     path: ~/.poetry
-      #     key: ${{ matrix.os }}-poetry
-      # Only runs when key from caching step changes
-      # - name: Install latest version of Poetry
-      #   if: steps.cache-poetry.outputs.cache-hit != 'true'
-      #   run: |
-      #     curl -sSL https://install.python-poetry.org | python3 -
-      # Poetry still needs to be re-prepended to the PATH on each run, since
-      # PATH does not persist between runs.
-      # - name: Add Poetry to $GITHUB_PATH
-      #   run: |
-      #     echo "/Users/runner/.local/bin" >> $GITHUB_PATH
       - name: Setup Poetry
         uses: abatilo/actions-poetry@v2
       - name: Get Poetry version
@@ -63,7 +46,7 @@ jobs:
         run: poetry check --no-interaction
       - name: Cache dependencies
         id: cache-deps
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v3
         with:
           path: ${{github.workspace}}/.venv
           key: ${{ matrix.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -76,4 +59,4 @@ jobs:
       - name: Run tests
         run: poetry run pytest -v
       - name: Build artifacts
-        run: poetry build
+        run: poetry build -v
