@@ -41,10 +41,10 @@ Variables:
 
 
 
-Order of executed operations
-check_db_connection
-check_files
-check_database
+Order of executed operations for `datawagon import` command
+check db connection
+check local files
+check database
 display new files
-import csv
-check_database
+on confirm, import all new files
+
