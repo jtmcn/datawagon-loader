@@ -54,7 +54,7 @@ class FileUtils(object):
 
     def _filter_csv_files(self, csv_files: List[str]) -> List[str]:
         included = ["video_summary"]
-        excluded = ["summary"]
+        excluded = ["summary", "backup"]
 
         filtered_csv_files = [
             csv_file
