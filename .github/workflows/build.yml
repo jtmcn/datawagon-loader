@@ -39,22 +39,24 @@ jobs:
         with:
           python-version: ${{matrix.python-version}}
       # Perma-cache Poetry to speed up builds
-      - name: Cache Poetry
-        id: cache-poetry
-        uses: actions/cache@v2.1.6
-        with:
-          path: ~/.poetry
-          key: ${{ matrix.os }}-poetry
+      # - name: Cache Poetry
+      #   id: cache-poetry
+      #   uses: actions/cache@v2.1.6
+      #   with:
+      #     path: ~/.poetry
+      #     key: ${{ matrix.os }}-poetry
       # Only runs when key from caching step changes
-      - name: Install latest version of Poetry
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+      # - name: Install latest version of Poetry
+      #   if: steps.cache-poetry.outputs.cache-hit != 'true'
+      #   run: |
+      #     curl -sSL https://install.python-poetry.org | python3 -
       # Poetry still needs to be re-prepended to the PATH on each run, since
       # PATH does not persist between runs.
-      - name: Add Poetry to $GITHUB_PATH
-        run: |
-          echo "/Users/runner/.local/bin" >> $GITHUB_PATH
+      # - name: Add Poetry to $GITHUB_PATH
+      #   run: |
+      #     echo "/Users/runner/.local/bin" >> $GITHUB_PATH
+      - name: Setup Poetry
+        uses: abatilo/actions-poetry@v2
       - name: Get Poetry version
         run: poetry --version
       - name: Check pyproject.toml validity
