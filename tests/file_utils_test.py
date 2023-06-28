@@ -51,4 +51,5 @@ class FileUtilsTestCase(TestCase):
             "something_else.csv",  # included
             "something_summary.csv",  # excluded
         ]
-        assert len(self.file_utils._filter_csv_files(mock_csv_file_infos)) == 1  # type: ignore
+        result = self.file_utils._filter_csv_files(mock_csv_file_infos)  # type: ignore
+        assert len(result) == 2
