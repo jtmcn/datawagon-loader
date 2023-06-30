@@ -30,5 +30,7 @@ test-cov:
 isort:
 	$(CMD) isort --recursive $(PYMODULE) $(TESTS)
 
+build-binary:
+	$(CMD) pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2
 # clean:
 # 	git clean -Xdf # Delete all files in .gitignore
