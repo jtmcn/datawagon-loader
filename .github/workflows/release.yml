@@ -37,7 +37,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller --onefile datawagon/main.py --name datawagon.command &&
+                poetry run pyinstaller --onefile datawagon/main.py --name datawagon.command &&
                 cd dist/ &&
                 zip -r9 datawagon.zip datawagon.command             
             OUT_FILE_NAME: datawagon.zip
