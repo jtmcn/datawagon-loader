@@ -43,27 +43,29 @@ jobs:
             OUT_FILE_NAME: datawagon.zip
             ASSET_MIME: application/zip
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
+    - name: Install poetry
+      run: pipx install poetry    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
         cache: 'poetry'
-    - name: Setup Poetry
-      uses: abatilo/actions-poetry@v2        
+    # - name: Setup Poetry
+    #   uses: abatilo/actions-poetry@v2        
     - name: Get Poetry version
       run: poetry --version
     - name: Check pyproject.toml validity
       run: poetry check --no-interaction
-    - name: Cache dependencies
-      id: cache-deps
-      uses: actions/cache@v3
-      with:
-        path: ${{github.workspace}}/.venv
-        key: ${{ matrix.os }}-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: ${{ matrix.os }}-
+    # - name: Cache dependencies
+    #   id: cache-deps
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: ${{github.workspace}}/.venv
+    #     key: ${{ matrix.os }}-${{ hashFiles('**/poetry.lock') }}
+    #     restore-keys: ${{ matrix.os }}-
     - name: Install deps
-      if: steps.cache-deps.cache-hit != 'true'
+    #   if: steps.cache-deps.cache-hit != 'true'
       run: |
         poetry config virtualenvs.in-project true
         poetry install --no-interaction  
