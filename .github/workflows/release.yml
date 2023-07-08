@@ -37,9 +37,9 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                poetry run pyinstaller --onefile datawagon/main.py --name datawagon.command &&
+                poetry run pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2 &&
                 cd dist/ &&
-                zip -r9 datawagon.zip datawagon.command             
+                zip -r9 datawagon.zip datawagon             
             OUT_FILE_NAME: datawagon.zip
             ASSET_MIME: application/zip
     steps:
