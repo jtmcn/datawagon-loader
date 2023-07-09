@@ -8,8 +8,8 @@ on:
 jobs:
 
   createrelease:
-    name: Create Release
-    runs-on: [ubuntu-latest]
+    name: Create Release  
+    runs-on: 'ubuntu-latest'
     steps:
     - name: Create Release
       id: create_release
@@ -59,6 +59,10 @@ jobs:
       run: |
         poetry config virtualenvs.in-project true
         poetry install --no-interaction  
+    - name: Run tests
+      run: poetry run pytest -v
+    - name: Build artifacts
+      run: poetry build -v        
     - name: Build with pyinstaller for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
     - name: Load Release URL File from release job
