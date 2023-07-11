@@ -106,7 +106,7 @@ class CSVLoader(object):
         datatype_dict = {}
 
         float_cols = ["revenue"]
-        int_cols = ["view", "day", "date_key"]
+        int_cols = ["view", "day", "date_key", "sec"]
         date_cols = ["date"]
 
         for col in df_appended.columns:
