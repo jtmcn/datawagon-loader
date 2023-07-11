@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from collections import namedtuple
+import toml
 
 import click
 from commands.check_database import check_database
@@ -64,4 +65,9 @@ cli.add_command(reset_database)
 
 if __name__ == "__main__":
     load_dotenv()
-    cli(obj={})
+
+    # print(f"Version: {importlib.metadata.version('datawagon')}")
+    version = toml.load("pyproject.toml")["tool"]["poetry"]["version"]
+    print(f"Version: {version}")
+
+    cli(obj={})  # type: ignore

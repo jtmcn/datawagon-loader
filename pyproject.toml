@@ -15,6 +15,7 @@ python-dotenv = "^1.0.0"
 pandas = "^2.0.2"
 sqlalchemy = "^2.0.17"
 psycopg2 = "^2.9.6"
+toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -26,6 +27,7 @@ black = "^23.3.0"
 pyinstaller = "^5.13.0"
 pytest-cov = "^4.1.0"
 sqlalchemy-stubs = "^0.4"
+types-toml = "^0.10.8.6"
 
 [build-system]
 requires = ["poetry-core"]
