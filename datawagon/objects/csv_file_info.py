@@ -1,7 +1,7 @@
 import calendar
 import re
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 
@@ -76,14 +76,6 @@ class CsvFileInfo:
         month_end_date = file_date.replace(
             day=calendar.monthrange(file_date.year, file_date.month)[1]
         )
-
-        # if table_name contains "adj" then month_end_date is the last day of the previous month
-        # because it is adjustments for the prev month
-        if "adj" in table_name:
-            month_end_date = (
-                month_end_date.replace(day=1) - timedelta(days=1)
-            ).replace(day=calendar.monthrange(month_end_date.year, month_end_date.month)[1])
-
         month_end_date_key = int(month_end_date.strftime("%Y%m%d"))
 
         if (
