@@ -74,9 +74,13 @@ class CSVLoader(object):
         # so we format them to snake_case
         return [
             col.replace(" ", "_")
-            .replace(":", "")
+            .replace(".", "_")
+            .replace("-", "_")
+            .replace("/", "_")
             .replace("(", "_")
             .replace(")", "")
+            .replace("?", "")
+            .replace(":", "")
             .lower()
             for col in columns
         ]
