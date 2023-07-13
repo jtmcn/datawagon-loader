@@ -25,7 +25,8 @@ def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
     if len(file_diff_display_df) > 0:
         click.secho(
             tabulate(
-                file_diff_display_df,  # type: ignore - a dataframe is a valid input
+                # type ignore because tabulate does support pandas dataframes
+                file_diff_display_df,  # type: ignore
                 headers=["Table", "DB File Count", "Source File Count"],
                 tablefmt="simple",
                 showindex=False,

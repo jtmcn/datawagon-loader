@@ -11,9 +11,14 @@ help: ## Show this help.
 
 better: reset-and-update build-app install-app  ## Reset local code and update from remote, build and install app
 
+pre-commit: check lint format isort test ## Run pre-commit checks
+
 reset-and-update: ## Reset local code and update from remote
 	git fetch
 	git reset --hard origin/main
+
+check:
+	poetry check
 
 run: ## Run app
 	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
