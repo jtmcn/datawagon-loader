@@ -6,38 +6,41 @@ ENTRYPOINT:=main.py
 TESTS:=tests
 
 
-better: reset-local-and-update-code	build-app install-app
+help: ## Show this help.
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-reset-local-and-update-code: 
+better: reset-and-update build-app install-app  ## Reset local code and update from remote, build and install app
+
+reset-and-update: ## Reset local code and update from remote
 	git fetch
 	git reset --hard origin/main
 
-run:
+run: ## Run app
 	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
 
-build-app:
+build-app: ## Build app
 	poetry build
 
-install-app:
+install-app: ## Install app
 	poetry install
 
-lint:
+lint: ## Lint code
 	$(CMD) flake8 $(PYMODULE) $(TESTS)
 
-format:
+format: ## Format code
 	$(CMD) black $(PYMODULE) $(TESTS)
 
-type:
+type: ## Type check code
 	$(CMD) mypy $(PYMODULE) $(TESTS)
 
-test:
+test: ## Run tests
 	$(CMD) pytest --cov=$(PYMODULE) $(TESTS)
 
-test-cov:
+test-cov: ## Run tests with coverage
 	$(CMD) pytest --cov=$(PYMODULE) $(TESTS) --cov-report html
 
-isort:
+isort: ## Sort imports
 	$(CMD) isort --recursive $(PYMODULE) $(TESTS)
 
-build-binary:
+build-binary: ## Build binary
 	$(CMD) pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2
