@@ -10,7 +10,7 @@ better: reset-local-and-update-code	build-app install-app
 
 reset-local-and-update-code: 
 	git fetch
-	git reset --hard origin/master
+	git reset --hard origin/main
 
 run:
 	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
