@@ -6,10 +6,7 @@ ENTRYPOINT:=main.py
 TESTS:=tests
 
 
-better:
-	reset-local-and-update-code
-	build-app
-	install-app
+better: reset-local-and-update-code	build-app install-app
 
 reset-local-and-update-code: 
 	git fetch
