@@ -6,10 +6,22 @@ ENTRYPOINT:=main.py
 TESTS:=tests
 
 
+better:
+	reset-local-and-update-code
+	build-app
+	install-app
+
+reset-local-and-update-code: 
+	git fetch
+	git reset --hard origin/master
+
 run:
 	$(CMD) python $(PYMODULE)/$(ENTRYPOINT)
 
-setup:
+build-app:
+	poetry build
+
+install-app:
 	poetry install
 
 lint:
@@ -32,5 +44,3 @@ isort:
 
 build-binary:
 	$(CMD) pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2
-# clean:
-# 	git clean -Xdf # Delete all files in .gitignore
