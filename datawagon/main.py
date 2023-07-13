@@ -1,13 +1,12 @@
 import subprocess
 import sys
 from collections import namedtuple
-import toml
 
 import click
+import toml
 from commands.check_database import check_database
 from commands.check_db_connection import check_db_connection
 from commands.check_files import check_files
-
 # from commands.manage_indexes import create_indexes, drop_indexes, check_indexes
 from commands.compare import compare_files_to_database
 from commands.import_all_csv import import_all_csv

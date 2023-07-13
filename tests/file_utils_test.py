@@ -1,5 +1,7 @@
 from unittest import TestCase
+
 import pytest
+
 from datawagon.objects.file_utils import FileUtils
 from tests.csv_file_info_mock import CsvFileInfoMock
 
