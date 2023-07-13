@@ -28,6 +28,7 @@ pyinstaller = "^5.13.0"
 pytest-cov = "^4.1.0"
 sqlalchemy-stubs = "^0.4"
 types-toml = "^0.10.8.6"
+pre-commit = "^3.3.3"
 
 [build-system]
 requires = ["poetry-core"]

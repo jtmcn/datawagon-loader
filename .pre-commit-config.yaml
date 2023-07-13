@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: poetry-check
+        name: Run Poetry Check
+        entry: poetry check
+        language: system
+        pass_filenames: false
+        stages: [commit]
+      - id: make-lint
+        name: Run Make Lint
+        entry: make lint
+        language: system
+        pass_filenames: false
+        stages: [commit]
