@@ -109,7 +109,8 @@ class CSVLoader(object):
 
         for col in df_appended.columns:
             if any(name in col for name in float_cols):
-                datatype_dict[col] = "float"
+                # floats will be changed to numeric on load (pandas doesn't support the type)
+                datatype_dict[col] = "float64"
             elif any(name in col for name in int_cols):
                 datatype_dict[col] = "int"
             elif any(name in col for name in date_cols):

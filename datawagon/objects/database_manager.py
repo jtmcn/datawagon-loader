@@ -5,7 +5,7 @@ from typing import Any, Iterable, List, Union
 import pandas as pd
 import psycopg2
 from psycopg2.sql import SQL, Identifier
-from sqlalchemy import create_engine
+from sqlalchemy import Numeric, create_engine
 
 
 class DatabaseManager:
@@ -97,6 +97,12 @@ class DatabaseManager:
             cursor.execute(SQL("create schema if not exists {}".format(self.schema)))
 
     def load_dataframe_into_database(self, df: pd.DataFrame, table_name: str) -> int:
+        # float will cause floating point precision issues in reporting, cast to numeric
+        dtype_dict = {}
+        for col in df.columns:
+            if df[col].dtype == "float64":
+                dtype_dict[col] = Numeric()
+
         try:
             df.to_sql(
                 name=table_name,
@@ -105,6 +111,7 @@ class DatabaseManager:
                 if_exists="append",
                 index=False,
                 method=self._df_to_pg_copy,
+                dtype=dtype_dict,
             )
 
             self.log_operation(
