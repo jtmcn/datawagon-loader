@@ -11,7 +11,7 @@ help: ## Show this help.
 
 better: reset-and-update build-app install-app  ## Reset local code and update from remote, build and install app
 
-pre-commit: check lint format isort test ## Run pre-commit checks
+pre-commit: check lint type format isort test  ## Run pre-commit checks
 
 reset-and-update: ## Reset local code and update from remote
 	git fetch
@@ -36,7 +36,7 @@ format: ## Format code
 	$(CMD) black $(PYMODULE) $(TESTS)
 
 type: ## Type check code
-	$(CMD) mypy $(PYMODULE) $(TESTS)
+	$(CMD) mypy --namespace-packages --explicit-package-bases $(PYMODULE) $(TESTS)
 
 test: ## Run tests
 	$(CMD) pytest --cov=$(PYMODULE) $(TESTS)

@@ -7,10 +7,10 @@ from tests.csv_file_info_mock import CsvFileInfoMock
 
 
 class FileUtilsTestCase(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.file_utils = FileUtils()
 
-    def test_group_by_table_name(self):
+    def test_group_by_table_name(self) -> None:
         mock_csv_file_infos = [CsvFileInfoMock(), CsvFileInfoMock()]
 
         grouped_mock_csv_file_infos = self.file_utils.group_by_table_name(mock_csv_file_infos)  # type: ignore
@@ -19,7 +19,7 @@ class FileUtilsTestCase(TestCase):
         with pytest.raises(KeyError):
             grouped_mock_csv_file_infos["video_summary"]
 
-    def test_check_for_duplicate_files(self):
+    def test_check_for_duplicate_files(self) -> None:
         mock_csv_file_infos__no_dupes = [
             CsvFileInfoMock(),
             CsvFileInfoMock(file_name_without_extension="something_else"),
@@ -29,7 +29,7 @@ class FileUtilsTestCase(TestCase):
         mock_csv_file_infos__with_dupes = [CsvFileInfoMock(), CsvFileInfoMock()]
         assert len(self.file_utils.check_for_duplicate_files(mock_csv_file_infos__with_dupes)) == 2  # type: ignore
 
-    def test_check_for_different_file_versions(self):
+    def test_check_for_different_file_versions(self) -> None:
         assert (
             len(
                 self.file_utils.check_for_different_file_versions(
@@ -47,7 +47,7 @@ class FileUtilsTestCase(TestCase):
             == 1
         )
 
-    def test_filter_csv_files(self):
+    def test_filter_csv_files(self) -> None:
         mock_csv_file_infos = [
             "something_video_summary.csv",  # included
             "something_else.csv",  # included

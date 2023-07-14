@@ -2,7 +2,8 @@ from datetime import date
 
 
 class CsvFileInfoMock:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:  # type: ignore
+        pass
         self.file_path = kwargs.get(
             "file_path",
             "/mock/path/YouTube_SomeBrand_M_20210501_ADJ_summary_v1-1.csv.gz",

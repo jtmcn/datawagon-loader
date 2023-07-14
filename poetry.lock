@@ -1053,6 +1053,28 @@ files = [
 ]
 
 [[package]]
+name = "types-click"
+version = "7.1.8"
+description = "Typing stubs for click"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-click-7.1.8.tar.gz", hash = "sha256:b6604968be6401dc516311ca50708a0a28baa7a0cb840efd7412f0dbbff4e092"},
+    {file = "types_click-7.1.8-py3-none-any.whl", hash = "sha256:8cb030a669e2e927461be9827375f83c16b8178c365852c060a34e24871e7e81"},
+]
+
+[[package]]
+name = "types-tabulate"
+version = "0.9.0.2"
+description = "Typing stubs for tabulate"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-tabulate-0.9.0.2.tar.gz", hash = "sha256:1dd4322a3a146e9073169c74278b8f14a58eb9905ca9db0d2588df408f27cac9"},
+    {file = "types_tabulate-0.9.0.2-py3-none-any.whl", hash = "sha256:a2e41cc41b6b46bfaec78f8fd8e03058fda7a31af6f203a4b235f5482f571f6f"},
+]
+
+[[package]]
 name = "types-toml"
 version = "0.10.8.6"
 description = "Typing stubs for toml"
@@ -1108,4 +1130,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "2d502774f49ef7d0f13081dd248bbf50c33a6aa98a1dc9ca0223280052c656c8"
+content-hash = "433061b0b8acfd956eee2aed3f03314bac0398007db44368b3dbc760d5d9d5e7"

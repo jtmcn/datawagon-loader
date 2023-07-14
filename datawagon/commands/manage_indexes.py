@@ -4,7 +4,7 @@ from datawagon.objects.index_manager import IndexManager
 
 
 @click.group()
-def cli():
+def cli() -> None:
     pass
 
 
@@ -27,10 +27,10 @@ def drop_indexes(ctx: click.Context) -> None:
 
 @click.command()
 @click.pass_context
-def check_indexes(ctx: click.Context):
+def check_indexes(ctx: click.Context) -> None:
     index_manager = IndexManager(ctx.obj["DB_CONNECTION"])
     df = index_manager.get_all_indexes()
-    click.secho(df)
+    click.secho(df)  # type: ignore
 
 
 if __name__ == "__main__":

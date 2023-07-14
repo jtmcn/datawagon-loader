@@ -38,7 +38,7 @@ class IndexManager:
                 cursor.execute(query)
             cursor.close()
 
-    def get_all_indexes(self):
+    def get_all_indexes(self) -> pd.DataFrame:
         """
         Returns a DataFrame containing the table name, index name and size of all indexes in the schema.
         """
