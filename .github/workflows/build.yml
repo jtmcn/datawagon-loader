@@ -64,7 +64,7 @@ jobs:
       - name: Install deps
         run: |
           poetry config virtualenvs.in-project true
-          poetry install --no-interaction
+          poetry install --no-interaction --without dev
       - name: Run tests
         run: poetry run pytest -v
       - name: Build artifacts
