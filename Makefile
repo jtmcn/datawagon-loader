@@ -1,5 +1,3 @@
-.PHONY: run setup format lint type test test-cov isort
-
 CMD:=poetry run
 PYMODULE:=datawagon
 ENTRYPOINT:=main.py
