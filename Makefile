@@ -7,9 +7,9 @@ TESTS:=tests
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-better: reset-and-update build-app install-app  ## Reset local code and update from remote, build and install app
+better: reset-and-update install-app build-app  ## Reset local code and update from remote, build and install app
 
-pre-commit: check lint type format isort test  ## Run pre-commit checks
+pre-commit: check lint type isort format check-format test  ## Run pre-commit checks
 
 reset-and-update: ## Reset local code and update from remote
 	git fetch
@@ -32,6 +32,9 @@ lint: ## Lint code
 
 format: ## Format code
 	$(CMD) black $(PYMODULE) $(TESTS)
+
+check-format: ## Check code format with flake8
+	$(CMD) flake8 $(PYMODULE) $(TESTS)
 
 type: ## Type check code
 	$(CMD) mypy --namespace-packages --explicit-package-bases $(PYMODULE) $(TESTS)
