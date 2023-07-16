@@ -4,18 +4,19 @@ from collections import namedtuple
 
 import click
 import toml
-from commands.check_database import check_database
-from commands.check_db_connection import check_db_connection
-from commands.check_files import check_files
+from dotenv import load_dotenv
+
+from datawagon.commands.check_database import check_database
+from datawagon.commands.check_db_connection import check_db_connection
+from datawagon.commands.check_files import check_files
 
 # from commands.manage_indexes import create_indexes, drop_indexes, check_indexes
-from commands.compare import compare_files_to_database
-from commands.import_all_csv import import_all_csv
-from commands.import_single_csv import import_selected_csv
-from commands.reset_database import reset_database
-from dotenv import load_dotenv
-from objects.database_manager import DatabaseManager
-from objects.parameter_validator import ParameterValidator
+from datawagon.commands.compare import compare_files_to_database
+from datawagon.commands.import_all_csv import import_all_csv
+from datawagon.commands.import_single_csv import import_selected_csv
+from datawagon.commands.reset_database import reset_database
+from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.parameter_validator import ParameterValidator
 
 
 @click.group(chain=True)

@@ -16,9 +16,13 @@ class DatabaseManager:
     1. Using the pandas to_sql method
     2. Using the psycopg2 copy_from method
 
+    to_sql loads data line by line, which is not fault tolerant.
+    A failure will result in a partial load. Therefore,
+    copy_from should be used for loading csv files into the database
+    as it loads the entire file at once or not at all.
+
     There are SQL queries with f-strings in this class. This is not ideal, but
     the only user input is the schema name, which is validated before usage.
-
     """
 
     CNAME_FILE_NAME = "_file_name"

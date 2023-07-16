@@ -1,4 +1,6 @@
-from .main import cli
+import sys
 
-if __name__ == "__main__":
-    cli()
+from datawagon.main import cli
+
+if __name__ == "datawagon.__main__":
+    sys.exit(cli())

@@ -7,13 +7,25 @@ TESTS:=tests
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-better: reset-and-update install-app build-app  ## Reset local code and update from remote, build and install app
+better: reset-and-update environment  ## Reset local code and update from remote, install dependencies and setup runtime environment
 
-pre-commit: check lint type isort format check-format test  ## Run pre-commit checks
+pre-commit: check type isort format lint test  ## Run pre-commit checks
 
 reset-and-update: ## Reset local code and update from remote
 	git fetch
 	git reset --hard origin/main
+
+requirements: ## Generate requirements.txt
+	poetry export --without-hashes -f requirements.txt -o requirements.txt
+
+environment: ## Setup runtime environment (not for development)
+	( \
+		python3 -m venv .venv; \
+		. .venv/bin/activate; \
+		python3 -m pip install --upgrade pip; \
+		python3 -m pip install -r requirements.txt; \
+		python3 -m pip install . \
+	)
 
 check:
 	poetry check
@@ -33,9 +45,6 @@ lint: ## Lint code
 format: ## Format code
 	$(CMD) black $(PYMODULE) $(TESTS)
 
-check-format: ## Check code format with flake8
-	$(CMD) flake8 $(PYMODULE) $(TESTS)
-
 type: ## Type check code
 	$(CMD) mypy --namespace-packages --explicit-package-bases $(PYMODULE) $(TESTS)
 
@@ -50,3 +59,6 @@ isort: ## Sort imports
 
 build-binary: ## Build binary
 	$(CMD) pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2
+
+clean-env:
+	rm -rf .venv
