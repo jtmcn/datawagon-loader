@@ -1,3 +1,4 @@
+.ONESHELL:
 CMD:=poetry run
 PYMODULE:=datawagon
 ENTRYPOINT:=main.py
@@ -7,7 +8,7 @@ TESTS:=tests
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-better: reset-and-update environment  ## Reset local code and update from remote, install dependencies and setup runtime environment
+better: reset-and-update runtime-environment  ## Reset local code and update from remote, install dependencies and setup runtime environment
 
 pre-commit: check type isort format lint test  ## Run pre-commit checks
 
@@ -18,7 +19,7 @@ reset-and-update: ## Reset local code and update from remote
 requirements: ## Generate requirements.txt
 	poetry export --without-hashes -f requirements.txt -o requirements.txt
 
-environment: ## Setup runtime environment (not for development)
+runtime-environment: ## Setup runtime environment (without poetry or dev dependencies)
 	( \
 		python3 -m venv .venv; \
 		. .venv/bin/activate; \
