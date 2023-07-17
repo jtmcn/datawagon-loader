@@ -1,3 +1,3 @@
 #!/bin/bash
 
-git pull -r --autostash
+git pull --quiet -r --autostash origin main
