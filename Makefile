@@ -8,7 +8,7 @@ TESTS:=tests
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-pre-commit: check type isort format lint test  ## Run pre-commit checks
+pre-commit: check type isort format lint test requirements  ## Run pre-commit checks
 
 requirements: ## Generate requirements.txt
 	poetry export --without-hashes -f requirements.txt -o requirements.txt
