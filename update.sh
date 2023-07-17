@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script will check for updates on the main branch of the repository in github
+# if changes are found, it will pull the changes and update the python environment
 
 git switch --quiet main
 
@@ -17,5 +19,4 @@ if ! git diff --quiet origin/main main; then
     echo "Updated"
 else
     echo "No changes"
-
 fi
