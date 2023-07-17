@@ -1,22 +1,59 @@
 #!/bin/bash
+set -e
 
-# This script will check for updates on the main branch of the repository in github
-# if changes are found, it will pull the changes and update the python environment
+# Variables
+BRANCH="main"
+VENV=".venv"
 
-git switch --quiet main
+# This script will check for updates on the main branch of the specified repository
+# If changes are found, it will pull the changes and update the Python environment
+# It assumes the Python virtual environment and the branch are already set
 
-git fetch --quiet
+function update_git() {
+    # Switch to the branch silently
+    git switch --quiet "$BRANCH"
 
-if ! git diff --quiet origin/main main; then
+    # Fetch any changes from origin silently
+    git fetch --quiet
 
-    git pull --quiet -r --autostash origin main
+    if ! git diff --quiet origin/"$BRANCH" "$BRANCH"; then
+        git pull --quiet -r --autostash origin "$BRANCH" || {
+            echo "Failed to pull from origin. Exiting."
+            exit 1
+        }
+        return 0;
+    else
+        echo "No changes"
+        return 1;
+    fi
+}
 
-    python3 -m venv .venv
-    source .venv/bin/activate 
-    python3 -m pip install --upgrade pip
-    python3 -m pip install -r requirements.txt
-    python3 -m pip install . 
-    echo "Updated"
-else
-    echo "No changes"
-fi
+function update_python_env() {
+    # Check if virtual environment exists, if not, create it 
+    if [ ! -d "$VENV" ]; then
+        python3 -m venv "$VENV"
+    fi
+
+    # Activate the virtual environment
+    source "$VENV"/bin/activate 
+    
+    # Make sure we're operating with the virtualenv python and pip
+    PYTHON="$VENV/bin/python"
+    PIP="$VENV/bin/pip"
+
+    # Upgrade pip and install requirements
+    "$PYTHON" -m pip install --upgrade pip
+    
+    "$PIP" install -r requirements.txt
+    "$PIP" install . 
+
+    echo "Python environment updated"
+}
+
+function main() {
+    if update_git; then
+        update_python_env
+    fi
+}
+
+main "$@"
