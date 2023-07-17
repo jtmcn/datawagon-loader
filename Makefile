@@ -8,25 +8,10 @@ TESTS:=tests
 help: ## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-better: reset-and-update runtime-environment  ## Reset local code and update from remote, install dependencies and setup runtime environment
-
 pre-commit: check type isort format lint test  ## Run pre-commit checks
-
-reset-and-update: ## Reset local code and update from remote
-	git fetch
-	git reset --hard origin/main
 
 requirements: ## Generate requirements.txt
 	poetry export --without-hashes -f requirements.txt -o requirements.txt
-
-runtime-environment: ## Setup runtime environment (without poetry or dev dependencies)
-	( \
-		python3 -m venv .venv; \
-		. .venv/bin/activate; \
-		python3 -m pip install --upgrade pip; \
-		python3 -m pip install -r requirements.txt; \
-		python3 -m pip install . \
-	)
 
 check:
 	poetry check
