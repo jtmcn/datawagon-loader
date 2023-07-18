@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 from datawagon.commands.check_database import check_database
 from datawagon.commands.check_db_connection import check_db_connection
 from datawagon.commands.check_files import check_files
-
-# from commands.manage_indexes import create_indexes, drop_indexes, check_indexes
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
