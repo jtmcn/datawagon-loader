@@ -11,7 +11,7 @@ def check_db_connection(ctx: click.Context) -> bool:
     db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
 
     if db_manager.test_connection():
-        click.echo(click.style("Successfully connected to the database.", fg="green"))
+        click.echo(click.style("Successfully connected to the database.", bg="green"))
         return True
     else:
         click.echo(click.style("Failed to connect to the database.", fg="red"))

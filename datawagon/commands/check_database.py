@@ -42,7 +42,7 @@ def _ensure_schema_exists(db_manager: DatabaseManager, schema_name: str) -> bool
         if click.confirm("Do you want to create the schema?"):
             db_manager.ensure_schema_exists()
             if db_manager.check_schema():
-                click.secho(f"Schema '{schema_name}' created.", fg="green")
+                click.secho(f"Schema '{schema_name}' created.", bg="green")
                 return True
             else:
                 click.secho("Schema creation failed.", fg="red")

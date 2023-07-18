@@ -35,6 +35,6 @@ def import_selected_csv(ctx: click.Context, file_path: str) -> None:
         df = loader.load_data()
 
         if db_manager.load_dataframe_into_database(df, csv_info.table_name):
-            click.secho("Successfully imported data into database", fg="green")
+            click.secho("Successfully imported data into database", bg="green")
         else:
             click.secho(f"Import failed for: {csv_info.file_name}", fg="red")

@@ -14,7 +14,7 @@ def create_indexes(ctx: click.Context) -> None:
     """Create indexes on all tables in the selected schema."""
     index_manager = IndexManager(ctx.obj["DB_CONNECTION"])
     index_manager.create_index_on_all_tables()
-    click.secho("Indexes created on all tables.", fg="green")
+    click.secho("Indexes created on all tables.", bg="green")
 
 
 @cli.command()

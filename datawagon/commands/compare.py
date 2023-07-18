@@ -50,7 +50,7 @@ def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
     else:
         display_limit = 10
         i = 0
-        click.secho(f"Found {new_file_count} new files:", fg="green")
+        click.secho(f"Found {new_file_count} new files:", bg="green")
         for file in new_files:
             if i >= display_limit:
                 break
