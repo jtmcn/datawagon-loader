@@ -36,7 +36,7 @@ lint: ## Lint code
 
 test: ## Run tests
 	@echo "Running tests with pytest"
-	$(CMD) pytest --cov=$(PYMODULE) $(TESTS)
+	$(CMD) pytest $(TESTS) --quiet
 
 
 # Stand alone, not used for automation
