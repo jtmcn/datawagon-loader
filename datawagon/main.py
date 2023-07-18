@@ -1,9 +1,9 @@
+import importlib.metadata
 import subprocess
 import sys
 from collections import namedtuple
 
 import click
-import toml
 from dotenv import load_dotenv
 
 from datawagon.commands.check_database import check_database
@@ -43,7 +43,6 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     ctx.obj["DB_CONNECTION"] = db_connection
     ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)
-
     ctx.obj["GLOBAL"] = {}
 
     ctx.call_on_close(db_connection.close)
@@ -64,11 +63,15 @@ cli.add_command(reset_database)
 # cli.add_command(check_indexes)
 
 
+def start_cli() -> click.Group:
+    load_dotenv(verbose=True)
+
+    click.secho("DATAWAGON", fg="blue", blink=True, bold=True)
+    click.echo(f"Version: {importlib.metadata.version('datawagon')}")
+    click.echo(nl=True)
+
+    return cli(obj={})  # type: ignore
+
+
 if __name__ == "__main__":
-    load_dotenv()
-
-    # print(f"Version: {importlib.metadata.version('datawagon')}")
-    version = toml.load("pyproject.toml")["tool"]["poetry"]["version"]
-    print(f"Version: {version}")
-
-    cli(obj={})  # type: ignore
+    start_cli()

@@ -1,6 +1,7 @@
 import sys
 
-from datawagon.main import cli
+from datawagon.main import start_cli
 
 if __name__ == "datawagon.__main__":
-    sys.exit(cli())
+    start_cli()
+    sys.exit(0)
