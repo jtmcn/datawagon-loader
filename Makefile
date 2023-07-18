@@ -20,7 +20,7 @@ type: ## Type check code
 
 isort: ## Sort imports
 	@echo "Sorting imports with isort..."
-	$(CMD) isort --recursive $(PYMODULE) $(TESTS)
+	$(CMD) isort --quiet --recursive $(PYMODULE) $(TESTS)
 
 format: ## Format code
 	@echo "Formatting code with black..."
