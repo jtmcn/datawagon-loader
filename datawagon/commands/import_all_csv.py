@@ -51,7 +51,7 @@ def import_all_csv(ctx: click.Context) -> None:
                     has_errors = True
                     click.secho(f"Import failed for {csv_info.file_name}", fg="red")
                 else:
-                    click.secho(f"inserted {success_count:,} rows", bg="green")
+                    click.secho(f"inserted {success_count:,} rows", fg="green")
 
             click.echo(nl=True)
 
@@ -62,7 +62,7 @@ def import_all_csv(ctx: click.Context) -> None:
             else:
                 click.secho(
                     f"Successfully imported data from {config.csv_source_dir} into database",
-                    bg="green",
+                    fg="green",
                 )
 
             # TODO: check_database again and display new row difference (?)
