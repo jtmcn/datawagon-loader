@@ -47,12 +47,14 @@ class DatabaseManager:
             self.connection_error = str(e)
 
         try:
-            self.create_log_table()
+            if self.check_schema():
+                self.create_log_table()
         except Exception as e:
             print(f"Failed to create log table: {e}")
 
     def close(self) -> None:
-        self.connection.close()
+        if not self.connection_error:
+            self.connection.close()
 
     def test_connection(self) -> bool:
         if self.connection_error:
@@ -61,6 +63,7 @@ class DatabaseManager:
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute("select 1")
+                cursor.close()
             return True
         except psycopg2.Error:
             return False
@@ -72,7 +75,7 @@ class DatabaseManager:
             cursor.execute(query, (self.schema,))
             results = cursor.fetchone()
             exists = results[0] if results is not None else False
-
+            cursor.close()
             return exists
 
     def check_table(self, table_name: str) -> bool:
@@ -94,11 +97,13 @@ class DatabaseManager:
             cursor.execute(query, (self.schema, table_name))
             results = cursor.fetchone()
             exists = results[0] if results is not None else False
+            cursor.close()
             return exists
 
     def ensure_schema_exists(self) -> None:
         with self.connection.cursor() as cursor:
             cursor.execute(SQL("create schema if not exists {}".format(self.schema)))
+            cursor.close()
 
     def load_dataframe_into_database(self, df: pd.DataFrame, table_name: str) -> int:
         # float will cause floating point precision issues in reporting, cast to numeric
@@ -153,6 +158,7 @@ class DatabaseManager:
 
             cursor.copy_expert(sql=sql, file=buffer)
             cursor.connection.commit()
+            cursor.close()
 
     def drop_all_tables_and_views(self) -> None:
         with self.connection.cursor() as cursor:

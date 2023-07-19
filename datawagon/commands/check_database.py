@@ -9,16 +9,9 @@ from datawagon.objects.database_manager import DatabaseManager
 @click.command()
 @click.pass_context
 def check_database(ctx: click.Context) -> List[CurrentTableData]:
-    """Check if the schema exists and display existing tables and number of rows."""
+    """Display existing tables and number of rows."""
 
     db_manager = ctx.obj["DB_CONNECTION"]
-
-    # This will try to create schema if it does not exist
-    if not _ensure_schema_exists(db_manager, ctx.obj["CONFIG"].db_schema):
-        click.secho("Schema does not exist.", fg="red")
-        ctx.abort()
-
-    click.echo(nl=True)
 
     existing_table_files = _current_tables(db_manager)
 
@@ -34,23 +27,6 @@ def check_database(ctx: click.Context) -> List[CurrentTableData]:
     click.echo(nl=True)
 
     return existing_table_files
-
-
-def _ensure_schema_exists(db_manager: DatabaseManager, schema_name: str) -> bool:
-    if not db_manager.check_schema():
-        click.secho(f"Schema '{schema_name}' does not exist in the database.", fg="red")
-        if click.confirm("Do you want to create the schema?"):
-            db_manager.ensure_schema_exists()
-            if db_manager.check_schema():
-                click.secho(f"Schema '{schema_name}' created.", bg="green")
-                return True
-            else:
-                click.secho("Schema creation failed.", fg="red")
-                return False
-        else:
-            return False
-    else:
-        return True
 
 
 def _current_tables(db_manager: DatabaseManager) -> List[CurrentTableData]:

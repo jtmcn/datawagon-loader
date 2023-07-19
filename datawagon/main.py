@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datawagon.commands.check_database import check_database
 from datawagon.commands.check_db_connection import check_db_connection
 from datawagon.commands.check_files import check_files
+from datawagon.commands.check_schema import check_schema
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
@@ -48,6 +49,7 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
 cli.add_command(reset_database)
 cli.add_command(check_db_connection)
+cli.add_command(check_schema)
 cli.add_command(check_database)
 cli.add_command(check_files)
 cli.add_command(compare_files_to_database)
@@ -67,6 +69,8 @@ def start_cli() -> click.Group:
     click.secho("DATAWAGON", fg="blue", blink=True, bold=True)
     click.echo(f"Version: {importlib.metadata.version('datawagon')}")
     click.echo(nl=True)
+
+    # todo: check if database here
 
     return cli(obj={})  # type: ignore
 
