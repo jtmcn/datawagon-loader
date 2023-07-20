@@ -1,4 +1,5 @@
 import importlib.metadata
+import signal
 import subprocess
 import sys
 from collections import namedtuple
@@ -6,12 +7,12 @@ from collections import namedtuple
 import click
 from dotenv import load_dotenv
 
-from datawagon.commands.check_database import check_database
-from datawagon.commands.check_files import check_files
 from datawagon.commands.compare import compare_files_to_database
+from datawagon.commands.files_in_database import files_in_database
 from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
 from datawagon.commands.reset_database import reset_database
+from datawagon.commands.scan_files import scan_files
 from datawagon.objects.database_manager import DatabaseManager
 from datawagon.objects.parameter_validator import ParameterValidator
 
@@ -36,7 +37,7 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     # if on mac, prevent computer from sleeping (display, system, disk)
     if "darwin" in sys.platform:
-        subprocess.Popen(["caffeinate", "-dim"])
+        proc = subprocess.Popen(["caffeinate", "-dim"])
 
     ctx.obj["DB_CONNECTION"] = db_manager
     check_db_connection(ctx=ctx, db_manager=db_manager)
@@ -47,12 +48,16 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
     ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)
     ctx.obj["GLOBAL"] = {}
 
-    ctx.call_on_close(db_manager.close)
+    def on_exit() -> None:
+        db_manager.close()
+        proc.send_signal(signal.SIGTERM)
+
+    ctx.call_on_close(on_exit)
 
 
 cli.add_command(reset_database)
-cli.add_command(check_database)
-cli.add_command(check_files)
+cli.add_command(files_in_database)
+cli.add_command(scan_files)
 cli.add_command(compare_files_to_database)
 cli.add_command(import_all_csv)
 cli.add_command(import_selected_csv)

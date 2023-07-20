@@ -4,8 +4,8 @@ import click
 import pandas as pd
 from tabulate import tabulate
 
-from datawagon.commands.check_database import check_database
-from datawagon.commands.check_files import check_files
+from datawagon.commands.files_in_database import files_in_database
+from datawagon.commands.scan_files import scan_files
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.current_table_data import CurrentTableData
 from datawagon.objects.file_utils import FileUtils
@@ -16,8 +16,8 @@ from datawagon.objects.file_utils import FileUtils
 def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
     """Compare files in source directory to files in database."""
 
-    csv_file_infos: List[CsvFileInfo] = ctx.invoke(check_files)
-    current_database_files: List[CurrentTableData] = ctx.invoke(check_database)
+    csv_file_infos: List[CsvFileInfo] = ctx.invoke(scan_files)
+    current_database_files: List[CurrentTableData] = ctx.invoke(files_in_database)
 
     file_diff_display_df = _file_diff(csv_file_infos, current_database_files)
 

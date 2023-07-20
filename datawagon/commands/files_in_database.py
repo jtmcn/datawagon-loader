@@ -8,7 +8,7 @@ from datawagon.objects.database_manager import DatabaseManager
 
 @click.command()
 @click.pass_context
-def check_database(ctx: click.Context) -> List[CurrentTableData]:
+def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
     """Display existing tables and number of rows."""
 
     db_manager = ctx.obj["DB_CONNECTION"]

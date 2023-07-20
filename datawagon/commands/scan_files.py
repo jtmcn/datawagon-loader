@@ -8,7 +8,7 @@ from datawagon.objects.file_utils import FileUtils
 
 @click.command()
 @click.pass_context
-def check_files(ctx: click.Context) -> list[CsvFileInfo]:
+def scan_files(ctx: click.Context) -> list[CsvFileInfo]:
     """Scan a directory for .csv.gz files and display the number of files grouped by table_name."""
 
     source_dir = ctx.obj["CONFIG"].csv_source_dir
