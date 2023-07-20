@@ -89,7 +89,7 @@ class CSVLoader(object):
         # These columns are not present in the csv files and will be added to all tables
         df["_file_name"] = self.input_file.file_name_without_extension
         df["_content_owner"] = self.input_file.content_owner
-        df["_file_month_end_date_key"] = self.input_file.file_month_end_date_key
+        df["_report_date_key"] = self.input_file.report_date_key
         df["_file_load_date"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
         return df

@@ -7,9 +7,7 @@ import click
 from dotenv import load_dotenv
 
 from datawagon.commands.check_database import check_database
-from datawagon.commands.check_db_connection import check_db_connection
 from datawagon.commands.check_files import check_files
-from datawagon.commands.check_schema import check_schema
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
@@ -34,22 +32,25 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     AppConfig = namedtuple("AppConfig", ["db_schema", "csv_source_dir"])
 
-    db_connection = DatabaseManager(db_url, db_schema)
+    db_manager = DatabaseManager(db_url, db_schema)
 
     # if on mac, prevent computer from sleeping (display, system, disk)
     if "darwin" in sys.platform:
         subprocess.Popen(["caffeinate", "-dim"])
 
-    ctx.obj["DB_CONNECTION"] = db_connection
+    ctx.obj["DB_CONNECTION"] = db_manager
+    check_db_connection(ctx=ctx, db_manager=db_manager)
+    check_schema(ctx=ctx, db_manager=db_manager, schema_name=db_schema)
+
+    # check log table exists ?
+
     ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)
     ctx.obj["GLOBAL"] = {}
 
-    ctx.call_on_close(db_connection.close)
+    ctx.call_on_close(db_manager.close)
 
 
 cli.add_command(reset_database)
-cli.add_command(check_db_connection)
-cli.add_command(check_schema)
 cli.add_command(check_database)
 cli.add_command(check_files)
 cli.add_command(compare_files_to_database)
@@ -70,9 +71,51 @@ def start_cli() -> click.Group:
     click.echo(f"Version: {importlib.metadata.version('datawagon')}")
     click.echo(nl=True)
 
-    # todo: check if database here
-
     return cli(obj={})  # type: ignore
+
+
+def check_db_connection(ctx: click.Context, db_manager: DatabaseManager) -> bool:
+    """Test the connection to the database."""
+
+    if db_manager.test_connection():
+        click.echo(click.style("Successfully connected to the database.", fg="green"))
+        return True
+    else:
+        click.echo(click.style("Failed to connect to the database.", fg="red"))
+        ctx.abort()
+
+
+def check_schema(
+    ctx: click.Context, db_manager: DatabaseManager, schema_name: str
+) -> bool:
+    """Check if the schema exists and prompt to create if it does not."""
+
+    # This will try to create schema if it does not exist
+    if not ensure_schema_exists(db_manager, schema_name):
+        click.secho(f"Schema '{schema_name}' does not exist.", fg="red")
+        ctx.abort()
+
+    click.echo(nl=True)
+    click.secho(f"'{schema_name}' is valid schema.", fg="green")
+    click.echo(nl=True)
+    return True
+
+
+def ensure_schema_exists(db_manager: DatabaseManager, schema_name: str) -> bool:
+    if not db_manager.check_schema():
+        click.secho(f"Schema '{schema_name}' does not exist in the database.", fg="red")
+        if click.confirm("Do you want to create the schema?"):
+            db_manager.ensure_schema_exists()
+            if db_manager.check_schema():
+                click.secho(f"Schema '{schema_name}' created.", fg="green")
+                return True
+            else:
+                click.secho("Schema creation failed.", fg="red")
+                return False
+        else:
+            return False
+    else:
+        return True
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ class CsvFileInfo:
     file_date_key: int
     file_date: date
     file_month_end_date: date
-    file_month_end_date_key: int
+    report_date_key: int
     file_version: str
     table_name: str
     file_size_in_bytes: int
@@ -76,7 +76,7 @@ class CsvFileInfo:
         file_month_end_date = file_date.replace(
             day=calendar.monthrange(file_date.year, file_date.month)[1]
         )
-        file_month_end_date_key = int(file_month_end_date.strftime("%Y%m%d"))
+        report_date_key = int(file_month_end_date.strftime("%Y%m%d"))
 
         if (
             file_name_without_extension is None
@@ -101,7 +101,7 @@ class CsvFileInfo:
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
             file_month_end_date=file_month_end_date,
-            file_month_end_date_key=file_month_end_date_key,
+            report_date_key=report_date_key,
         )
 
         return data_item
