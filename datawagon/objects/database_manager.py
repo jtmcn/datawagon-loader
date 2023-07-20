@@ -113,7 +113,7 @@ class DatabaseManager:
         dtype_dict = {}
         for col in df.columns:
             if df[col].dtype == "float64":
-                dtype_dict[col] = Numeric()
+                dtype_dict[col] = Numeric(precision=19, scale=7)
 
         try:
             df.to_sql(
