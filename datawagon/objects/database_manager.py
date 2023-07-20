@@ -34,10 +34,13 @@ class DatabaseManager:
     def __init__(self, db_url: str, schema: str) -> None:
         self.connection_error = ""
         self.schema = schema
+        self.hostname = ""
+        self.db_name = db_url.split("/")[-1]
 
         try:
             self.connection = psycopg2.connect(db_url)
             self.connection.set_session(autocommit=True)
+            self.hostname = self.connection.info.host
         except psycopg2.OperationalError as e:
             self.connection_error = str(e)
 
@@ -160,14 +163,23 @@ class DatabaseManager:
             cursor.connection.commit()
             cursor.close()
 
+    def drop_schema(self) -> None:
+        with self.connection.cursor() as cursor:
+            sql = SQL("drop schema if exists {} cascade;").format(
+                Identifier(self.schema)
+            )
+            cursor.execute(sql)
+            cursor.close()
+
     def drop_all_tables_and_views(self) -> None:
+        # 7/20/23 - unused, replaced by drop_schema
         with self.connection.cursor() as cursor:
             sql = f"""
                 do $$ declare
                     r record;
                 begin
-                    for r in (select tablename from pg_tables where schemaname = '{self.schema}'
-                        and tablename != '{self.LOG_TABLE_NAME}')
+                    for r in (select tablename from pg_tables where schemaname = '{self.schema}')
+
                     loop
                         execute 'drop table if exists {self.schema}.' || r.tablename || ' cascade';
                     end loop;
@@ -177,8 +189,6 @@ class DatabaseManager:
                     end loop;
                 end $$;
                 """
-
-            self.log_operation("Dropped all tables and views")
 
             cursor.execute(sql)
             cursor.close()

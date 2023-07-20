@@ -12,7 +12,10 @@ def reset_database(ctx: click.Context) -> None:
     schema_name = ctx.obj["CONFIG"].db_schema
 
     click.secho(
-        f"This command will drop all tables and views in the selected schema: '{schema_name}'"
+        "This command will DELETE ALL DATA "
+        + f"\non server: '{db_manager.hostname}'"
+        + f"\nin database: '{db_manager.db_name}'"
+        + f"\nwithin the schema: '{schema_name}' "
         + "\nALL DATA WILL BE LOST!",
         bg="yellow",
         bold=True,
@@ -26,5 +29,5 @@ def reset_database(ctx: click.Context) -> None:
         )
         return
 
-    db_manager.drop_all_tables_and_views()
-    click.echo(f"All tables and views in schema '{schema_name}' have been dropped.")
+    db_manager.drop_schema()
+    click.echo(f"All tables, views and schema '{schema_name}' have been dropped.")
