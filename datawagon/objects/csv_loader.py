@@ -70,8 +70,8 @@ class CSVLoader(object):
         return data, header
 
     def _format_columns(self, columns: List[str]) -> List[str]:
-        # Column headers are inconsistent do not make good table names,
-        # so we format them to snake_case
+        # Column headers are inconsistent do not make good names in the database,
+        # format them to snake_case
         return [
             col.replace(" ", "_")
             .replace(".", "_")
@@ -99,7 +99,7 @@ class CSVLoader(object):
 
         df_raw = pd.DataFrame(data, columns=columns)
 
-        df_appended = self._append_columns(df_raw)
+        df_with_appended = self._append_columns(df_raw)
 
         datatype_dict = {}
 
@@ -107,7 +107,7 @@ class CSVLoader(object):
         int_cols = ["view", "day", "date_key", "sec"]
         date_cols = ["date"]
 
-        for col in df_appended.columns:
+        for col in df_with_appended.columns:
             if any(name in col for name in float_cols):
                 # floats will be changed to numeric on load (pandas doesn't support the type)
                 datatype_dict[col] = "float64"
@@ -117,6 +117,6 @@ class CSVLoader(object):
                 datatype_dict[col] = "datetime64[ns]"
             else:
                 datatype_dict[col] = "object"
-        df = df_appended.astype(datatype_dict)
+        df = df_with_appended.astype(datatype_dict)
 
         return df
