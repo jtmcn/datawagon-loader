@@ -13,8 +13,8 @@ from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
 from datawagon.commands.reset_database import reset_database
 from datawagon.commands.scan_files import scan_files
-from datawagon.objects.database_manager import DatabaseManager
 from datawagon.objects.parameter_validator import ParameterValidator
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.group(chain=True)
@@ -33,7 +33,7 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     AppConfig = namedtuple("AppConfig", ["db_schema", "csv_source_dir"])
 
-    db_manager = DatabaseManager(db_url, db_schema)
+    db_manager = PostgresDatabaseManager(db_url, db_schema)
 
     # if on mac, prevent computer from sleeping (display, system, disk)
     if "darwin" in sys.platform:
@@ -50,7 +50,8 @@ def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) ->
 
     def on_exit() -> None:
         db_manager.close()
-        proc.send_signal(signal.SIGTERM)
+        if proc:
+            proc.send_signal(signal.SIGTERM)
 
     ctx.call_on_close(on_exit)
 
@@ -72,14 +73,16 @@ cli.add_command(reset_database)
 def start_cli() -> click.Group:
     load_dotenv(verbose=True)
 
-    click.secho("DATAWAGON", fg="blue", blink=True, bold=True)
+    click.secho("DATAWAGON", fg="blue", bold=True)
     click.echo(f"Version: {importlib.metadata.version('datawagon')}")
     click.echo(nl=True)
 
     return cli(obj={})  # type: ignore
 
 
-def check_db_connection(ctx: click.Context, db_manager: DatabaseManager) -> bool:
+def check_db_connection(
+    ctx: click.Context, db_manager: PostgresDatabaseManager
+) -> bool:
     """Test the connection to the database."""
 
     if db_manager.test_connection():
@@ -91,7 +94,7 @@ def check_db_connection(ctx: click.Context, db_manager: DatabaseManager) -> bool
 
 
 def check_schema(
-    ctx: click.Context, db_manager: DatabaseManager, schema_name: str
+    ctx: click.Context, db_manager: PostgresDatabaseManager, schema_name: str
 ) -> bool:
     """Check if the schema exists and prompt to create if it does not."""
 
@@ -106,7 +109,7 @@ def check_schema(
     return True
 
 
-def ensure_schema_exists(db_manager: DatabaseManager, schema_name: str) -> bool:
+def ensure_schema_exists(db_manager: PostgresDatabaseManager, schema_name: str) -> bool:
     if not db_manager.check_schema():
         click.secho(f"Schema '{schema_name}' does not exist in the database.", fg="red")
         if click.confirm("Do you want to create the schema?"):

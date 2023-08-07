@@ -1,6 +1,6 @@
 import click
 
-from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()
@@ -8,7 +8,7 @@ from datawagon.objects.database_manager import DatabaseManager
 def reset_database(ctx: click.Context) -> None:
     """Reset the database by dropping all tables and views in the selected schema."""
 
-    db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
+    db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
     schema_name = ctx.obj["CONFIG"].db_schema
 
     click.secho(

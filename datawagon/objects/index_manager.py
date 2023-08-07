@@ -1,7 +1,7 @@
 import pandas as pd
 from psycopg2.sql import SQL, Identifier
 
-from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 class IndexManager:
@@ -11,7 +11,7 @@ class IndexManager:
     6/20/23 - Indexes may not be useful to end user and this class is not used in the main code.
     """
 
-    def __init__(self, db_manager: DatabaseManager) -> None:
+    def __init__(self, db_manager: PostgresDatabaseManager) -> None:
         self.db_manager = db_manager
 
     def create_index_on_all_tables(self) -> None:

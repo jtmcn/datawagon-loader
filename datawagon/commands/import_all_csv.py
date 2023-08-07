@@ -5,7 +5,7 @@ import click
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.csv_loader import CSVLoader
-from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command(name="import")
@@ -15,7 +15,7 @@ def import_all_csv(ctx: click.Context) -> None:
 
     config = ctx.obj["CONFIG"]
 
-    db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
+    db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
 
     csv_file_infos: List[CsvFileInfo] = ctx.invoke(compare_files_to_database)
 

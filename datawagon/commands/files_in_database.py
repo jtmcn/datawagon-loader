@@ -3,7 +3,7 @@ from typing import List
 import click
 
 from datawagon.objects.current_table_data import CurrentTableData
-from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()
@@ -29,7 +29,7 @@ def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
     return existing_table_files
 
 
-def _current_tables(db_manager: DatabaseManager) -> List[CurrentTableData]:
+def _current_tables(db_manager: PostgresDatabaseManager) -> List[CurrentTableData]:
     tables = db_manager.table_names()
     all_table_data = []
     with click.progressbar(

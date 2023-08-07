@@ -8,7 +8,7 @@ from psycopg2.sql import SQL, Identifier
 from sqlalchemy import Numeric, create_engine
 
 
-class DatabaseManager:
+class PostgresDatabaseManager:
     """
     Database handler for PostgreSQL databases.
 
@@ -108,19 +108,23 @@ class DatabaseManager:
             cursor.execute(SQL("create schema if not exists {}".format(self.schema)))
             cursor.close()
 
-    def load_dataframe_into_database(self, df: pd.DataFrame, table_name: str) -> int:
+    def load_dataframe_into_database(
+        self, df: pd.DataFrame, table_name: str, is_appended: bool = True
+    ) -> int:
         # float will cause floating point precision issues in reporting, cast to numeric
         dtype_dict = {}
         for col in df.columns:
             if df[col].dtype == "float64":
                 dtype_dict[col] = Numeric(precision=19, scale=7)
 
+        if_exits = "append" if is_appended else "replace"
+
         try:
             df.to_sql(
                 name=table_name,
                 schema=self.schema,
                 con=self.engine,
-                if_exists="append",
+                if_exists=if_exits,
                 index=False,
                 method=self._df_to_pg_copy,
                 dtype=dtype_dict,
