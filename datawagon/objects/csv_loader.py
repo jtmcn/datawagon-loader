@@ -7,11 +7,11 @@ from typing import Any, List, Tuple
 
 import pandas as pd
 
-from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 
 
 class CSVLoader(object):
-    def __init__(self, input_file: CsvFileInfo) -> None:
+    def __init__(self, input_file: CsvFileInfoOverride) -> None:
         self.input_file = input_file
 
     def load_data(self) -> pd.DataFrame:
@@ -87,9 +87,13 @@ class CSVLoader(object):
 
     def _append_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         # These columns are not present in the csv files and will be added to all tables
+        # if isinstance(self.input_file, CsvFileInfo):
         df["_file_name"] = self.input_file.file_name_without_extension
-        df["_content_owner"] = self.input_file.content_owner
-        df["_report_date_key"] = self.input_file.report_date_key
+        if self.input_file.content_owner:
+            df["_content_owner"] = self.input_file.content_owner
+        if self.input_file.report_date_key:
+            df["_report_date_key"] = self.input_file.report_date_key
+
         df["_file_load_date"] = datetime.now(timezone.utc).replace(tzinfo=None)
 
         return df
@@ -102,6 +106,8 @@ class CSVLoader(object):
         df_with_appended = self._append_columns(df_raw)
 
         datatype_dict = {}
+
+        # TODO: move column overrides to source_config
 
         float_cols = ["revenue"]
         int_cols = ["view", "day", "date_key", "sec"]

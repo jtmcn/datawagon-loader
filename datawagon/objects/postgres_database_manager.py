@@ -1,11 +1,13 @@
 import csv
 from io import StringIO
-from typing import Any, Iterable, List, Union
+from typing import Any, Iterable, List, Literal, Union
 
 import pandas as pd
 import psycopg2
 from psycopg2.sql import SQL, Identifier
 from sqlalchemy import Numeric, create_engine
+
+from datawagon.objects.app_config import AppConfig
 
 
 class PostgresDatabaseManager:
@@ -31,29 +33,29 @@ class PostgresDatabaseManager:
 
     LOG_TABLE_NAME = "log"
 
-    def __init__(self, db_url: str, schema: str) -> None:
+    def __init__(self, app_config: AppConfig) -> None:
         self.connection_error = ""
-        self.schema = schema
+        self.schema = app_config.db_schema
         self.hostname = ""
-        self.db_name = db_url.split("/")[-1]
+        self.db_name = app_config.db_url.split("/")[-1]
 
         try:
-            self.connection = psycopg2.connect(db_url)
+            self.connection = psycopg2.connect(app_config.db_url)
             self.connection.set_session(autocommit=True)
             self.hostname = self.connection.info.host
         except psycopg2.OperationalError as e:
             self.connection_error = str(e)
 
         try:
-            self.engine = create_engine(db_url, isolation_level="AUTOCOMMIT")
+            self.engine = create_engine(app_config.db_url, isolation_level="AUTOCOMMIT")
         except Exception as e:
             self.connection_error = str(e)
 
-        try:
-            if self.check_schema():
-                self.create_log_table()
-        except Exception as e:
-            print(f"Failed to create log table: {e}")
+        # try:
+        #     if self.check_schema():
+        #         self.create_log_table()
+        # except Exception as e:
+        #     print(f"Failed to create log table: {e}")
 
     def close(self) -> None:
         if not self.connection_error:
@@ -80,6 +82,9 @@ class PostgresDatabaseManager:
             exists = results[0] if results is not None else False
             cursor.close()
             return exists
+
+    def does_log_table_exist(self) -> bool:
+        return self.check_table(self.LOG_TABLE_NAME)
 
     def check_table(self, table_name: str) -> bool:
         query = SQL(
@@ -109,7 +114,10 @@ class PostgresDatabaseManager:
             cursor.close()
 
     def load_dataframe_into_database(
-        self, df: pd.DataFrame, table_name: str, is_appended: bool = True
+        self,
+        df: pd.DataFrame,
+        table_name: str,
+        append_or_replace: Literal["append", "replace"] = "append",
     ) -> int:
         # float will cause floating point precision issues in reporting, cast to numeric
         dtype_dict = {}
@@ -117,14 +125,12 @@ class PostgresDatabaseManager:
             if df[col].dtype == "float64":
                 dtype_dict[col] = Numeric(precision=19, scale=7)
 
-        if_exits = "append" if is_appended else "replace"
-
         try:
             df.to_sql(
                 name=table_name,
                 schema=self.schema,
                 con=self.engine,
-                if_exists=if_exits,
+                if_exists=append_or_replace,
                 index=False,
                 method=self._df_to_pg_copy,
                 dtype=dtype_dict,

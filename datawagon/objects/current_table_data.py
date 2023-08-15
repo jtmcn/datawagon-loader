@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 
 
+# TODO: use pydantic instead of dataclasses
 @dataclass
 class CurrentTableData:
     table_name: str

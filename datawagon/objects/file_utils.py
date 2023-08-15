@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Dict, List
 
-from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 
 
 class FileUtils(object):
     def group_by_table_name(
         self,
-        file_info_list: List[CsvFileInfo],
-    ) -> Dict[str, List[CsvFileInfo]]:
+        file_info_list: List[CsvFileInfoOverride],
+    ) -> Dict[str, List[CsvFileInfoOverride]]:
         grouped_files = {}
         for file_info in file_info_list:
             if file_info.table_name not in grouped_files:
@@ -18,30 +18,33 @@ class FileUtils(object):
         return grouped_files
 
     def check_for_duplicate_files(
-        self, file_info_list: List[CsvFileInfo]
-    ) -> List[CsvFileInfo]:
+        self, file_info_list: List[CsvFileInfoOverride]
+    ) -> List[CsvFileInfoOverride]:
         file_names = [
             file_info.file_name_without_extension for file_info in file_info_list
         ]
+
         duplicate_file_names = set(
             [file_name for file_name in file_names if file_names.count(file_name) > 1]
         )
+
         duplicate_files = [
             file_info
             for file_info in file_info_list
             if file_info.file_name_without_extension in duplicate_file_names
         ]
+
         return duplicate_files
 
-    def scan_for_csv_files(self, source_path: Path) -> List[Path]:
-        all_csv_files = list(source_path.glob("**/*.csv*"))
-        # exclude open files
-        all_csv_files = [
-            file for file in all_csv_files if not file.name.startswith(".~lock")
-        ]
-        file_names = [str(file) for file in all_csv_files]
-        results = self._filter_csv_files(file_names)
-        return [Path(file) for file in results]
+    # def scan_for_csv_files(self, source_path: Path) -> List[Path]:
+    #     all_csv_files = list(source_path.glob("**/*.csv*"))
+    #     # exclude open files
+    #     all_csv_files = [
+    #         file for file in all_csv_files if not file.name.startswith(".~lock")
+    #     ]
+    #     file_names = [str(file) for file in all_csv_files]
+    #     results = self._filter_csv_files(file_names)
+    #     return [Path(file) for file in results]
 
     def scan_for_csv_files_with_name(self, source_path: Path, name: str) -> List[Path]:
         all_csv_files = list(source_path.glob(f"**/*{name}*.csv*"))
@@ -50,12 +53,12 @@ class FileUtils(object):
             file for file in all_csv_files if not file.name.startswith(".~lock")
         ]
         file_names = [str(file) for file in all_csv_files]
-        results = self._filter_csv_files(file_names)
-        return [Path(file) for file in results]
+
+        return [Path(file) for file in file_names]
 
     def check_for_different_file_versions(
-        self, file_info_list: List[CsvFileInfo]
-    ) -> List[List[CsvFileInfo]]:
+        self, file_info_list: List[CsvFileInfoOverride]
+    ) -> List[List[CsvFileInfoOverride]]:
         grouped_files = self.group_by_table_name(file_info_list)
         different_file_versions = []
 

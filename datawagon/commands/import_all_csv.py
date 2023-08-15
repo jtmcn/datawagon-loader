@@ -3,9 +3,10 @@ from typing import List
 import click
 
 from datawagon.commands.compare import compare_files_to_database
-from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.csv_loader import CSVLoader
 from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
+from datawagon.objects.source_file_scanner import SourceFilesToDatabase
 
 
 @click.command(name="import")
@@ -17,7 +18,13 @@ def import_all_csv(ctx: click.Context) -> None:
 
     db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
 
-    csv_file_infos: List[CsvFileInfo] = ctx.invoke(compare_files_to_database)
+    matched_new_files: List[SourceFilesToDatabase] = ctx.invoke(
+        compare_files_to_database
+    )
+
+    csv_file_infos: List[CsvFileInfoOverride] = [
+        file_info for src in matched_new_files for file_info in src.files
+    ]
 
     if len(csv_file_infos) != 0:
         click.echo(nl=True)
@@ -31,14 +38,14 @@ def import_all_csv(ctx: click.Context) -> None:
 
         has_errors = False
         for csv_info in csv_file_infos:
+            click.echo(
+                f"Importing {csv_info.file_name_without_extension} into {csv_info.table_name}... ",
+                nl=False,
+            )
+
             loader = CSVLoader(csv_info)
 
             df = loader.load_data()
-
-            click.echo(
-                f"Importing {csv_info.content_owner}+{csv_info.file_date_key} into {csv_info.table_name}... ",
-                nl=False,
-            )
 
             success_count = db_manager.load_dataframe_into_database(
                 df, csv_info.table_name
@@ -46,6 +53,7 @@ def import_all_csv(ctx: click.Context) -> None:
 
             if success_count == -1:
                 has_errors = True
+                click.echo(nl=True)
                 click.secho(f"Import failed for {csv_info.file_name}", fg="red")
             else:
                 click.secho(f"inserted {success_count:,} rows", fg="green")
