@@ -4,7 +4,7 @@ import click
 
 from datawagon.objects.csv_file_info import CsvFileInfo
 from datawagon.objects.csv_loader import CSVLoader
-from datawagon.objects.database_manager import DatabaseManager
+from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()
@@ -18,7 +18,7 @@ def import_selected_csv(ctx: click.Context, file_path: str) -> None:
 
     csv_file = Path(file_path)
 
-    db_manager: DatabaseManager = ctx.obj["DB_CONNECTION"]
+    db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
 
     csv_info = CsvFileInfo.build_data_item(csv_file)
 
