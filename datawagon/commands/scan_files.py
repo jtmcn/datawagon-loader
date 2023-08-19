@@ -26,8 +26,6 @@ def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
 
     matched_files = SourceFileScanner(app_config).matched_files()
 
-    print(matched_files)
-
     if len(matched_files) == 0:
         click.secho(f"No .csv files found in source directory: {source_dir}", fg="red")
         ctx.abort()
@@ -65,5 +63,5 @@ def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
         ctx.abort()
 
     click.echo(nl=True)
-    print(matched_files)
+
     return matched_files

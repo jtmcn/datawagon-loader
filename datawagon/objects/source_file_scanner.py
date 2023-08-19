@@ -19,7 +19,6 @@ class SourceFiles(BaseModel):
 
 class SourceFilesToDatabase(SourceFiles):
     table_name: str
-    # destination_table: str
     append_or_replace: str
 
 
@@ -38,13 +37,7 @@ class SourceFileScanner(object):
         self, source_path: Path, glob_pat: str, exclude_pattern: str | None
     ) -> List[Path]:
         all_csv_files = self.find_files(source_path, glob_pat, exclude_pattern)
-        # print(all_csv_files)
-        # all_csv_files = list(source_path.glob(f"**/*{glob_pat}*.csv*"))
-        # all_csv_files = list(source_path.glob(self.case_insensitive_glob(glob_pat)))
-        # all_csv_files = self.find_files(
-        #     source_path=source_path, glob_pat=glob_pat, ignore_case=True
-        # )
-        # exclude open files
+
         all_csv_files = [
             file for file in all_csv_files if not file.name.startswith(".~lock")
         ]
@@ -68,7 +61,6 @@ class SourceFileScanner(object):
                                 os.path.abspath(os.path.join(root, filename))
                             )
 
-        print(matches)
         return [Path(match) for match in matches]
 
     def source_file_attrs(

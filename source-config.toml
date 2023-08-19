@@ -3,7 +3,7 @@ title = "CSV Source Files to be loaded into the database"
 
 [source.claim_raw]
 # example file: YouTube_SomeBrandName_M_20230601_claim_raw_v1-1.csv.tar.gz
-is_enabled = false
+is_enabled = true
 file_name_base = "claim_raw" 
 exclude_file_name_base = "adj_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})' 
@@ -26,7 +26,7 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.video_raw]
 file_name_base = "video_raw"
 destination_table = "video_raw"
-is_enabled = false
+is_enabled = true
 append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
@@ -34,7 +34,7 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.red_rawdata_asset]
 file_name_base = "red_rawdata_asset"
 destination_table = "red_rawdata_asset"
-is_enabled = false
+is_enabled = true
 append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
@@ -42,7 +42,7 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.red_music_rawdata_asset]
 file_name_base = "red_music_rawdata_asset"
 destination_table = "red_music_rawdata_asset"
-is_enabled = false
+is_enabled = true
 append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
@@ -50,7 +50,7 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.monthly_shorts_non_music_ads_video_summary]
 file_name_base = "monthly_shorts_non_music_ads_video_summary"
 destination_table = "monthly_shorts_non_music_ads_video_summary"
-is_enabled = false
+is_enabled = true
 append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
@@ -58,7 +58,7 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.monthly_shorts_non_music_subscription_video_summary]
 file_name_base = "monthly_shorts_non_music_subscription_video_summary"
 destination_table = "monthly_shorts_non_music_subscription_video_summary"
-is_enabled = false
+is_enabled = true
 append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
@@ -66,5 +66,5 @@ regex_group_names = ["content_owner", "file_date_key"]
 [source.video_report]
 file_name_base = "video_report"
 destination_table = "video_report"
-is_enabled = false
+is_enabled = true
 append_or_replace = "replace"

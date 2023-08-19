@@ -24,7 +24,6 @@ class IndexManager:
                     Identifier(table_name),
                     Identifier(self.db_manager.INDEX_COLUMN_NAME),
                 )
-                print(index_query)
                 cursor.execute(index_query)
             cursor.close()
 
