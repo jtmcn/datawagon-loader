@@ -56,10 +56,6 @@ test-cov: ## Run tests with coverage
 	@echo "Running tests with pytest and coverage..."
 	$(CMD) pytest --cov=$(PYMODULE) $(TESTS) --cov-report html
 
-build-binary: ## Build binary
-	@echo "Building binary with pyinstaller..."
-	$(CMD) pyinstaller --onefile datawagon/main.py --name datawagon --target-arch universal2
-
 clean-env:
 	@echo "Cleaning up virtual environment..."
 	rm -rf .venv
