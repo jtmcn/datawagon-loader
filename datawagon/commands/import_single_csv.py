@@ -49,7 +49,6 @@ def import_selected_csv(
         click.echo(nl=True)
         ctx.abort()
 
-
     csv_info = source_file_mapper.files[0]
 
     db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
