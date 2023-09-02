@@ -6,18 +6,23 @@ from tabulate import tabulate
 
 from datawagon.commands.files_in_database import files_in_database
 from datawagon.commands.scan_files import scan_files
-from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.current_table_data import CurrentTableData
 from datawagon.objects.file_utils import FileUtils
+from datawagon.objects.source_file_scanner import SourceFilesToDatabase
 
 
 @click.command()
 @click.pass_context
-def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
+def compare_files_to_database(ctx: click.Context) -> List[SourceFilesToDatabase]:
     """Compare files in source directory to files in database."""
 
-    csv_file_infos: List[CsvFileInfo] = ctx.invoke(scan_files)
+    matched_files: List[SourceFilesToDatabase] = ctx.invoke(scan_files)
     current_database_files: List[CurrentTableData] = ctx.invoke(files_in_database)
+
+    csv_file_infos: List[CsvFileInfoOverride] = [
+        file_info for src in matched_files for file_info in src.files
+    ]
 
     file_diff_display_df = _file_diff(csv_file_infos, current_database_files)
 
@@ -38,9 +43,13 @@ def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
         click.secho("No tables found.", fg="red")
         ctx.abort()
 
-    new_files = _net_new_files(csv_file_infos, current_database_files)
+    new_files = _net_new_files(matched_files, current_database_files)
 
-    new_file_count = len(new_files)
+    new_csv_file_infos: List[CsvFileInfoOverride] = [
+        file_info for src in new_files for file_info in src.files
+    ]
+
+    new_file_count = len(new_csv_file_infos)
 
     click.echo(nl=True)
     click.echo(nl=True)
@@ -51,7 +60,7 @@ def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
         display_limit = 10
         i = 0
         click.secho(f"Found {new_file_count} new files:", fg="green")
-        for file in new_files:
+        for file in new_csv_file_infos:
             if i >= display_limit:
                 break
             click.secho(f"{file.file_name}")
@@ -62,8 +71,12 @@ def compare_files_to_database(ctx: click.Context) -> List[CsvFileInfo]:
     return new_files
 
 
+# TODO: move these functions to an object class
+
+
 def _file_diff(
-    csv_file_infos: List[CsvFileInfo], current_database_files: List[CurrentTableData]
+    csv_file_infos: List[CsvFileInfoOverride],
+    current_database_files: List[CurrentTableData],
 ) -> pd.DataFrame:
     """Create a DataFrame which compares files in source directory to files in database."""
 
@@ -97,8 +110,9 @@ def _file_diff(
 
 
 def _net_new_files(
-    csv_file_infos: List[CsvFileInfo], current_database_files: List[CurrentTableData]
-) -> List[CsvFileInfo]:
+    all_source_files_by_table: List[SourceFilesToDatabase],
+    current_database_files: List[CurrentTableData],
+) -> List[SourceFilesToDatabase]:
     existing_files: set[str] = set(
         [
             source_file
@@ -107,10 +121,26 @@ def _net_new_files(
         ]
     )
 
-    new_files = [
-        file
-        for file in csv_file_infos
-        if (file.file_name_without_extension not in existing_files)
-    ]
+    # new_files = []
+    # maintain list of source files by table, but remove existing_files
+    # from the inner files []
 
-    return sorted(new_files, key=lambda x: x.table_name)
+    # for source_files_by_table in all_source_files_by_table:
+    for range_index in range(len(all_source_files_by_table)):
+        # source_files_by_table = all_source_files_by_table[range_index]
+        all_source_files_by_table[range_index].files = sorted(
+            [
+                file
+                for file in all_source_files_by_table[range_index].files
+                if (file.file_name_without_extension not in existing_files)
+            ],
+            key=lambda x: x.table_name,
+        )
+
+    # new_files = [
+    #     file
+    #     for file in source_files_by_table
+    #     if (file.file_name_without_extension not in existing_files)
+    # ]
+
+    return all_source_files_by_table

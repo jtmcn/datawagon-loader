@@ -1,34 +1,45 @@
 from pathlib import Path
+from typing import List
 
 import click
 
-from datawagon.objects.csv_file_info import CsvFileInfo
+from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.file_utils import FileUtils
+from datawagon.objects.source_file_scanner import (
+    SourceFileScanner,
+    SourceFilesToDatabase,
+)
 
 
 @click.command()
 @click.pass_context
-def scan_files(ctx: click.Context) -> list[CsvFileInfo]:
+def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
     """Scan a directory for .csv.gz files and display the number of files grouped by table_name."""
 
     source_dir = ctx.obj["CONFIG"].csv_source_dir
+    app_config = ctx.obj["CONFIG"]
 
     file_utils = FileUtils()
     source_path = Path(source_dir)
 
-    click.secho(f"Scanning {source_path} for .csv files...", fg="blue")
+    click.secho(f"Scanning for .csv files in {source_path}...", fg="blue")
 
-    csv_files = file_utils.scan_for_csv_files(source_path)
+    matched_files = SourceFileScanner(app_config).matched_files()
 
-    list_of_file_info = [
-        CsvFileInfo.build_data_item(csv_file) for csv_file in csv_files
-    ]
-
-    if len(list_of_file_info) == 0:
+    if len(matched_files) == 0:
         click.secho(f"No .csv files found in source directory: {source_dir}", fg="red")
         ctx.abort()
 
-    duplicates = file_utils.check_for_duplicate_files(list_of_file_info)
+    for files_by_table in matched_files:
+        click.secho(
+            f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector}"
+        )
+
+    csv_file_infos: List[CsvFileInfoOverride] = [
+        file_info for src in matched_files for file_info in src.files
+    ]
+
+    duplicates = file_utils.check_for_duplicate_files(csv_file_infos)
 
     if len(duplicates) > 0:
         click.secho("Duplicate files found:", fg="red")
@@ -40,7 +51,7 @@ def scan_files(ctx: click.Context) -> list[CsvFileInfo]:
         ctx.abort()
 
     different_file_versions = file_utils.check_for_different_file_versions(
-        list_of_file_info
+        csv_file_infos
     )
 
     if different_file_versions:
@@ -51,8 +62,6 @@ def scan_files(ctx: click.Context) -> list[CsvFileInfo]:
                 click.echo(f"  - {file_info.file_name} ({file_info.file_version})")
         ctx.abort()
 
-    click.secho(f"{len(list_of_file_info)} files found in source directory")
-
     click.echo(nl=True)
 
-    return list_of_file_info
+    return matched_files

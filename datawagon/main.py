@@ -2,10 +2,10 @@ import importlib.metadata
 import signal
 import subprocess
 import sys
-from collections import namedtuple
+from pathlib import Path
 
 import click
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
 from datawagon.commands.compare import compare_files_to_database
 from datawagon.commands.files_in_database import files_in_database
@@ -13,6 +13,7 @@ from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
 from datawagon.commands.reset_database import reset_database
 from datawagon.commands.scan_files import scan_files
+from datawagon.objects.app_config import AppConfig
 from datawagon.objects.parameter_validator import ParameterValidator
 from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
@@ -26,30 +27,56 @@ from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
     help="Source directory containing .csv, .csv.zip or .csv.gz files.",
     envvar="DW_CSV_SOURCE_DIR",
 )
+@click.option(
+    "--csv-source-config",
+    type=str,
+    help="Location of source_config.toml",
+    envvar="DW_CSV_SOURCE_TOML",
+)
 @click.pass_context
-def cli(ctx: click.Context, db_url: str, db_schema: str, csv_source_dir: str) -> None:
-    if not ParameterValidator(db_url, db_schema, csv_source_dir).are_valid_parameters:
+def cli(
+    ctx: click.Context,
+    db_url: str,
+    db_schema: str,
+    csv_source_dir: Path,
+    csv_source_config: Path,
+) -> None:
+    if not ParameterValidator(
+        db_url, db_schema, csv_source_dir, csv_source_config
+    ).are_valid_parameters:
         ctx.abort()
 
-    AppConfig = namedtuple("AppConfig", ["db_schema", "csv_source_dir"])
+    app_config = AppConfig(
+        db_schema=db_schema,
+        csv_source_dir=csv_source_dir,
+        csv_source_config=csv_source_config,
+        db_url=db_url,
+    )
 
-    db_manager = PostgresDatabaseManager(db_url, db_schema)
+    db_manager = PostgresDatabaseManager(app_config)
 
     # if on mac, prevent computer from sleeping (display, system, disk)
     if "darwin" in sys.platform:
         proc = subprocess.Popen(["caffeinate", "-dim"])
 
     ctx.obj["DB_CONNECTION"] = db_manager
-    check_db_connection(ctx=ctx, db_manager=db_manager)
-    check_schema(ctx=ctx, db_manager=db_manager, schema_name=db_schema)
 
-    # check log table exists ?
+    is_valid_db = check_db_connection(db_manager=db_manager)
+    is_valid_schema = (
+        check_schema(db_manager=db_manager, schema_name=db_schema)
+        if is_valid_db
+        else False
+    )
 
-    ctx.obj["CONFIG"] = AppConfig(db_schema, csv_source_dir)
+    if is_valid_db and is_valid_schema:
+        db_manager.create_log_table()
+
+    ctx.obj["CONFIG"] = app_config
     ctx.obj["GLOBAL"] = {}
 
     def on_exit() -> None:
-        db_manager.close()
+        if is_valid_db:
+            db_manager.close()
         if proc:
             proc.send_signal(signal.SIGTERM)
 
@@ -71,37 +98,38 @@ cli.add_command(reset_database)
 
 
 def start_cli() -> click.Group:
-    load_dotenv(verbose=True)
+    env_file = find_dotenv()
 
-    click.secho("DATAWAGON", fg="blue", bold=True)
+    load_dotenv(env_file)
+
+    click.secho("DataWagon", fg="magenta", bold=True)
     click.echo(f"Version: {importlib.metadata.version('datawagon')}")
+    click.secho(f"Configuration loaded from: {env_file}")
     click.echo(nl=True)
 
     return cli(obj={})  # type: ignore
 
 
-def check_db_connection(
-    ctx: click.Context, db_manager: PostgresDatabaseManager
-) -> bool:
+def check_db_connection(db_manager: PostgresDatabaseManager) -> bool:
     """Test the connection to the database."""
 
-    if db_manager.test_connection():
-        click.echo(click.style("Successfully connected to the database.", fg="green"))
+    if db_manager.is_valid_connection:
+        click.secho("Successfully connected to the database.", fg="green")
+        click.echo(nl=True)
         return True
     else:
-        click.echo(click.style("Failed to connect to the database.", fg="red"))
-        ctx.abort()
+        click.secho("Failed to connect to the database.", fg="red")
+        click.echo(nl=True)
+        return False
 
 
-def check_schema(
-    ctx: click.Context, db_manager: PostgresDatabaseManager, schema_name: str
-) -> bool:
+def check_schema(db_manager: PostgresDatabaseManager, schema_name: str) -> bool:
     """Check if the schema exists and prompt to create if it does not."""
 
     # This will try to create schema if it does not exist
     if not ensure_schema_exists(db_manager, schema_name):
         click.secho(f"Schema '{schema_name}' does not exist.", fg="red")
-        ctx.abort()
+        click.echo(nl=True)
 
     click.echo(nl=True)
     click.secho(f"'{schema_name}' is valid schema.", fg="green")
@@ -112,7 +140,7 @@ def check_schema(
 def ensure_schema_exists(db_manager: PostgresDatabaseManager, schema_name: str) -> bool:
     if not db_manager.check_schema():
         click.secho(f"Schema '{schema_name}' does not exist in the database.", fg="red")
-        if click.confirm("Do you want to create the schema?"):
+        if click.confirm("Create the schema?"):
             db_manager.ensure_schema_exists()
             if db_manager.check_schema():
                 click.secho(f"Schema '{schema_name}' created.", fg="green")

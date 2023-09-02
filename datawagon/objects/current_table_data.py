@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 from typing import List
 
+from pydantic import BaseModel
 
-@dataclass
-class CurrentTableData:
+
+class CurrentTableData(BaseModel):
     table_name: str
     total_rows: int
     file_count: int

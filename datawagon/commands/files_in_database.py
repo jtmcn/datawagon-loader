@@ -13,6 +13,9 @@ def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
 
     db_manager = ctx.obj["DB_CONNECTION"]
 
+    if not db_manager.is_valid_connection:
+        ctx.abort()
+
     existing_table_files = _current_tables(db_manager)
 
     db_count = len(
@@ -41,7 +44,10 @@ def _current_tables(db_manager: PostgresDatabaseManager) -> List[CurrentTableDat
             table_df = db_manager.files_in_table_df(table)
             file_list = table_df["_file_name"].tolist()
             table_data = CurrentTableData(
-                table, table_df["row_count"].sum(), len(file_list), file_list
+                table_name=table,
+                total_rows=table_df["row_count"].sum(),
+                file_count=len(file_list),
+                source_files=file_list,
             )
             all_table_data.append(table_data)
             table_progress.update(1)

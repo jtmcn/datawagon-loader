@@ -9,6 +9,9 @@ def reset_database(ctx: click.Context) -> None:
     """Reset the database by dropping all tables and views in the selected schema."""
 
     db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
+    if not db_manager.is_valid_connection:
+        ctx.abort()
+
     schema_name = ctx.obj["CONFIG"].db_schema
 
     click.secho(
@@ -20,12 +23,17 @@ def reset_database(ctx: click.Context) -> None:
         bg="yellow",
         bold=True,
     )
+    click.echo(nl=True)
+
     if not click.confirm("Are you sure you want to continue?"):
         return
 
+    click.echo(nl=True)
+
     if not db_manager.test_connection():
-        click.echo(
-            "Unable to connect to the database. Please check the connection settings."
+        click.secho(
+            "Unable to connect to the database. Please check the connection settings.",
+            fg="red",
         )
         return
 
