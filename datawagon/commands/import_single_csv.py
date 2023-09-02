@@ -53,6 +53,9 @@ def import_selected_csv(
 
     db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
 
+    if not db_manager.is_valid_connection:
+        ctx.abort()
+
     if not replace and db_manager.check_if_file_imported(
         csv_info.file_name_without_extension, csv_info.table_name
     ):

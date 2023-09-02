@@ -51,6 +51,8 @@ class PostgresDatabaseManager:
         except Exception as e:
             self.connection_error = str(e)
 
+        self.is_valid_connection = self.test_connection()
+
         # try:
         #     if self.check_schema():
         #         self.create_log_table()

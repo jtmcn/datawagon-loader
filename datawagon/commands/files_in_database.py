@@ -13,6 +13,9 @@ def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
 
     db_manager = ctx.obj["DB_CONNECTION"]
 
+    if not db_manager.is_valid_connection:
+        ctx.abort()
+
     existing_table_files = _current_tables(db_manager)
 
     db_count = len(

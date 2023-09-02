@@ -18,6 +18,9 @@ def import_all_csv(ctx: click.Context) -> None:
 
     db_manager: PostgresDatabaseManager = ctx.obj["DB_CONNECTION"]
 
+    if not db_manager.is_valid_connection:
+        ctx.abort()
+
     matched_new_files: List[SourceFilesToDatabase] = ctx.invoke(
         compare_files_to_database
     )

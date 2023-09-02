@@ -60,15 +60,23 @@ def cli(
         proc = subprocess.Popen(["caffeinate", "-dim"])
 
     ctx.obj["DB_CONNECTION"] = db_manager
-    check_db_connection(ctx=ctx, db_manager=db_manager)
-    check_schema(ctx=ctx, db_manager=db_manager, schema_name=db_schema)
-    db_manager.create_log_table()
+
+    is_valid_db = check_db_connection(db_manager=db_manager)
+    is_valid_schema = (
+        check_schema(db_manager=db_manager, schema_name=db_schema)
+        if is_valid_db
+        else False
+    )
+
+    if is_valid_db and is_valid_schema:
+        db_manager.create_log_table()
 
     ctx.obj["CONFIG"] = app_config
     ctx.obj["GLOBAL"] = {}
 
     def on_exit() -> None:
-        db_manager.close()
+        if is_valid_db:
+            db_manager.close()
         if proc:
             proc.send_signal(signal.SIGTERM)
 
@@ -102,28 +110,26 @@ def start_cli() -> click.Group:
     return cli(obj={})  # type: ignore
 
 
-def check_db_connection(
-    ctx: click.Context, db_manager: PostgresDatabaseManager
-) -> bool:
+def check_db_connection(db_manager: PostgresDatabaseManager) -> bool:
     """Test the connection to the database."""
 
-    if db_manager.test_connection():
-        click.echo(click.style("Successfully connected to the database.", fg="green"))
+    if db_manager.is_valid_connection:
+        click.secho("Successfully connected to the database.", fg="green")
+        click.echo(nl=True)
         return True
     else:
-        click.echo(click.style("Failed to connect to the database.", fg="red"))
-        ctx.abort()
+        click.secho("Failed to connect to the database.", fg="red")
+        click.echo(nl=True)
+        return False
 
 
-def check_schema(
-    ctx: click.Context, db_manager: PostgresDatabaseManager, schema_name: str
-) -> bool:
+def check_schema(db_manager: PostgresDatabaseManager, schema_name: str) -> bool:
     """Check if the schema exists and prompt to create if it does not."""
 
     # This will try to create schema if it does not exist
     if not ensure_schema_exists(db_manager, schema_name):
         click.secho(f"Schema '{schema_name}' does not exist.", fg="red")
-        ctx.abort()
+        click.echo(nl=True)
 
     click.echo(nl=True)
     click.secho(f"'{schema_name}' is valid schema.", fg="green")
