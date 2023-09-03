@@ -2,8 +2,8 @@ from pathlib import Path
 
 import click
 
+from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.csv_loader import CSVLoader
-from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.source_file_scanner import SourceFileScanner
 
 

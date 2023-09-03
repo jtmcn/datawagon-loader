@@ -3,8 +3,8 @@ from typing import List
 import click
 
 from datawagon.commands.compare import compare_files_to_database
+from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.csv_loader import CSVLoader
-from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.source_file_metadata import SourceFileMetadata
 from datawagon.objects.source_file_scanner import SourceFilesToDatabase
 

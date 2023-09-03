@@ -13,9 +13,9 @@ from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
 from datawagon.commands.reset_database import reset_database
 from datawagon.commands.scan_files import scan_files
+from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.parameter_validator import ParameterValidator
-from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.group(chain=True)

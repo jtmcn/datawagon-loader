@@ -1,6 +1,6 @@
 import click
 
-from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
+from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()

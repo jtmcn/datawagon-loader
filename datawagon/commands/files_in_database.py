@@ -2,8 +2,8 @@ from typing import List
 
 import click
 
+from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.current_table_data import CurrentTableData
-from datawagon.objects.postgres_database_manager import PostgresDatabaseManager
 
 
 @click.command()
