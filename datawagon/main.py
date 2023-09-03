@@ -91,11 +91,6 @@ cli.add_command(import_all_csv)
 cli.add_command(import_selected_csv)
 cli.add_command(reset_database)
 
-# Indexes may not be useful
-# cli.add_command(create_indexes)
-# cli.add_command(drop_indexes)
-# cli.add_command(check_indexes)
-
 
 def start_cli() -> click.Group:
     env_file = find_dotenv()
