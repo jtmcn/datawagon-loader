@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Dict, List
 
-from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
+from datawagon.objects.source_file_metadata import SourceFileMetadata
 
 
 class FileUtils(object):
     def group_by_table_name(
         self,
-        file_info_list: List[CsvFileInfoOverride],
-    ) -> Dict[str, List[CsvFileInfoOverride]]:
+        file_info_list: List[SourceFileMetadata],
+    ) -> Dict[str, List[SourceFileMetadata]]:
         grouped_files = {}
         for file_info in file_info_list:
             if file_info.table_name not in grouped_files:
@@ -18,8 +18,8 @@ class FileUtils(object):
         return grouped_files
 
     def check_for_duplicate_files(
-        self, file_info_list: List[CsvFileInfoOverride]
-    ) -> List[CsvFileInfoOverride]:
+        self, file_info_list: List[SourceFileMetadata]
+    ) -> List[SourceFileMetadata]:
         file_names = [
             file_info.file_name_without_extension for file_info in file_info_list
         ]
@@ -57,8 +57,8 @@ class FileUtils(object):
         return [Path(file) for file in file_names]
 
     def check_for_different_file_versions(
-        self, file_info_list: List[CsvFileInfoOverride]
-    ) -> List[List[CsvFileInfoOverride]]:
+        self, file_info_list: List[SourceFileMetadata]
+    ) -> List[List[SourceFileMetadata]]:
         grouped_files = self.group_by_table_name(file_info_list)
         different_file_versions = []
 

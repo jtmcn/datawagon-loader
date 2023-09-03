@@ -7,11 +7,11 @@ from typing import Any, List, Tuple
 
 import pandas as pd
 
-from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
+from datawagon.objects.source_file_metadata import SourceFileMetadata
 
 
 class CSVLoader(object):
-    def __init__(self, input_file: CsvFileInfoOverride) -> None:
+    def __init__(self, input_file: SourceFileMetadata) -> None:
         self.input_file = input_file
 
     def load_data(self) -> pd.DataFrame:

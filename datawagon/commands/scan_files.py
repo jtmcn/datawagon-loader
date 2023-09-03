@@ -3,8 +3,8 @@ from typing import List
 
 import click
 
-from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.file_utils import FileUtils
+from datawagon.objects.source_file_metadata import SourceFileMetadata
 from datawagon.objects.source_file_scanner import (
     SourceFileScanner,
     SourceFilesToDatabase,
@@ -35,7 +35,7 @@ def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
             f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector}"
         )
 
-    csv_file_infos: List[CsvFileInfoOverride] = [
+    csv_file_infos: List[SourceFileMetadata] = [
         file_info for src in matched_files for file_info in src.files
     ]
 

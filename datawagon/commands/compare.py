@@ -6,9 +6,9 @@ from tabulate import tabulate
 
 from datawagon.commands.files_in_database import files_in_database
 from datawagon.commands.scan_files import scan_files
-from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.current_table_data import CurrentTableData
 from datawagon.objects.file_utils import FileUtils
+from datawagon.objects.source_file_metadata import SourceFileMetadata
 from datawagon.objects.source_file_scanner import SourceFilesToDatabase
 
 
@@ -20,7 +20,7 @@ def compare_files_to_database(ctx: click.Context) -> List[SourceFilesToDatabase]
     matched_files: List[SourceFilesToDatabase] = ctx.invoke(scan_files)
     current_database_files: List[CurrentTableData] = ctx.invoke(files_in_database)
 
-    csv_file_infos: List[CsvFileInfoOverride] = [
+    csv_file_infos: List[SourceFileMetadata] = [
         file_info for src in matched_files for file_info in src.files
     ]
 
@@ -45,7 +45,7 @@ def compare_files_to_database(ctx: click.Context) -> List[SourceFilesToDatabase]
 
     new_files = _net_new_files(matched_files, current_database_files)
 
-    new_csv_file_infos: List[CsvFileInfoOverride] = [
+    new_csv_file_infos: List[SourceFileMetadata] = [
         file_info for src in new_files for file_info in src.files
     ]
 
@@ -75,7 +75,7 @@ def compare_files_to_database(ctx: click.Context) -> List[SourceFilesToDatabase]
 
 
 def _file_diff(
-    csv_file_infos: List[CsvFileInfoOverride],
+    csv_file_infos: List[SourceFileMetadata],
     current_database_files: List[CurrentTableData],
 ) -> pd.DataFrame:
     """Create a DataFrame which compares files in source directory to files in database."""

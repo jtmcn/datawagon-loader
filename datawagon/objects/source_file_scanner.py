@@ -8,12 +8,12 @@ import toml
 from pydantic import BaseModel, Field, ValidationError
 
 from datawagon.objects.app_config import AppConfig
-from datawagon.objects.csv_file_info_override import CsvFileInfoOverride
 from datawagon.objects.source_config import Source, SourceConfig, SourceFileAttributes
+from datawagon.objects.source_file_metadata import SourceFileMetadata
 
 
 class SourceFiles(BaseModel):
-    files: List[CsvFileInfoOverride] = Field(default_factory=list)
+    files: List[SourceFileMetadata] = Field(default_factory=list)
     file_selector: str
 
 
@@ -123,7 +123,7 @@ class SourceFileScanner(object):
 
                 for file_path in file_list:
                     source_file = self.source_file_attrs(file_path, file_source)
-                    source_file_info = CsvFileInfoOverride.build_data_item(source_file)
+                    source_file_info = SourceFileMetadata.build_data_item(source_file)
                     table_mapper.files.append(source_file_info)
 
                 all_available_files.append(table_mapper)
@@ -149,7 +149,7 @@ class SourceFileScanner(object):
                     table_name=file_source.destination_table,
                     append_or_replace=file_source.append_or_replace,
                     file_selector=file_source.file_name_base,
-                    files=[CsvFileInfoOverride.build_data_item(file_attrs)],
+                    files=[SourceFileMetadata.build_data_item(file_attrs)],
                 )
                 return table_mapper
 

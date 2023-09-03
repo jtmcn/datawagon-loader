@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from datawagon.objects.source_config import SourceFileAttributes
 
 
-class CsvFileInfoOverride(BaseModel):
+class SourceFileMetadata(BaseModel):
     """Class for properties used to upload .csv files into database"""
 
     append_or_replace: Literal["append", "replace"]
@@ -19,9 +19,6 @@ class CsvFileInfoOverride(BaseModel):
     file_name: str
     file_name_without_extension: str
     content_owner: Optional[str]
-    # file_date_key: Optional[int]
-    # file_date: date
-    # file_month_end_date: date
     report_date_key: Optional[int]
     file_version: str
     table_name: str
@@ -32,9 +29,7 @@ class CsvFileInfoOverride(BaseModel):
         extra = "allow"
 
     @classmethod
-    def build_data_item(
-        cls, source_file: SourceFileAttributes
-    ) -> "CsvFileInfoOverride":
+    def build_data_item(cls, source_file: SourceFileAttributes) -> "SourceFileMetadata":
         file_path = source_file.file_path
 
         file_size_in_bytes = file_path.stat().st_size
