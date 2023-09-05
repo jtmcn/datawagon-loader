@@ -46,12 +46,3 @@ class FileUtilsTestCase(TestCase):
             )
             == 1
         )
-
-    def test_filter_csv_files(self) -> None:
-        mock_csv_file_infos = [
-            "something_video_summary.csv",  # included
-            "something_else.csv",  # included
-            "something_summary.csv",  # excluded
-        ]
-        result = self.file_utils._filter_csv_files(mock_csv_file_infos)  # type: ignore
-        assert len(result) == 2

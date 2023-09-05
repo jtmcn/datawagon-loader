@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Dict, List
 
 from datawagon.objects.source_file_metadata import SourceFileMetadata
@@ -36,26 +35,6 @@ class FileUtils(object):
 
         return duplicate_files
 
-    # def scan_for_csv_files(self, source_path: Path) -> List[Path]:
-    #     all_csv_files = list(source_path.glob("**/*.csv*"))
-    #     # exclude open files
-    #     all_csv_files = [
-    #         file for file in all_csv_files if not file.name.startswith(".~lock")
-    #     ]
-    #     file_names = [str(file) for file in all_csv_files]
-    #     results = self._filter_csv_files(file_names)
-    #     return [Path(file) for file in results]
-
-    def scan_for_csv_files_with_name(self, source_path: Path, name: str) -> List[Path]:
-        all_csv_files = list(source_path.glob(f"**/*{name}*.csv*"))
-        # exclude open files
-        all_csv_files = [
-            file for file in all_csv_files if not file.name.startswith(".~lock")
-        ]
-        file_names = [str(file) for file in all_csv_files]
-
-        return [Path(file) for file in file_names]
-
     def check_for_different_file_versions(
         self, file_info_list: List[SourceFileMetadata]
     ) -> List[List[SourceFileMetadata]]:
@@ -68,16 +47,3 @@ class FileUtils(object):
                 different_file_versions.append(file_infos)
 
         return different_file_versions
-
-    def _filter_csv_files(self, csv_files: List[str]) -> List[str]:
-        included = ["video_summary"]
-        excluded = ["summary", "backup"]
-
-        filtered_csv_files = [
-            csv_file
-            for csv_file in csv_files
-            if any(file_part in csv_file.lower() for file_part in included)
-            or all(file_part not in csv_file.lower() for file_part in excluded)
-        ]
-
-        return filtered_csv_files
