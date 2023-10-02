@@ -22,6 +22,6 @@ class CsvFileInfoMock:
         self.month_end_date = kwargs.get("month_end_date", date(2021, 5, 31))
         self.month_end_date_key = kwargs.get("month_end_date_key", 20210531)
         self.file_version = kwargs.get("file_version", "v1-1")
-        self.table_name = kwargs.get("table_name", "adj_summary")
+        self.base_name = kwargs.get("base_name", "adj_summary")
         self.file_size_in_bytes = kwargs.get("file_size_in_bytes", 123456789)
         self.file_size = kwargs.get("file_size", "123.5 MB")

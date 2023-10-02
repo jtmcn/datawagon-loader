@@ -7,27 +7,29 @@ from typing import List
 import toml
 from pydantic import BaseModel, Field, ValidationError
 
-from datawagon.objects.app_config import AppConfig
-from datawagon.objects.source_config import Source, SourceConfig, SourceFileAttributes
-from datawagon.objects.source_file_metadata import SourceFileMetadata
+from datawagon.objects.managed_file_metadata import (
+    ManagedFileInput,
+    ManagedFileMetadata,
+)
+from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
 
 
-class SourceFiles(BaseModel):
-    files: List[SourceFileMetadata] = Field(default_factory=list)
-    file_selector: str
+class ManagedFiles(BaseModel):
+    files: List[ManagedFileMetadata] = Field(default_factory=list)
+    file_selector_base_name: str
 
 
-class SourceFilesToDatabase(SourceFiles):
+class ManagedFilesToDatabase(ManagedFiles):
     table_name: str
-    append_or_replace: str
+    table_append_or_replace: str
 
 
-class SourceFileScanner(object):
-    def __init__(self, app_config: AppConfig) -> None:
-        self.app_config = app_config
+class ManagedFileScanner(object):
+    def __init__(self, csv_source_config: Path, csv_source_dir: Path) -> None:
+        self.csv_source_dir = csv_source_dir
 
         try:
-            source_config_file = toml.load(app_config.csv_source_config)
+            source_config_file = toml.load(csv_source_config)
             self.valid_config = SourceConfig(**source_config_file)
 
         except ValidationError as e:
@@ -66,18 +68,20 @@ class SourceFileScanner(object):
     def source_file_attrs(
         self,
         file_path: Path,
-        file_source: Source,
+        file_source: SourceFromLocalFS,
         is_replace_override: bool = False,
-    ) -> SourceFileAttributes:
-        append_or_replace = (
-            "replace" if is_replace_override else file_source.append_or_replace
+    ) -> ManagedFileInput:
+        table_append_or_replace = (
+            "replace" if is_replace_override else file_source.table_append_or_replace
         )
 
         file_dict = {
             "file_name": file_path.name,
             "file_path": file_path,
-            "destination_table": file_source.destination_table,
-            "append_or_replace": append_or_replace,
+            "base_name": file_source.select_file_name_base,
+            "table_name": file_source.table_name,
+            "table_append_or_replace": table_append_or_replace,
+            "storage_folder_name": file_source.storage_folder_name,
         }
 
         if file_source.regex_pattern and file_source.regex_group_names:
@@ -99,31 +103,32 @@ class SourceFileScanner(object):
             for i in range(len(match.groups())):
                 file_dict[r_groups[i]] = match.group(i + 1)
 
-        return SourceFileAttributes(**file_dict)
+        return ManagedFileInput(**file_dict)
 
-    def matched_files(self) -> List[SourceFilesToDatabase]:
-        all_available_files: List[SourceFilesToDatabase] = []
+    def matched_files(self) -> List[ManagedFilesToDatabase]:
+        all_available_files: List[ManagedFilesToDatabase] = []
 
         valid_config = self.valid_config
 
-        for file_id in valid_config.source:
-            file_source = valid_config.source[file_id]
+        for file_id in valid_config.file:
+            file_source = valid_config.file[file_id]
             if file_source.is_enabled:
                 file_list = self.scan_for_csv_files_with_name(
-                    self.app_config.csv_source_dir,
-                    file_source.file_name_base,
+                    self.csv_source_dir,
+                    file_source.select_file_name_base,
                     file_source.exclude_file_name_base,
                 )
 
-                table_mapper = SourceFilesToDatabase(
-                    table_name=file_source.destination_table,
-                    append_or_replace=file_source.append_or_replace,
-                    file_selector=file_source.file_name_base,
+                table_mapper = ManagedFilesToDatabase(
+                    table_name=file_source.table_name
+                    or file_source.select_file_name_base,
+                    table_append_or_replace=file_source.table_append_or_replace,
+                    file_selector_base_name=file_source.select_file_name_base,
                 )
 
                 for file_path in file_list:
                     source_file = self.source_file_attrs(file_path, file_source)
-                    source_file_info = SourceFileMetadata.build_data_item(source_file)
+                    source_file_info = ManagedFileMetadata.build_data_item(source_file)
                     table_mapper.files.append(source_file_info)
 
                 all_available_files.append(table_mapper)
@@ -135,21 +140,22 @@ class SourceFileScanner(object):
         source_file_path: Path,
         input_file_base_name: str,
         is_replace_override: bool,
-    ) -> SourceFilesToDatabase | None:
+    ) -> ManagedFilesToDatabase | None:
         valid_config = self.valid_config
 
-        for file_id in valid_config.source:
-            file_source = valid_config.source[file_id]
-            if file_source.file_name_base == input_file_base_name:
+        for file_id in valid_config.file:
+            file_source = valid_config.file[file_id]
+            if file_source.select_file_name_base == input_file_base_name:
                 file_attrs = self.source_file_attrs(
                     source_file_path, file_source, is_replace_override
                 )
 
-                table_mapper = SourceFilesToDatabase(
-                    table_name=file_source.destination_table,
-                    append_or_replace=file_source.append_or_replace,
-                    file_selector=file_source.file_name_base,
-                    files=[SourceFileMetadata.build_data_item(file_attrs)],
+                table_mapper = ManagedFilesToDatabase(
+                    table_name=file_source.table_name
+                    or file_source.select_file_name_base,
+                    table_append_or_replace=file_source.table_append_or_replace,
+                    file_selector_base_name=file_source.select_file_name_base,
+                    files=[ManagedFileMetadata.build_data_item(file_attrs)],
                 )
                 return table_mapper
 

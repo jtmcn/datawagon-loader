@@ -223,8 +223,7 @@ class PostgresDatabaseManager:
         query = f"""
                 select
                     '{table_name}' as table_name,
-                    {self.CNAME_FILE_NAME},
-                    count(*) as row_count
+                    {self.CNAME_FILE_NAME}
                 from {self.schema}.{table_name}
                 group by
                     {self.CNAME_FILE_NAME}
