@@ -13,8 +13,18 @@ from datawagon.objects.managed_file_scanner import (
 
 
 @click.command()
+@click.option(
+    "--file-extension",
+    type=click.STRING,
+    default=False,
+    show_default=True,
+    required=False,
+    help="Only select files with this extension",
+)
 @click.pass_context
-def files_in_local_fs(ctx: click.Context) -> List[ManagedFilesToDatabase]:
+def files_in_local_fs(
+    ctx: click.Context, file_extension: str
+) -> List[ManagedFilesToDatabase]:
     """Scan a directory for .csv.gz files and display the number of files grouped by table_name."""
 
     source_dir: str = ctx.obj["CONFIG"].csv_source_dir
@@ -27,7 +37,7 @@ def files_in_local_fs(ctx: click.Context) -> List[ManagedFilesToDatabase]:
 
     matched_files = ManagedFileScanner(
         app_config.csv_source_config, app_config.csv_source_dir
-    ).matched_files()
+    ).matched_files(file_extension)
 
     if len(matched_files) == 0:
         click.secho(f"No .csv files found in source directory: {source_dir}", fg="red")

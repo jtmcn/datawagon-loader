@@ -13,13 +13,14 @@ from datawagon.commands.compare import (
     compare_local_files_to_bucket,
     compare_local_files_to_database,
 )
+from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_database import files_in_database
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
 from datawagon.commands.import_all_csv import import_all_csv
 from datawagon.commands.import_single_csv import import_selected_csv
 from datawagon.commands.reset_database import reset_database
-from datawagon.commands.upload_to_storage import upload_all_csv
+from datawagon.commands.upload_to_storage import upload_all_gzip_csv
 from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.parameter_validator import ParameterValidator
@@ -68,6 +69,7 @@ def cli(
     ).are_valid_parameters:
         ctx.abort()
 
+    # TODO: fix error handling, this is not working
     # load config from toml file
     try:
         source_config_file = toml.load(csv_source_config)
@@ -126,7 +128,8 @@ cli.add_command(files_in_database)
 cli.add_command(files_in_local_fs)
 cli.add_command(compare_local_files_to_database)
 cli.add_command(compare_local_files_to_bucket)
-cli.add_command(upload_all_csv)
+cli.add_command(upload_all_gzip_csv)
+cli.add_command(file_zip_to_gzip)
 cli.add_command(import_all_csv)
 cli.add_command(import_selected_csv)
 cli.add_command(reset_database)

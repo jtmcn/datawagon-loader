@@ -7,7 +7,7 @@ is_enabled = true
 storage_folder_name = "caravan/claim_raw"
 table_name = "claim_raw"
 select_file_name_base = "claim_raw"
-exclude_file_name_base = "adj_claim_raw"
+exclude_file_name_base = "ADJ_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})' 
 regex_group_names = ["content_owner", "file_date_key"]
 # file_date_key is special and it will be converted to a eom report_date_key when found (for now)
@@ -26,48 +26,54 @@ regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
 
-# [source.video_raw]
-# file_name_base = "video_raw"
-# destination_table = "video_raw"
-# is_enabled = false
-# append_or_replace = "append"
-# regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
-# regex_group_names = ["content_owner", "file_date_key"]
+[file.video_raw]
+is_enabled = true
+storage_folder_name = "caravan/video_raw"
+table_name = "video_raw"
+select_file_name_base = "video_raw"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+table_append_or_replace = "append"
 
-# [source.red_rawdata_asset]
-# file_name_base = "red_rawdata_asset"
-# destination_table = "red_rawdata_asset"
-# is_enabled = false
-# append_or_replace = "append"
-# regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
-# regex_group_names = ["content_owner", "file_date_key"]
+[file.red_rawdata_asset]
+is_enabled = true
+storage_folder_name = "caravan/red_rawdata_asset"
+table_name = "red_rawdata_asset"
+select_file_name_base = "red_rawdata_asset"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+table_append_or_replace = "append"
 
-# [source.red_music_rawdata_asset]
-# file_name_base = "red_music_rawdata_asset"
-# destination_table = "red_music_rawdata_asset"
-# is_enabled = false
-# append_or_replace = "append"
-# regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
-# regex_group_names = ["content_owner", "file_date_key"]
+[file.red_music_rawdata_asset]
+is_enabled = true
+storage_folder_name = "caravan/red_music_rawdata_asset"
+select_file_name_base = "red_music_rawdata_asset"
+table_name = "red_music_rawdata_asset"
+table_append_or_replace = "append"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
 
-# [source.monthly_shorts_non_music_ads_video_summary]
-# file_name_base = "monthly_shorts_non_music_ads_video_summary"
-# destination_table = "monthly_shorts_non_music_ads_video_summary"
-# is_enabled = false
-# append_or_replace = "append"
-# regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
-# regex_group_names = ["content_owner", "file_date_key"]
+[file.monthly_shorts_non_music_ads_video_summary]
+is_enabled = true
+storage_folder_name = "caravan/monthly_shorts_non_music_ads_video_summary"
+select_file_name_base = "monthly_shorts_non_music_ads_video_summary"
+table_name = "monthly_shorts_non_music_ads_video_summary"
+table_append_or_replace = "append"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
 
-# [source.monthly_shorts_non_music_subscription_video_summary]
-# file_name_base = "monthly_shorts_non_music_subscription_video_summary"
-# destination_table = "monthly_shorts_non_music_subscription_video_summary"
-# is_enabled = false
-# append_or_replace = "append"
-# regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
-# regex_group_names = ["content_owner", "file_date_key"]
+[file.monthly_shorts_non_music_subscription_video_summary]
+is_enabled = true
+storage_folder_name = "caravan/monthly_shorts_non_music_subscription_video_summary"
+select_file_name_base = "monthly_shorts_non_music_subscription_video_summary"
+table_name = "monthly_shorts_non_music_subscription_video_summary"
+table_append_or_replace = "append"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
 
-# [source.video_report]
-# file_name_base = "video_report"
-# destination_table = "video_report"
-# is_enabled = false
-# append_or_replace = "replace"
+[file.video_report]
+is_enabled = false
+storage_folder_name = "caravan/video_report"
+select_file_name_base = "video_report"
+table_name = "video_report"
+table_append_or_replace = "replace"

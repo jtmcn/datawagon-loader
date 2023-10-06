@@ -36,9 +36,15 @@ class ManagedFileScanner(object):
             raise ValueError(f"Validation Failed for source_config.toml\n{e}")
 
     def scan_for_csv_files_with_name(
-        self, source_path: Path, glob_pat: str, exclude_pattern: str | None
+        self,
+        source_path: Path,
+        glob_pat: str,
+        exclude_pattern: str | None,
+        file_extension: str | None = None,
     ) -> List[Path]:
-        all_csv_files = self.find_files(source_path, glob_pat, exclude_pattern)
+        all_csv_files = self.find_files(
+            source_path, glob_pat, exclude_pattern, file_extension
+        )
 
         all_csv_files = [
             file for file in all_csv_files if not file.name.startswith(".~lock")
@@ -48,15 +54,20 @@ class ManagedFileScanner(object):
         return [Path(file) for file in file_names]
 
     def find_files(
-        self, base_path: Path, match_pattern: str, exclude_pattern: str | None
+        self,
+        base_path: Path,
+        match_pattern: str,
+        exclude_pattern: str | None,
+        file_extension: str | None = None,
     ) -> List[Path]:
         matches = []
 
         match_pattern = match_pattern.lower()
-
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
-                if fnmatch.fnmatch(filename.lower(), f"*{match_pattern}*"):
+                if fnmatch.fnmatch(
+                    filename.lower(), f"*{match_pattern}*{file_extension or ''}*"
+                ):
                     if not fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern}*"):
                         if not filename.startswith(".~lock"):
                             matches.append(
@@ -105,7 +116,9 @@ class ManagedFileScanner(object):
 
         return ManagedFileInput(**file_dict)
 
-    def matched_files(self) -> List[ManagedFilesToDatabase]:
+    def matched_files(
+        self, file_extension: str | None = None
+    ) -> List[ManagedFilesToDatabase]:
         all_available_files: List[ManagedFilesToDatabase] = []
 
         valid_config = self.valid_config
@@ -117,6 +130,7 @@ class ManagedFileScanner(object):
                     self.csv_source_dir,
                     file_source.select_file_name_base,
                     file_source.exclude_file_name_base,
+                    file_extension,
                 )
 
                 table_mapper = ManagedFilesToDatabase(

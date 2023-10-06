@@ -1,3 +1,8 @@
+import gzip
+import io
+import os
+import zipfile
+from pathlib import Path
 from typing import Dict, List
 
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
@@ -56,11 +61,50 @@ class FileUtils(object):
             file_name_without_extension = file_name[:-7]
         elif file_name.endswith(".csv.zip"):
             file_name_without_extension = file_name[:-8]
-        elif file_name.endswith(".gz"):
-            file_name_without_extension = file_name[:-3]
-        elif file_name.endswith(".zip"):
-            file_name_without_extension = file_name[:-4]
+
         else:
             raise ValueError(f"Invalid file name format: {file_name}")
 
         return file_name_without_extension
+
+    def csv_zip_to_gzip(
+        self, input_zip_path: Path, remove_original_zip: bool = False
+    ) -> str | None:
+        """Convert a ZIP file containing CSV files to a GZIP file containing GZIP compressed CSV files
+        Remove any directory structure from the ZIP file"""
+        current_dir = os.path.dirname(input_zip_path)
+        with zipfile.ZipFile(input_zip_path, "r") as input_zip:
+            # Create a new output ZIP file in memory
+            with io.BytesIO() as output_zip_buffer:
+                with zipfile.ZipFile(
+                    output_zip_buffer, "w", zipfile.ZIP_DEFLATED, allowZip64=True
+                ) as output_zip:
+                    # Iterate through the files in the input ZIP
+                    output_gzip_path = None
+                    for file_info in input_zip.infolist():
+                        # Remove the path prefix from the filename
+                        filename = os.path.basename(file_info.filename)
+                        output_gzip_path = f"{current_dir}/{filename}.gz"
+                        with input_zip.open(file_info.filename) as input_file:
+                            if file_info.filename.lower().endswith(".csv"):
+                                # Create a GZIP compressed file in memory
+                                with io.BytesIO() as gzip_buffer:
+                                    with gzip.GzipFile(
+                                        fileobj=gzip_buffer, mode="w"
+                                    ) as gzip_file:
+                                        gzip_file.write(input_file.read())
+                                    gzip_buffer.seek(0)
+
+                                    # Add the GZIP file to the output ZIP
+                                    output_zip.writestr(filename, gzip_buffer.read())
+
+                if output_gzip_path is not None:
+                    # Save the output Gzip file to disk
+                    with open(output_gzip_path, "wb") as output_file:
+                        output_file.write(output_zip_buffer.getvalue())
+
+        # Optionally, delete the original ZIP file
+        if remove_original_zip:
+            os.remove(input_zip_path)
+
+        return output_gzip_path.replace(current_dir, "") if output_gzip_path else None

@@ -11,7 +11,7 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
 @click.command(name="upload")
 @click.pass_context
-def upload_all_csv(ctx: click.Context) -> None:
+def upload_all_gzip_csv(ctx: click.Context) -> None:
     """Upload all new files to storage bucket."""
 
     matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(
@@ -44,11 +44,8 @@ def upload_all_csv(ctx: click.Context) -> None:
 
             if csv_info.report_date_key:
                 destination_name = (
-                    (csv_info.storage_folder_name or csv_info.base_name)
-                    + "/"
-                    + f"report_date_key={csv_info.report_date_key}"
-                    + "/"
-                    + csv_info.file_name
+                    f"{csv_info.storage_folder_name or csv_info.base_name}/"
+                    + f"report_date_key={csv_info.report_date_key}/{csv_info.file_name}"
                 )
             else:
                 destination_name = (

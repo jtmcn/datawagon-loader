@@ -77,7 +77,9 @@ def compare_local_files_to_database(ctx: click.Context) -> List[ManagedFilesToDa
 def compare_local_files_to_bucket(ctx: click.Context) -> List[ManagedFilesToDatabase]:
     """Compare files in source directory to files in storage bucket."""
 
-    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(files_in_local_fs)
+    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
+        files_in_local_fs, file_extension="gz"
+    )
     current_bucket_files: List[CurrentDestinationData] = ctx.invoke(files_in_storage)
 
     csv_file_infos: List[ManagedFileMetadata] = [
