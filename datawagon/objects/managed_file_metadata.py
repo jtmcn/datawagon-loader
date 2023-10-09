@@ -24,7 +24,7 @@ class ManagedFileMetadata(ManagedFileInput):
     """Class for properties used to upload .csv files into database"""
 
     file_dir: str
-    file_name_without_extension: str
+    # file_name_without_extension: str
     content_owner: Optional[str]
     report_date_key: Optional[int]
     file_version: str
@@ -46,14 +46,14 @@ class ManagedFileMetadata(ManagedFileInput):
         file_name = file_path.name
 
         # TODO: replace following with FileUtils.remove_file_extension
-        if file_path.suffix == ".csv":
-            file_name_without_extension = re.sub(r"\.csv$", "", file_name)
-        elif file_path.suffix == ".gz":
-            file_name_without_extension = re.sub(r"\.csv(\.gz)?$", "", file_name)
-        elif file_path.suffix == ".zip":
-            file_name_without_extension = re.sub(r"\.csv(\.zip)?$", "", file_name)
-        else:
-            raise ValueError(f"Invalid file name format: {file_name}")
+        # if file_path.suffix == ".csv":
+        #     file_name_without_extension = re.sub(r"\.csv$", "", file_name)
+        # elif file_path.suffix == ".gz":
+        #     file_name_without_extension = re.sub(r"\.csv(\.gz)?$", "", file_name)
+        # elif file_path.suffix == ".zip":
+        #     file_name_without_extension = re.sub(r"\.csv(\.zip)?$", "", file_name)
+        # else:
+        #     raise ValueError(f"Invalid file name format: {file_name}")
 
         file_version = cls.get_file_version(file_name)
 
@@ -81,7 +81,7 @@ class ManagedFileMetadata(ManagedFileInput):
             file_path=file_path,
             file_dir=file_dir,
             file_name=file_name,
-            file_name_without_extension=file_name_without_extension,
+            # file_name_without_extension=file_name_without_extension,
             file_version=file_version,
             base_name=source_file.base_name,
             file_size_in_bytes=file_size_in_bytes,

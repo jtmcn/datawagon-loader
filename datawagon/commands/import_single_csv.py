@@ -58,7 +58,7 @@ def import_selected_csv(
         ctx.abort()
 
     if not replace and db_manager.check_if_file_imported(
-        csv_info.file_name_without_extension, csv_info.base_name
+        csv_info.file_name, csv_info.base_name
     ):
         click.secho(f"File already imported: {csv_info.file_name}", fg="yellow")
         click.echo(nl=True)

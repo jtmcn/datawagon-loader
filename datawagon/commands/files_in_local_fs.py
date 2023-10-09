@@ -16,7 +16,7 @@ from datawagon.objects.managed_file_scanner import (
 @click.option(
     "--file-extension",
     type=click.STRING,
-    default=False,
+    default=None,
     show_default=True,
     required=False,
     help="Only select files with this extension",

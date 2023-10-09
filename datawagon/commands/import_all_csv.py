@@ -42,7 +42,7 @@ def import_all_csv(ctx: click.Context) -> None:
         has_errors = False
         for csv_info in csv_file_infos:
             click.echo(
-                f"Importing {csv_info.file_name_without_extension} into {csv_info.base_name}... ",
+                f"Importing {csv_info} into {csv_info.base_name}... ",
                 nl=False,
             )
 

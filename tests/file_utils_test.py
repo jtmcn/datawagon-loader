@@ -22,7 +22,7 @@ class FileUtilsTestCase(TestCase):
     def test_check_for_duplicate_files(self) -> None:
         mock_csv_file_infos__no_dupes = [
             CsvFileInfoMock(),
-            CsvFileInfoMock(file_name_without_extension="something_else"),
+            CsvFileInfoMock(file_name="something_else"),
         ]
         assert len(self.file_utils.check_for_duplicate_files(mock_csv_file_infos__no_dupes)) == 0  # type: ignore
 

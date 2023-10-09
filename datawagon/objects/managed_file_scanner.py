@@ -46,9 +46,6 @@ class ManagedFileScanner(object):
             source_path, glob_pat, exclude_pattern, file_extension
         )
 
-        all_csv_files = [
-            file for file in all_csv_files if not file.name.startswith(".~lock")
-        ]
         file_names = [str(file) for file in all_csv_files]
 
         return [Path(file) for file in file_names]
@@ -62,12 +59,18 @@ class ManagedFileScanner(object):
     ) -> List[Path]:
         matches = []
 
-        match_pattern = match_pattern.lower()
+        if file_extension is not None:
+            match_pattern = f"*{match_pattern.lower()}*{file_extension}"
+        else:
+            match_pattern = f"*{match_pattern.lower()}*"
+
+        if exclude_pattern is not None:
+            exclude_pattern = exclude_pattern.lower()
+
+        print(f"match_pattern: {match_pattern}")
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
-                if fnmatch.fnmatch(
-                    filename.lower(), f"*{match_pattern}*{file_extension or ''}*"
-                ):
+                if fnmatch.fnmatch(filename.lower(), match_pattern):
                     if not fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern}*"):
                         if not filename.startswith(".~lock"):
                             matches.append(
@@ -102,7 +105,7 @@ class ManagedFileScanner(object):
             match = re.match(r_pattern, file_path.name)
 
             if not match:
-                raise ValueError(f"Invalid file name format: {file_path.name}")
+                raise ValueError(f"Invalid file name format: {file_path}")
 
             if len(r_groups) != len(match.groups()):
                 raise ValueError(

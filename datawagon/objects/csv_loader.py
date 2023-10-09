@@ -88,7 +88,7 @@ class CSVLoader(object):
     def _append_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         # These columns are not present in the csv files and will be added to all tables
         # if isinstance(self.input_file, CsvFileInfo):
-        df["_file_name"] = self.input_file.file_name_without_extension
+        df["_file_name"] = self.input_file.file_name
         if self.input_file.content_owner:
             df["_content_owner"] = self.input_file.content_owner
         if self.input_file.report_date_key:

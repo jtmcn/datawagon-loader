@@ -18,7 +18,9 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 def compare_local_files_to_database(ctx: click.Context) -> List[ManagedFilesToDatabase]:
     """Compare files in source directory to files in database."""
 
-    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(files_in_local_fs)
+    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
+        files_in_local_fs, file_extension="gz"
+    )
     current_database_files: List[CurrentDestinationData] = ctx.invoke(files_in_database)
 
     csv_file_infos: List[ManagedFileMetadata] = [
@@ -188,7 +190,7 @@ def _net_new_files(
             [
                 file
                 for file in all_source_files_by_table[range_index].files
-                if (file.file_name_without_extension not in existing_files)
+                if (file.file_name not in existing_files)
             ],
             key=lambda x: x.base_name,
         )

@@ -36,7 +36,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
         has_errors = False
         for csv_info in csv_file_infos:
             click.echo(
-                f"Uploading {csv_info.file_name_without_extension} into {csv_info.storage_folder_name}... ",
+                f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}... ",
                 nl=False,
             )
 
