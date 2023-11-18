@@ -27,6 +27,7 @@ class ManagedFileMetadata(ManagedFileInput):
     # file_name_without_extension: str
     content_owner: Optional[str]
     report_date_key: Optional[int]
+    report_date_str: Optional[str]
     file_version: str
     file_size_in_bytes: int
     file_size: str
@@ -59,7 +60,7 @@ class ManagedFileMetadata(ManagedFileInput):
 
         file_attributes_dict = source_file.model_dump()
 
-        report_date_key = None
+        report_date_key, report_date_str = None, None
 
         if "file_date_key" in file_attributes_dict.keys():
             file_date_key = file_attributes_dict["file_date_key"]
@@ -69,6 +70,9 @@ class ManagedFileMetadata(ManagedFileInput):
             file_month_end_date = file_date.replace(
                 day=calendar.monthrange(file_date.year, file_date.month)[1]
             )
+
+            report_date_str = file_month_end_date.strftime("%Y-%m-%d")
+
             report_date_key = int(file_month_end_date.strftime("%Y%m%d"))
 
         content_owner = None
@@ -88,6 +92,7 @@ class ManagedFileMetadata(ManagedFileInput):
             file_size=file_size,
             table_append_or_replace=source_file.table_append_or_replace,
             report_date_key=report_date_key,
+            report_date_str=report_date_str,
             content_owner=content_owner,
             storage_folder_name=source_file.storage_folder_name
             or source_file.base_name,

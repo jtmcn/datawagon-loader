@@ -42,10 +42,10 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
             str_path = str(csv_info.file_path)
 
-            if csv_info.report_date_key:
+            if csv_info.report_date_str:
                 destination_name = (
                     f"{csv_info.storage_folder_name or csv_info.base_name}/"
-                    + f"report_date_key={csv_info.report_date_key}/{csv_info.file_name}"
+                    + f"report_date={csv_info.report_date_str}/{csv_info.file_name}"
                 )
             else:
                 destination_name = (

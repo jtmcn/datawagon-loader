@@ -67,7 +67,6 @@ class ManagedFileScanner(object):
         if exclude_pattern is not None:
             exclude_pattern = exclude_pattern.lower()
 
-        print(f"match_pattern: {match_pattern}")
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
                 if fnmatch.fnmatch(filename.lower(), match_pattern):

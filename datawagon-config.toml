@@ -26,11 +26,40 @@ regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
 
+[file.asset_raw]
+is_enabled = true
+storage_folder_name = "caravan/asset_raw"
+table_name = "asset_raw"
+select_file_name_base = "asset_raw"
+exclude_file_name_base = "ADJ_asset_raw"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+table_append_or_replace = "append"
+
+[file.adj_asset_raw]
+is_enabled = true
+storage_folder_name = "caravan/adj_asset_raw"
+table_name = "adj_asset_raw"
+select_file_name_base = "ADJ_asset_raw"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+table_append_or_replace = "append"
+
 [file.video_raw]
 is_enabled = true
 storage_folder_name = "caravan/video_raw"
 table_name = "video_raw"
 select_file_name_base = "video_raw"
+exclude_file_name_base = "ADJ_video_raw"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+table_append_or_replace = "append"
+
+[file.adj_video_raw]
+is_enabled = true
+storage_folder_name = "caravan/adj_video_raw"
+table_name = "adj_video_raw"
+select_file_name_base = "ADJ_video_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -44,11 +73,29 @@ regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
 
+[file.red_rawdata_video]
+is_enabled = true
+storage_folder_name = "caravan/red_rawdata_video"
+select_file_name_base = "red_rawdata_video"
+table_name = "red_rawdata_video"
+table_append_or_replace = "append"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+
 [file.red_music_rawdata_asset]
 is_enabled = true
 storage_folder_name = "caravan/red_music_rawdata_asset"
 select_file_name_base = "red_music_rawdata_asset"
 table_name = "red_music_rawdata_asset"
+table_append_or_replace = "append"
+regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
+regex_group_names = ["content_owner", "file_date_key"]
+
+[file.red_music_rawdata_video]
+is_enabled = true
+storage_folder_name = "caravan/red_music_rawdata_video"
+select_file_name_base = "red_music_rawdata_video"
+table_name = "red_music_rawdata_video"
 table_append_or_replace = "append"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
