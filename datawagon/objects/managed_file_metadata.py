@@ -12,6 +12,7 @@ class ManagedFileInput(BaseModel):
     file_name: str
     file_path: Path
     base_name: str
+    table_name: str
     table_append_or_replace: Literal["append", "replace"]
     storage_folder_name: str
 
@@ -88,6 +89,7 @@ class ManagedFileMetadata(ManagedFileInput):
             # file_name_without_extension=file_name_without_extension,
             file_version=file_version,
             base_name=source_file.base_name,
+            table_name=source_file.table_name,
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
             table_append_or_replace=source_file.table_append_or_replace,

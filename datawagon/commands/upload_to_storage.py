@@ -9,7 +9,7 @@ from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
 
-@click.command(name="upload")
+@click.command(name="upload-to-gcs")
 @click.pass_context
 def upload_all_gzip_csv(ctx: click.Context) -> None:
     """Upload all new files to storage bucket."""

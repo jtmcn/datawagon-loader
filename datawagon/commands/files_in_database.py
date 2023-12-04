@@ -43,14 +43,16 @@ def _current_tables(
         show_eta=False,
     ) as table_progress:
         for table in tables:
-            table_df = db_manager.files_in_table_df(table)
-            file_list = table_df["_file_name"].tolist()
-            table_data = CurrentDestinationData(
-                base_name=table,
-                file_count=len(file_list),
-                source_files=file_list,
-            )
-            all_table_data.append(table_data)
-            table_progress.update(1)
+            table_exists = db_manager.check_table(table)
+            if table_exists:
+                table_df = db_manager.files_in_table_df(table)
+                file_list = table_df["_file_name"].tolist()
+                table_data = CurrentDestinationData(
+                    base_name=table,
+                    file_count=len(file_list),
+                    source_files=file_list,
+                )
+                all_table_data.append(table_data)
+                table_progress.update(1)
 
     return all_table_data

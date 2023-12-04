@@ -9,7 +9,7 @@ from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
 
-@click.command(name="import")
+@click.command(name="import-all-to-postgres")
 @click.pass_context
 def import_all_csv(ctx: click.Context) -> None:
     """Scan a directory for .csv files and import them into a PostgreSQL database."""
@@ -42,7 +42,7 @@ def import_all_csv(ctx: click.Context) -> None:
         has_errors = False
         for csv_info in csv_file_infos:
             click.echo(
-                f"Importing {csv_info} into {csv_info.base_name}... ",
+                f"Importing {csv_info.file_name} into table: {csv_info.table_name} ... ",
                 nl=False,
             )
 
@@ -51,7 +51,7 @@ def import_all_csv(ctx: click.Context) -> None:
             df = loader.load_data()
 
             success_count = db_manager.load_dataframe_into_database(
-                df, csv_info.base_name
+                df, csv_info.table_name
             )
 
             if success_count == -1:
