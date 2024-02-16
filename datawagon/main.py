@@ -89,7 +89,7 @@ def cli(
         csv_source_config=csv_source_config,
         db_url=db_url,
         gcs_project_id=gcs_project_id,
-        gcs_bucket=gcs_bucket
+        gcs_bucket=gcs_bucket,
         # bucket_storage_url=bucket_storage_url
     )
 
