@@ -919,6 +919,21 @@ docs = ["Sphinx", "furo"]
 test = ["objgraph", "psutil"]
 
 [[package]]
+name = "hologram"
+version = "0.0.16"
+description = "JSON schema generation from dataclasses"
+optional = false
+python-versions = "*"
+files = [
+    {file = "hologram-0.0.16-py3-none-any.whl", hash = "sha256:4e56bd525336bb64a18916f871977a4125b64be8aaa750233583003333cda361"},
+    {file = "hologram-0.0.16.tar.gz", hash = "sha256:1c2c921b4e575361623ea0e0d0aa5aee377b1a333cc6c6a879e213ed34583e55"},
+]
+
+[package.dependencies]
+jsonschema = ">=3.0"
+python-dateutil = ">=2.8,<2.9"
+
+[[package]]
 name = "identify"
 version = "2.5.34"
 description = "File identification library for Python"
@@ -2656,4 +2671,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "76b73e16ffc44584343ca44abaa5d9839881b4bc9568afde00b8b726609adbbd"
+content-hash = "9f4e2f9ba596545d68d9034d207492d3cca52d901f4daac6cad375d0b8432732"

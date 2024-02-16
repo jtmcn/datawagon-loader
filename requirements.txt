@@ -13,6 +13,7 @@ google-crc32c==1.5.0 ; python_version >= "3.9" and python_version < "3.13"
 google-resumable-media==2.7.0 ; python_version >= "3.9" and python_version < "3.13"
 googleapis-common-protos==1.62.0 ; python_version >= "3.9" and python_version < "3.13"
 greenlet==3.0.3 ; python_version >= "3.9" and python_version < "3.13" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32")
+hologram==0.0.16 ; python_version >= "3.9" and python_version < "3.13"
 idna==3.6 ; python_version >= "3.9" and python_version < "3.13"
 jsonschema-specifications==2023.12.1 ; python_version >= "3.9" and python_version < "3.13"
 jsonschema==4.21.1 ; python_version >= "3.9" and python_version < "3.13"
