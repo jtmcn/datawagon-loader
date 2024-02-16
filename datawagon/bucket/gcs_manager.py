@@ -4,7 +4,6 @@ from typing import List
 import pandas as pd
 from google.cloud import storage
 
-# from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.source_config import SourceConfig
 
 
@@ -31,8 +30,6 @@ class GcsManager:
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
         combined_df = pd.DataFrame(columns=["_file_name", "base_name"])
 
-        # file_utils = FileUtils()
-
         for file_id in source_confg.file:
             file_source = source_confg.file[file_id]
             if file_source.is_enabled:
@@ -47,10 +44,7 @@ class GcsManager:
                 for blob in blob_list:
                     # remove the base_prefix and file_extension from the blob name
                     # to prevent duplicate files
-                    file_list.append(
-                        # file_utils.remove_file_extension(os.path.basename(blob))
-                        os.path.basename(blob)
-                    )
+                    file_list.append(os.path.basename(blob))
 
                 df = pd.DataFrame(file_list, columns=["_file_name"])
                 df["base_name"] = file_source.select_file_name_base

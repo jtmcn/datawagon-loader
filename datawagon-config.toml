@@ -7,21 +7,17 @@ is_enabled = true
 storage_folder_name = "caravan/claim_raw"
 table_name = "claim_raw"
 select_file_name_base = "claim_raw"
-exclude_file_name_base = "ADJ_claim_raw"
+exclude_file_name_base = "adj_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})' 
 regex_group_names = ["content_owner", "file_date_key"]
 # file_date_key is special and it will be converted to a eom report_date_key when found (for now)
 table_append_or_replace = "append"
-# TODO MAYBE: 
-# is_skip_first_row = true
-# file_name_base_is_case_sensitive = false
-
 
 [file.adj_claim_raw]
 is_enabled = true
 storage_folder_name = "caravan/adj_claim_raw"
 table_name = "adj_claim_raw"
-select_file_name_base = "ADJ_claim_raw" # case sensitive!
+select_file_name_base = "adj_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -31,7 +27,7 @@ is_enabled = true
 storage_folder_name = "caravan/asset_raw"
 table_name = "asset_raw"
 select_file_name_base = "asset_raw"
-exclude_file_name_base = "ADJ_asset_raw"
+exclude_file_name_base = "adj_asset_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -40,7 +36,7 @@ table_append_or_replace = "append"
 is_enabled = true
 storage_folder_name = "caravan/adj_asset_raw"
 table_name = "adj_asset_raw"
-select_file_name_base = "ADJ_asset_raw"
+select_file_name_base = "adj_asset_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -50,7 +46,7 @@ is_enabled = true
 storage_folder_name = "caravan/video_raw"
 table_name = "video_raw"
 select_file_name_base = "video_raw"
-exclude_file_name_base = "ADJ_video_raw"
+exclude_file_name_base = "adj_video_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -59,7 +55,7 @@ table_append_or_replace = "append"
 is_enabled = true
 storage_folder_name = "caravan/adj_video_raw"
 table_name = "adj_video_raw"
-select_file_name_base = "ADJ_video_raw"
+select_file_name_base = "adj_video_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 table_append_or_replace = "append"
@@ -119,8 +115,10 @@ regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.video_report]
-is_enabled = false
+is_enabled = true
 storage_folder_name = "caravan/video_report"
 select_file_name_base = "video_report"
 table_name = "video_report"
 table_append_or_replace = "replace"
+regex_pattern = 'video_report_(.+)_V_(.+)\.csv'
+regex_group_names = ["content_owner", "file_version"]

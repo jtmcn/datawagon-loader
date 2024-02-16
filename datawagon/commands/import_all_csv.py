@@ -2,7 +2,7 @@ from typing import List
 
 import click
 
-from datawagon.commands.compare import compare_local_files_to_database
+from datawagon.commands.compare import compare_local_files_to_postgres
 from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.csv_loader import CSVLoader
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
@@ -22,7 +22,7 @@ def import_all_csv(ctx: click.Context) -> None:
         ctx.abort()
 
     matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(
-        compare_local_files_to_database
+        compare_local_files_to_postgres
     )
 
     csv_file_infos: List[ManagedFileMetadata] = [

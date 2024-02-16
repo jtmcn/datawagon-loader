@@ -53,12 +53,6 @@ class PostgresDatabaseManager:
 
         self.is_valid_connection = self.test_connection()
 
-        # try:
-        #     if self.check_schema():
-        #         self.create_log_table()
-        # except Exception as e:
-        #     print(f"Failed to create log table: {e}")
-
     def close(self) -> None:
         if not self.connection_error:
             self.connection.close()

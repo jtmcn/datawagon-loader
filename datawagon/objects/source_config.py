@@ -15,16 +15,6 @@ class SourceFromLocalFS(BaseModel):
     table_append_or_replace: Literal["append", "replace"]
 
 
-# class SourceFromBucket(BaseModel):
-#     is_enabled: bool
-#     file_name_base: str
-#     exclude_file_name_base: Optional[str] = None
-#     regex_pattern: Optional[re.Pattern] = None
-#     regex_group_names: Optional[List[str]] = None
-#     destination_table: str
-#     append_or_replace: str
-
-
 class Destination(BaseModel):
     destination_type: Literal["table", "bucket"]
 
@@ -40,5 +30,4 @@ class DestinationAsTable(BaseModel):
 
 
 class SourceConfig(BaseModel):
-    # title: str
     file: dict[str, SourceFromLocalFS]

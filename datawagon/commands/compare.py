@@ -15,12 +15,10 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
 @click.command()
 @click.pass_context
-def compare_local_files_to_database(ctx: click.Context) -> List[ManagedFilesToDatabase]:
+def compare_local_files_to_postgres(ctx: click.Context) -> List[ManagedFilesToDatabase]:
     """Compare files in source directory to files in database."""
 
-    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
-        files_in_local_fs, file_extension="gz"
-    )
+    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(files_in_local_fs)
     current_database_files: List[CurrentDestinationData] = ctx.invoke(files_in_database)
 
     csv_file_infos: List[ManagedFileMetadata] = [
@@ -162,7 +160,7 @@ def _file_diff(
 
         data_rows.append(
             {
-                "Table": base_name,
+                "Base Name": base_name,
                 "DB File Count": db_file_count,
                 "Source File Count": source_file_count,
             }
@@ -170,7 +168,7 @@ def _file_diff(
 
     display_table_data = pd.DataFrame(data_rows)
 
-    return display_table_data.sort_values(by=["Table"])
+    return display_table_data.sort_values(by=["Base Name"])
 
 
 def _net_new_files(

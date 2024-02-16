@@ -11,7 +11,7 @@ from hologram import ValidationError
 
 from datawagon.commands.compare import (
     compare_local_files_to_bucket,
-    compare_local_files_to_database,
+    compare_local_files_to_postgres,
 )
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_database import files_in_database
@@ -108,6 +108,9 @@ def cli(
         else False
     )
 
+    if not is_valid_schema:
+        ctx.abort()
+
     if is_valid_db and is_valid_schema:
         db_manager.create_log_table()
 
@@ -126,7 +129,7 @@ def cli(
 cli.add_command(reset_database)
 cli.add_command(files_in_database)
 cli.add_command(files_in_local_fs)
-cli.add_command(compare_local_files_to_database)
+cli.add_command(compare_local_files_to_postgres)
 cli.add_command(compare_local_files_to_bucket)
 cli.add_command(upload_all_gzip_csv)
 cli.add_command(file_zip_to_gzip)
@@ -167,8 +170,9 @@ def check_schema(db_manager: PostgresDatabaseManager, schema_name: str) -> bool:
 
     # This will try to create schema if it does not exist
     if not ensure_schema_exists(db_manager, schema_name):
-        click.secho(f"Schema '{schema_name}' does not exist.", fg="red")
+        click.secho(f"Schema '{schema_name}' must exist. Exiting.", fg="red")
         click.echo(nl=True)
+        return False
 
     click.echo(nl=True)
     click.secho(f"'{schema_name}' is valid schema.", fg="green")

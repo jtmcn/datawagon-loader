@@ -1,5 +1,6 @@
 import gzip
 import os
+import shutil
 import zipfile
 from pathlib import Path
 from typing import Dict, List
@@ -44,6 +45,25 @@ class FileUtils(object):
                 different_file_versions.append(file_infos)
 
         return different_file_versions
+
+    def csv_gzipped(
+        self, input_csv_file: Path, remove_original_zip: bool = False
+    ) -> Path:
+        is_successful = False
+        output_gzip_path = f"{input_csv_file}.gz"
+
+        with open(input_csv_file, "rb") as f_in:
+            with gzip.open(output_gzip_path, "wb") as f_out:
+                try:
+                    shutil.copyfileobj(f_in, f_out)
+                    is_successful = True
+                except Exception as e:
+                    print("Failed to gzip file: ", e)
+
+        if remove_original_zip and is_successful:
+            os.remove(input_csv_file)
+
+        return Path(output_gzip_path)
 
     def csv_zip_to_gzip(
         self, input_zip_path: Path, remove_original_zip: bool = False
