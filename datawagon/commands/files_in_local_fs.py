@@ -3,28 +3,41 @@ from typing import List
 
 import click
 
+from datawagon.objects.app_config import AppConfig
 from datawagon.objects.file_utils import FileUtils
-from datawagon.objects.source_file_metadata import SourceFileMetadata
-from datawagon.objects.source_file_scanner import (
-    SourceFileScanner,
-    SourceFilesToDatabase,
+from datawagon.objects.managed_file_metadata import ManagedFileMetadata
+from datawagon.objects.managed_file_scanner import (
+    ManagedFileScanner,
+    ManagedFilesToDatabase,
 )
 
 
 @click.command()
+@click.option(
+    "--file-extension",
+    type=click.STRING,
+    default=None,
+    show_default=True,
+    required=False,
+    help="Only select files with this extension",
+)
 @click.pass_context
-def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
+def files_in_local_fs(
+    ctx: click.Context, file_extension: str
+) -> List[ManagedFilesToDatabase]:
     """Scan a directory for .csv.gz files and display the number of files grouped by table_name."""
 
-    source_dir = ctx.obj["CONFIG"].csv_source_dir
-    app_config = ctx.obj["CONFIG"]
+    source_dir: str = ctx.obj["CONFIG"].csv_source_dir
+    app_config: AppConfig = ctx.obj["CONFIG"]
 
     file_utils = FileUtils()
     source_path = Path(source_dir)
 
     click.secho(f"Scanning for .csv files in {source_path}...", fg="blue")
 
-    matched_files = SourceFileScanner(app_config).matched_files()
+    matched_files = ManagedFileScanner(
+        app_config.csv_source_config, app_config.csv_source_dir
+    ).matched_files(file_extension)
 
     if len(matched_files) == 0:
         click.secho(f"No .csv files found in source directory: {source_dir}", fg="red")
@@ -32,10 +45,10 @@ def scan_files(ctx: click.Context) -> List[SourceFilesToDatabase]:
 
     for files_by_table in matched_files:
         click.secho(
-            f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector}"
+            f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector_base_name}"
         )
 
-    csv_file_infos: List[SourceFileMetadata] = [
+    csv_file_infos: List[ManagedFileMetadata] = [
         file_info for src in matched_files for file_info in src.files
     ]
 

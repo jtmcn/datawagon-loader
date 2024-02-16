@@ -8,3 +8,5 @@ class AppConfig(BaseModel):
     db_url: str
     csv_source_dir: Path
     csv_source_config: Path
+    gcs_project_id: str
+    gcs_bucket: str

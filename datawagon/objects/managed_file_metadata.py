@@ -6,22 +6,30 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from datawagon.objects.source_config import SourceFileAttributes
+
+class ManagedFileInput(BaseModel):
+    # TODO: merge with SourceFileMetadata
+    file_name: str
+    file_path: Path
+    base_name: str
+    table_name: str
+    table_append_or_replace: Literal["append", "replace"]
+    storage_folder_name: str
+
+    # allows for additional fields defined at runtime by regex_group_names
+    class Config:
+        extra = "allow"
 
 
-class SourceFileMetadata(BaseModel):
+class ManagedFileMetadata(ManagedFileInput):
     """Class for properties used to upload .csv files into database"""
 
-    append_or_replace: Literal["append", "replace"]
-
-    file_path: Path
     file_dir: str
-    file_name: str
-    file_name_without_extension: str
+    # file_name_without_extension: str
     content_owner: Optional[str]
     report_date_key: Optional[int]
+    report_date_str: Optional[str]
     file_version: str
-    table_name: str
     file_size_in_bytes: int
     file_size: str
 
@@ -29,7 +37,7 @@ class SourceFileMetadata(BaseModel):
         extra = "allow"
 
     @classmethod
-    def build_data_item(cls, source_file: SourceFileAttributes) -> "SourceFileMetadata":
+    def build_data_item(cls, source_file: ManagedFileInput) -> "ManagedFileMetadata":
         file_path = source_file.file_path
 
         file_size_in_bytes = file_path.stat().st_size
@@ -39,21 +47,21 @@ class SourceFileMetadata(BaseModel):
 
         file_name = file_path.name
 
-        if file_path.suffix == ".csv":
-            file_name_without_extension = re.sub(r"\.csv$", "", file_name)
-        elif file_path.suffix == ".gz":
-            file_name_without_extension = re.sub(r"\.csv(\.gz)?$", "", file_name)
-        elif file_path.suffix == ".zip":
-            file_name_without_extension = re.sub(r"\.csv(\.zip)?$", "", file_name)
-        else:
-            raise ValueError(f"Invalid file name format: {file_name}")
+        # TODO: replace following with FileUtils.remove_file_extension
+        # if file_path.suffix == ".csv":
+        #     file_name_without_extension = re.sub(r"\.csv$", "", file_name)
+        # elif file_path.suffix == ".gz":
+        #     file_name_without_extension = re.sub(r"\.csv(\.gz)?$", "", file_name)
+        # elif file_path.suffix == ".zip":
+        #     file_name_without_extension = re.sub(r"\.csv(\.zip)?$", "", file_name)
+        # else:
+        #     raise ValueError(f"Invalid file name format: {file_name}")
 
         file_version = cls.get_file_version(file_name)
-        table_name = source_file.destination_table
 
         file_attributes_dict = source_file.model_dump()
 
-        report_date_key = None
+        report_date_key, report_date_str = None, None
 
         if "file_date_key" in file_attributes_dict.keys():
             file_date_key = file_attributes_dict["file_date_key"]
@@ -63,6 +71,9 @@ class SourceFileMetadata(BaseModel):
             file_month_end_date = file_date.replace(
                 day=calendar.monthrange(file_date.year, file_date.month)[1]
             )
+
+            report_date_str = file_month_end_date.strftime("%Y-%m-%d")
+
             report_date_key = int(file_month_end_date.strftime("%Y%m%d"))
 
         content_owner = None
@@ -75,15 +86,18 @@ class SourceFileMetadata(BaseModel):
             file_path=file_path,
             file_dir=file_dir,
             file_name=file_name,
-            file_name_without_extension=file_name_without_extension,
+            # file_name_without_extension=file_name_without_extension,
             file_version=file_version,
-            table_name=table_name,
+            base_name=source_file.base_name,
+            table_name=source_file.table_name,
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
-            append_or_replace=source_file.append_or_replace,
+            table_append_or_replace=source_file.table_append_or_replace,
             report_date_key=report_date_key,
-            # file_date_key=file_date_key,
+            report_date_str=report_date_str,
             content_owner=content_owner,
+            storage_folder_name=source_file.storage_folder_name
+            or source_file.base_name,
         )
 
         return data_item

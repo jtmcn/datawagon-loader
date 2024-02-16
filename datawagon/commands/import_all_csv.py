@@ -2,14 +2,14 @@ from typing import List
 
 import click
 
-from datawagon.commands.compare import compare_files_to_database
+from datawagon.commands.compare import compare_local_files_to_postgres
 from datawagon.database.postgres_database_manager import PostgresDatabaseManager
 from datawagon.objects.csv_loader import CSVLoader
-from datawagon.objects.source_file_metadata import SourceFileMetadata
-from datawagon.objects.source_file_scanner import SourceFilesToDatabase
+from datawagon.objects.managed_file_metadata import ManagedFileMetadata
+from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
 
-@click.command(name="import")
+@click.command(name="import-all-to-postgres")
 @click.pass_context
 def import_all_csv(ctx: click.Context) -> None:
     """Scan a directory for .csv files and import them into a PostgreSQL database."""
@@ -21,11 +21,11 @@ def import_all_csv(ctx: click.Context) -> None:
     if not db_manager.is_valid_connection:
         ctx.abort()
 
-    matched_new_files: List[SourceFilesToDatabase] = ctx.invoke(
-        compare_files_to_database
+    matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(
+        compare_local_files_to_postgres
     )
 
-    csv_file_infos: List[SourceFileMetadata] = [
+    csv_file_infos: List[ManagedFileMetadata] = [
         file_info for src in matched_new_files for file_info in src.files
     ]
 
@@ -42,7 +42,7 @@ def import_all_csv(ctx: click.Context) -> None:
         has_errors = False
         for csv_info in csv_file_infos:
             click.echo(
-                f"Importing {csv_info.file_name_without_extension} into {csv_info.table_name}... ",
+                f"Importing {csv_info.file_name} into table: {csv_info.table_name} ... ",
                 nl=False,
             )
 

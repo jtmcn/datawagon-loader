@@ -53,12 +53,6 @@ class PostgresDatabaseManager:
 
         self.is_valid_connection = self.test_connection()
 
-        # try:
-        #     if self.check_schema():
-        #         self.create_log_table()
-        # except Exception as e:
-        #     print(f"Failed to create log table: {e}")
-
     def close(self) -> None:
         if not self.connection_error:
             self.connection.close()
@@ -223,8 +217,7 @@ class PostgresDatabaseManager:
         query = f"""
                 select
                     '{table_name}' as table_name,
-                    {self.CNAME_FILE_NAME},
-                    count(*) as row_count
+                    {self.CNAME_FILE_NAME}
                 from {self.schema}.{table_name}
                 group by
                     {self.CNAME_FILE_NAME}

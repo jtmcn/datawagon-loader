@@ -3,12 +3,12 @@ from typing import List
 import click
 
 from datawagon.database.postgres_database_manager import PostgresDatabaseManager
-from datawagon.objects.current_table_data import CurrentTableData
+from datawagon.objects.current_table_data import CurrentDestinationData
 
 
 @click.command()
 @click.pass_context
-def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
+def files_in_database(ctx: click.Context) -> List[CurrentDestinationData]:
     """Display existing tables and number of rows."""
 
     db_manager = ctx.obj["DB_CONNECTION"]
@@ -32,7 +32,9 @@ def files_in_database(ctx: click.Context) -> List[CurrentTableData]:
     return existing_table_files
 
 
-def _current_tables(db_manager: PostgresDatabaseManager) -> List[CurrentTableData]:
+def _current_tables(
+    db_manager: PostgresDatabaseManager,
+) -> List[CurrentDestinationData]:
     tables = db_manager.table_names()
     all_table_data = []
     with click.progressbar(
@@ -41,15 +43,16 @@ def _current_tables(db_manager: PostgresDatabaseManager) -> List[CurrentTableDat
         show_eta=False,
     ) as table_progress:
         for table in tables:
-            table_df = db_manager.files_in_table_df(table)
-            file_list = table_df["_file_name"].tolist()
-            table_data = CurrentTableData(
-                table_name=table,
-                total_rows=table_df["row_count"].sum(),
-                file_count=len(file_list),
-                source_files=file_list,
-            )
-            all_table_data.append(table_data)
-            table_progress.update(1)
+            table_exists = db_manager.check_table(table)
+            if table_exists:
+                table_df = db_manager.files_in_table_df(table)
+                file_list = table_df["_file_name"].tolist()
+                table_data = CurrentDestinationData(
+                    base_name=table,
+                    file_count=len(file_list),
+                    source_files=file_list,
+                )
+                all_table_data.append(table_data)
+                table_progress.update(1)
 
     return all_table_data
