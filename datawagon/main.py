@@ -45,20 +45,13 @@ from datawagon.objects.source_config import SourceConfig
 @click.pass_context
 def cli(
     ctx: click.Context,
-    db_url: str,
-    db_schema: str,
     csv_source_dir: Path,
     csv_source_config: Path,
     gcs_project_id: str,
     gcs_bucket: str,
 ) -> None:
-    # if not ParameterValidator(
-    #     db_url, db_schema, csv_source_dir, csv_source_config
-    # ).are_valid_parameters:
-    #     ctx.abort()
+    print(f"csv_source_config: {csv_source_config}")
 
-    # TODO: fix error handling, this is not working
-    # load config from toml file
     try:
         source_config_file = toml.load(csv_source_config)
         valid_config = SourceConfig(**source_config_file)
@@ -72,22 +65,14 @@ def cli(
     ctx.obj["FILE_CONFIG"] = valid_config
 
     app_config = AppConfig(
-        db_schema=db_schema,
         csv_source_dir=csv_source_dir,
         csv_source_config=csv_source_config,
-        db_url=db_url,
         gcs_project_id=gcs_project_id,
         gcs_bucket=gcs_bucket,
     )
 
     ctx.obj["CONFIG"] = app_config
     ctx.obj["GLOBAL"] = {}
-
-    # def on_exit() -> None:
-    #     if proc:
-    #         proc.send_signal(signal.SIGTERM)
-
-    # ctx.call_on_close(on_exit)
 
 
 cli.add_command(files_in_local_fs)
