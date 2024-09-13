@@ -16,8 +16,6 @@ from datawagon.objects.source_config import SourceConfig
 
 
 @click.group(chain=True)
-@click.option("--db-url", type=str, help="Database URL", envvar="DW_POSTGRES_DB_URL")
-@click.option("--db-schema", type=str, help="Schema name to use", envvar="DW_DB_SCHEMA")
 @click.option(
     "--csv-source-dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
