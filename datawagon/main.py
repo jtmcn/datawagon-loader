@@ -51,7 +51,7 @@ def cli(
     print(f"csv_source_config: {csv_source_config}")
 
     try:
-        source_config_file = toml.load(csv_source_config)
+        source_config_file = toml.load(csv_source_config.as_posix())
         valid_config = SourceConfig(**source_config_file)
 
     except ValidationError as e:
