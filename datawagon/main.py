@@ -24,7 +24,7 @@ from datawagon.objects.source_config import SourceConfig
 )
 @click.option(
     "--csv-source-config",
-    type=str,
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
     help="Location of source_config.toml",
     envvar="DW_CSV_SOURCE_TOML",
 )
@@ -51,7 +51,7 @@ def cli(
     print(f"csv_source_config: {csv_source_config}")
 
     try:
-        source_config_file = toml.load(csv_source_config.as_posix())
+        source_config_file = toml.load(csv_source_config)
         valid_config = SourceConfig(**source_config_file)
 
     except ValidationError as e:
