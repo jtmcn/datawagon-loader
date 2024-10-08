@@ -81,9 +81,10 @@ cli.add_command(files_in_storage)
 
 
 def start_cli() -> click.Group:
-    env_file = find_dotenv()
+    
+    env_file = find_dotenv(usecwd=True, raise_error_if_not_found=True)
 
-    load_dotenv(env_file)
+    load_dotenv(env_file, verbose=True)
 
     click.secho("DataWagon", fg="magenta", bold=True)
     click.echo(f"Version: {importlib.metadata.version('datawagon')}")

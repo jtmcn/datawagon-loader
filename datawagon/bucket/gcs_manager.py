@@ -11,7 +11,16 @@ class GcsManager:
     def __init__(self, gcs_project: str, source_bucket_name: str) -> None:
         self.storage_client = storage.Client(project=gcs_project)
         self.source_bucket_name = source_bucket_name
-
+        try:
+            existing_buckets = self.storage_client.list_buckets()
+            for bucket in existing_buckets:
+                print(f"existing_bucket: {bucket.name}")
+            self.has_error = False
+        except Exception as e:
+            print(f"Error connecting to GCS: {e}")
+            print("Make sure you're logged-in: gcloud auth application-default login")
+            self.has_error = True
+        
     def list_buckets(self) -> List[str]:
         buckets = self.storage_client.list_buckets()
         return [bucket.name for bucket in buckets]
@@ -19,13 +28,18 @@ class GcsManager:
     def list_blobs(
         self, storage_folder_name: str, file_name_base: str, file_extension: str
     ) -> List[str]:
-        blobs = self.storage_client.list_blobs(
-            self.source_bucket_name,
-            prefix=storage_folder_name + "/",
-            match_glob="**" + file_name_base + "**" + file_extension,
-        )
+        if not self.has_error:
+            try:
+                blobs = self.storage_client.list_blobs(
+                    self.source_bucket_name,
+                    prefix=storage_folder_name + "/",
+                    match_glob="**" + file_name_base + "**" + file_extension,
+                )
 
-        return [blob.name for blob in blobs]
+                return [blob.name for blob in blobs]
+            except Exception as e:
+                print("Error: unable to list files in bucket", e)
+        return []
 
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
         combined_df = pd.DataFrame(columns=["_file_name", "base_name"])
