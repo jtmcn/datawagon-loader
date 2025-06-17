@@ -18,7 +18,7 @@ jsonschema-specifications==2023.12.1 ; python_version >= "3.9" and python_versio
 jsonschema==4.21.1 ; python_version >= "3.9" and python_version < "3.13"
 numpy==1.26.4 ; python_version >= "3.9" and python_version <= "3.11" or python_version >= "3.12" and python_version < "3.13"
 pandas==2.2.0 ; python_version >= "3.9" and python_version < "3.13"
-protobuf==4.25.3 ; python_version >= "3.9" and python_version < "3.13"
+protobuf==4.25.8 ; python_version >= "3.9" and python_version < "3.13"
 pyasn1-modules==0.3.0 ; python_version >= "3.9" and python_version < "3.13"
 pyasn1==0.5.1 ; python_version >= "3.9" and python_version < "3.13"
 pydantic-core==2.16.2 ; python_version >= "3.9" and python_version < "3.13"
