@@ -1,12 +1,12 @@
 import fnmatch
-import os
 import re
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional
 
 import toml
 from pydantic import BaseModel, Field, ValidationError
 
+from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import (
     ManagedFileInput,
     ManagedFileMetadata,
@@ -24,9 +24,26 @@ class ManagedFilesToDatabase(ManagedFiles):
     table_append_or_replace: str
 
 
-class ManagedFileScanner(object):
+class ManagedFileScanner:
+    """Scans for and processes files based on configuration patterns.
+
+    Provides optimized file scanning with cached regex patterns and
+    improved performance for large directory structures.
+    """
+
     def __init__(self, csv_source_config: Path, csv_source_dir: Path) -> None:
+        """Initialize the file scanner.
+
+        Args:
+            csv_source_config: Path to the source configuration file
+            csv_source_dir: Directory to scan for files
+
+        Raises:
+            ValueError: If configuration validation fails
+        """
         self.csv_source_dir = csv_source_dir
+        self.logger = get_logger("file_scanner")
+        self._compiled_patterns: Dict[str, re.Pattern] = {}
 
         try:
             source_config_file = toml.load(csv_source_config)
@@ -54,29 +71,61 @@ class ManagedFileScanner(object):
         self,
         base_path: Path,
         match_pattern: str,
-        exclude_pattern: str | None,
-        file_extension: str | None = None,
+        exclude_pattern: Optional[str],
+        file_extension: Optional[str] = None,
     ) -> List[Path]:
+        """Find files matching the specified patterns.
+
+        Uses optimized pattern matching and excludes system lock files.
+
+        Args:
+            base_path: Directory to search in
+            match_pattern: Pattern to match filenames against
+            exclude_pattern: Pattern to exclude from results
+            file_extension: File extension to filter by
+
+        Returns:
+            List of matching file paths
+        """
         matches = []
 
+        # Build the full match pattern
         if file_extension is not None:
-            match_pattern = f"*{match_pattern.lower()}*{file_extension}"
+            full_match_pattern = f"*{match_pattern.lower()}*{file_extension}"
         else:
-            match_pattern = f"*{match_pattern.lower()}*"
+            full_match_pattern = f"*{match_pattern.lower()}*"
 
-        if exclude_pattern is not None:
-            exclude_pattern = exclude_pattern.lower()
+        exclude_pattern_lower = exclude_pattern.lower() if exclude_pattern else None
+        self.logger.debug(f"Scanning {base_path} with pattern: {full_match_pattern}")
 
-        for root, dirnames, filenames in os.walk(base_path):
-            for filename in filenames:
-                if fnmatch.fnmatch(filename.lower(), match_pattern):
-                    if not fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern}*"):
-                        if not filename.startswith(".~lock"):
-                            matches.append(
-                                os.path.abspath(os.path.join(root, filename))
-                            )
+        # Use pathlib for more efficient file iteration
+        try:
+            for file_path in base_path.rglob("*"):
+                if file_path.is_file():
+                    filename_lower = file_path.name.lower()
 
-        return [Path(match) for match in matches]
+                    # Skip system lock files early
+                    if filename_lower.startswith(".~lock"):
+                        continue
+
+                    # Check match pattern
+                    if fnmatch.fnmatch(filename_lower, full_match_pattern):
+                        # Check exclude pattern
+                        if exclude_pattern_lower and fnmatch.fnmatch(
+                            filename_lower, f"*{exclude_pattern_lower}*"
+                        ):
+                            continue
+
+                        matches.append(file_path)
+        except PermissionError as e:
+            self.logger.warning(f"Permission denied accessing {base_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Error scanning directory {base_path}: {e}")
+
+        self.logger.info(
+            f"Found {len(matches)} files matching pattern '{match_pattern}'"
+        )
+        return matches
 
     def source_file_attrs(
         self,
@@ -101,7 +150,13 @@ class ManagedFileScanner(object):
             r_pattern = file_source.regex_pattern
             r_groups = file_source.regex_group_names
 
-            match = re.match(r_pattern, file_path.name)
+            # Use cached compiled pattern for better performance
+            pattern_key = str(r_pattern)
+            if pattern_key not in self._compiled_patterns:
+                self._compiled_patterns[pattern_key] = re.compile(r_pattern)
+
+            compiled_pattern = self._compiled_patterns[pattern_key]
+            match = compiled_pattern.match(file_path.name)
 
             if not match:
                 raise ValueError(f"Invalid file name format: {file_path}")
@@ -110,11 +165,10 @@ class ManagedFileScanner(object):
                 raise ValueError(
                     "File regex config generated mismatched groups."
                     + f"\nFile name: {file_path.name}, regex: {r_pattern}, groups: {r_groups}"
-                    ""
                 )
 
-            for i in range(len(match.groups())):
-                file_dict[r_groups[i]] = match.group(i + 1)
+            for i, group_name in enumerate(r_groups):
+                file_dict[group_name] = match.group(i + 1)
 
         return ManagedFileInput(**file_dict)
 
