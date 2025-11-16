@@ -33,6 +33,7 @@ class TestLoggingConfig(unittest.TestCase):
     def test_get_logger_inherits_parent_level(self) -> None:
         """Test that child loggers inherit parent configuration."""
         parent_logger = setup_logging(level="ERROR")
+        _ = parent_logger  # Explicitly "use" parent_logger to satisfy flake8
         child_logger = get_logger("child")
 
         # Child should inherit parent's effective level

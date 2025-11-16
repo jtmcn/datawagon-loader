@@ -14,4 +14,3 @@ def validate_config(ctx: click.Context) -> None:
 
     click.secho("\nFile Configuration:", fg="green")
     click.echo(file_config.json(indent=2))
-

@@ -1,21 +1,11 @@
-from pathlib import Path
-from typing import Optional
-
-from pydantic import (
-    BaseModel,
-    DirectoryPath,
-    Field,
-    FilePath,
-    ValidationError,
-    validator,
-)
+from pydantic import BaseModel, DirectoryPath, Field, FilePath
 
 
 class AppSettings(BaseModel):
-    csv_source_dir: DirectoryPath = Field(..., env="DW_CSV_SOURCE_DIR")
-    csv_source_config: FilePath = Field(..., env="DW_CSV_SOURCE_TOML")
-    gcs_project_id: str = Field(..., env="DW_GCS_PROJECT_ID")
-    gcs_bucket: str = Field(..., env="DW_GCS_BUCKET")
+    csv_source_dir: DirectoryPath = Field(...)
+    csv_source_config: FilePath = Field(...)
+    gcs_project_id: str = Field(...)
+    gcs_bucket: str = Field(...)
 
     class Config:
         # This allows the model to be created from environment variables
@@ -87,6 +77,6 @@ class AppSettings(BaseModel):
         # for loading JSON.
         # In this case, we are not using a custom function.
         # The `json_dumps` setting is used to specify a custom function
-        - `case_sensitive` = False
-        - `extra` = "ignore"
-        - `frozen` = True
+        case_sensitive = False
+        extra = "ignore"
+        frozen = True

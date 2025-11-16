@@ -7,7 +7,6 @@ import toml
 from pydantic import BaseModel, Field, ValidationError
 
 from datawagon.logging_config import get_logger
-
 from datawagon.objects.managed_file_metadata import (
     ManagedFileInput,
     ManagedFileMetadata,
