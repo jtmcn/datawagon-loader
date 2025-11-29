@@ -1,0 +1,162 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+DataWagon automates loading YouTube Analytics CSV files into Google Cloud Storage buckets. It processes compressed files (.csv.gz, .csv.zip), validates file names against regex patterns, extracts metadata, and uploads to GCS with partitioning by report date.
+
+## Development Commands
+
+### Environment Setup
+
+#### First-Time Setup
+```bash
+make setup               # Complete setup (Poetry, plugins, .env, deps)
+source .venv/bin/activate
+```
+
+#### Updating Environment
+```bash
+./update.sh              # Pull changes and update
+# OR manually:
+git pull
+poetry install
+make requirements
+```
+
+### Code Quality (Pre-commit Checks)
+```bash
+make pre-commit          # Run all checks (type, isort, format, lint, test, requirements-check)
+make pre-commit-fast     # Run faster checks (type, lint, test only)
+make type                # Type check with mypy
+make isort               # Sort imports
+make format              # Format code with black
+make lint                # Lint with flake8
+make test                # Run tests with pytest
+make requirements-check  # Verify requirements.txt is in sync with poetry.lock
+```
+
+### Testing
+```bash
+make test                # Run all tests
+make test-cov            # Run tests with HTML coverage report
+poetry run pytest tests/ --quiet
+poetry run pytest tests/file_utils_test.py -k test_group_by_base_name  # Run single test
+```
+
+### Build & Install
+```bash
+make build-app           # Build with poetry
+poetry build
+```
+
+### Running the Application
+```bash
+datawagon --help                     # Show available commands
+datawagon files-in-local-fs          # List files in source directory
+datawagon compare-local-to-bucket    # Compare local files to GCS bucket
+datawagon upload-to-gcs              # Upload new files to GCS
+datawagon file-zip-to-gzip           # Convert .zip files to .gzip
+datawagon files-in-storage           # List files in GCS bucket
+```
+
+Commands can be chained:
+```bash
+datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
+```
+
+## Architecture
+
+### Configuration System
+
+**Source Configuration (`datawagon-config.toml`)**: Defines file types to process. Each `[file.{name}]` section specifies:
+- `select_file_name_base`: Pattern to match files
+- `exclude_file_name_base`: Pattern to exclude files
+- `regex_pattern`: Regex to extract metadata from filenames
+- `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
+- `storage_folder_name`: GCS destination folder
+- `table_name`: Destination table name
+- `table_append_or_replace`: Upload strategy
+
+**Runtime Configuration**: Via environment variables or CLI flags:
+- `DW_CSV_SOURCE_DIR`: Source directory for CSV files
+- `DW_CSV_SOURCE_TOML`: Path to source config TOML
+- `DW_GCS_PROJECT_ID`: GCS project ID
+- `DW_GCS_BUCKET`: GCS bucket name
+
+### Core Components
+
+**Click CLI (`datawagon/main.py`)**:
+- Entry point with command group using `chain=True` for command chaining
+- Loads `.env` file and validates `source_config.toml` against `SourceConfig` model
+- Creates `AppConfig` and `SourceConfig` objects, stores in `ctx.obj`
+
+**File Scanner (`datawagon/objects/managed_file_scanner.py`)**:
+- `ManagedFileScanner.matched_files()`: Scans source directory for files matching config
+- Extracts metadata from filenames using regex patterns
+- Returns `List[ManagedFilesToDatabase]` grouping files by destination
+
+**File Metadata (`datawagon/objects/managed_file_metadata.py`)**:
+- `ManagedFileMetadata`: Pydantic model storing file info
+- Auto-converts `file_date_key` (YYYYMMDD or YYYYMM) to `report_date_str` (YYYY-MM-DD)
+- Includes `content_owner`, `file_version`, `base_name`, `storage_folder_name`
+
+**GCS Manager (`datawagon/bucket/gcs_manager.py`)**:
+- Wraps Google Cloud Storage client
+- `list_blobs()`: Lists files in bucket matching glob pattern
+- `upload_blob()`: Uploads file to GCS with destination path
+- `files_in_blobs_df()`: Returns DataFrame of files in bucket by base_name
+
+**Commands (`datawagon/commands/`)**:
+- `files_in_local_fs`: Scans local directory, validates files, checks for duplicates
+- `files_in_storage`: Lists files currently in GCS bucket
+- `compare_local_files_to_bucket`: Shows diff between local and bucket files
+- `upload_to_storage`: Prompts user and uploads new files with partitioning
+- `file_zip_to_gzip`: Converts .zip to .gzip format
+
+### Data Flow
+
+1. CLI loads config from `.env` and validates `source_config.toml`
+2. `ManagedFileScanner.matched_files()` scans source directory using config rules
+3. For each file, regex extracts metadata (content_owner, file_date_key, etc.)
+4. `ManagedFileMetadata` converts extracted data, creates `report_date_str`
+5. Commands compare local files to GCS bucket contents
+6. Upload creates partitioned path: `{storage_folder_name}/report_date={YYYY-MM-DD}/{filename}`
+7. GCS Manager uploads files to bucket
+
+### File Processing
+
+**Supported extensions**: `.csv`, `.csv.gz`, `.csv.zip`
+
+**File name patterns**: Configured per file type. Example:
+- Pattern: `YouTube_(.+)_M_(\d{8}|\d{6})`
+- Groups: `["content_owner", "file_date_key"]`
+- Matches: `YouTube_BrandName_M_20230601_claim_raw_v1-1.csv.gz`
+- Extracts: `content_owner="BrandName"`, `file_date_key="20230601"`
+
+**Special handling**:
+- `file_date_key` group auto-converts to `report_date_str` for partitioning
+- Files starting with `.~lock` are excluded
+- Duplicate detection by file name
+
+### Pydantic Models
+
+**Configuration Models** (`datawagon/objects/source_config.py`):
+- `SourceConfig`: Root config with `file: dict[str, SourceFromLocalFS]`
+- `SourceFromLocalFS`: Per-file-type settings
+
+**Data Models**:
+- `AppConfig`: Runtime config (paths, GCS project/bucket)
+- `ManagedFileInput`: Raw file attributes before validation
+- `ManagedFileMetadata`: Validated file metadata with computed fields
+- `ManagedFiles`: Base class grouping files by selector
+- `ManagedFilesToDatabase`: Adds table name and append/replace strategy
+
+## Code Style
+
+- Pre-commit hook runs `make pre-commit` (type, isort, format, lint, test)
+- Type hints required (checked with mypy)
+- Import sorting with isort
+- Code formatting with black
+- Linting with flake8 (config in `.flake8`)

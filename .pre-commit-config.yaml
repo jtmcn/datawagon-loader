@@ -2,8 +2,16 @@ repos:
   - repo: local
     hooks:
       - id: make-check
-        name: Run "make pre-commit" hook
+        name: Run pre-commit checks
         entry: make pre-commit
         language: system
         pass_filenames: false
+        stages: [commit]
+        # To skip during development: git commit --no-verify
+      - id: requirements-sync
+        name: Check requirements.txt sync
+        entry: make requirements-check
+        language: system
+        pass_filenames: false
+        files: 'poetry.lock|pyproject.toml'
         stages: [commit] 
