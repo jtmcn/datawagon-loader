@@ -63,18 +63,6 @@ def files_in_local_fs(
 
         ctx.abort()
 
-    different_file_versions = file_utils.check_for_different_file_versions(
-        csv_file_infos
-    )
-
-    if different_file_versions:
-        click.secho("Different file versions found for the same table name:", fg="red")
-        for file_infos in different_file_versions:
-            file_infos.sort(key=lambda x: x.file_version)
-            for file_info in file_infos:
-                click.echo(f"  - {file_info.file_name} ({file_info.file_version})")
-        ctx.abort()
-
     click.echo(nl=True)
 
     return matched_files

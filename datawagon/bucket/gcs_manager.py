@@ -28,14 +28,26 @@ class GcsManager:
     def list_blobs(
         self, storage_folder_name: str, file_name_base: str, file_extension: str
     ) -> List[str]:
+        """List blobs matching pattern in both versioned and non-versioned folders."""
         if not self.has_error:
             try:
+                # Extract parent directory for efficient search
+                if "/" in storage_folder_name:
+                    parts = storage_folder_name.rsplit("/", 1)
+                    parent_prefix = parts[0] + "/"
+                    folder_base = parts[1]
+                else:
+                    parent_prefix = ""
+                    folder_base = storage_folder_name
+
+                # Search with glob that matches both:
+                # - caravan/claim_raw/report_date=*/file.csv.gz
+                # - caravan/claim_raw_v1-0/report_date=*/file.csv.gz
                 blobs = self.storage_client.list_blobs(
                     self.source_bucket_name,
-                    prefix=storage_folder_name + "/",
-                    match_glob="**" + file_name_base + "**" + file_extension,
+                    prefix=parent_prefix,
+                    match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
                 )
-
                 return [blob.name for blob in blobs]
             except Exception as e:
                 print("Error: unable to list files in bucket", e)

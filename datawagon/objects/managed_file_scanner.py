@@ -78,6 +78,34 @@ class ManagedFileScanner(object):
 
         return [Path(match) for match in matches]
 
+    def _apply_version_based_folder_naming(
+        self, all_files: List[ManagedFilesToDatabase]
+    ) -> None:
+        """
+        Modify storage_folder_name to include version suffix for versioned files.
+
+        Logic:
+        - If file has a version (file_version is not empty): append _{version} to storage_folder_name
+        - If file has NO version (file_version is empty): leave storage_folder_name unchanged
+
+        This ensures:
+        - Each version has a stable, permanent folder (e.g., caravan/claim_raw_v1-1/)
+        - Each folder maps to a single BigQuery external table
+        - Backward compatible with non-versioned files (e.g., caravan/claim_raw/)
+
+        Example outputs:
+        - File with v1-1 → caravan/claim_raw_v1-1/
+        - File with v1-0 → caravan/claim_raw_v1-0/
+        - File with no version → caravan/claim_raw/ (unchanged)
+        """
+        for file_group in all_files:
+            for file_metadata in file_group.files:
+                # Only append version if file has one
+                if file_metadata.file_version:
+                    file_metadata.storage_folder_name = (
+                        f"{file_metadata.storage_folder_name}_{file_metadata.file_version}"
+                    )
+
     def source_file_attrs(
         self,
         file_path: Path,
@@ -148,6 +176,9 @@ class ManagedFileScanner(object):
                     table_mapper.files.append(source_file_info)
 
                 all_available_files.append(table_mapper)
+
+        # Apply version-based folder naming before returning
+        self._apply_version_based_folder_naming(all_available_files)
 
         return all_available_files
 
