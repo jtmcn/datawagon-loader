@@ -107,3 +107,44 @@ class GcsManager:
     def download_blob(self, blob_name: str, destination_file_name: str) -> None:
         blob = self.get_blob(blob_name)
         blob.download_to_filename(destination_file_name)
+
+    def copy_blob_within_bucket(
+        self, source_blob_name: str, destination_blob_name: str
+    ) -> bool:
+        """Copy a blob to a new location within the same bucket."""
+        if not self.has_error:
+            try:
+                bucket = self.storage_client.bucket(self.source_bucket_name)
+                source_blob = bucket.blob(source_blob_name)
+
+                # Copy blob within same bucket
+                destination_blob = bucket.copy_blob(
+                    source_blob, bucket, destination_blob_name
+                )
+
+                # Verify copy succeeded
+                if destination_blob.exists():
+                    return True
+                else:
+                    print(
+                        f"Error: Copy verification failed for {destination_blob_name}"
+                    )
+                    return False
+
+            except Exception as e:
+                print(f"Error copying blob: {e}")
+                return False
+        return False
+
+    def list_all_blobs_with_prefix(self, prefix: str = "") -> List[str]:
+        """List all blobs in bucket with given prefix."""
+        if not self.has_error:
+            try:
+                blobs = self.storage_client.list_blobs(
+                    self.source_bucket_name, prefix=prefix
+                )
+                return [blob.name for blob in blobs]
+            except Exception as e:
+                print(f"Error listing blobs: {e}")
+                return []
+        return []

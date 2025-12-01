@@ -10,6 +10,7 @@ from datawagon.commands.compare import compare_local_files_to_bucket
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
+from datawagon.commands.migrate_to_versioned_folders import migrate_to_versioned_folders
 from datawagon.commands.upload_to_storage import upload_all_gzip_csv
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
@@ -78,6 +79,7 @@ cli.add_command(compare_local_files_to_bucket)
 cli.add_command(upload_all_gzip_csv)
 cli.add_command(file_zip_to_gzip)
 cli.add_command(files_in_storage)
+cli.add_command(migrate_to_versioned_folders)
 
 
 def start_cli() -> click.Group:
