@@ -198,8 +198,10 @@ This will:
 
 ```
 FROM: caravan/claim_raw/report_date=2025-07-31/YouTube_Brand_M_20250701_claim_raw_v1-1.csv.gz
-TO:   caravan/claim_raw_v1-1/report_date=2025-07-31/YouTube_Brand_M_20250701_claim_raw_v1-1.csv.gz
+TO:   caravan-versioned/claim_raw_v1-1/report_date=2025-07-31/YouTube_Brand_M_20250701_claim_raw_v1-1.csv.gz
 ```
+
+Note: The migration changes the root folder from `caravan` to `caravan-versioned` and adds version suffixes.
 
 **Post-migration workflow:**
 
@@ -291,10 +293,10 @@ gs://your-bucket/storage_folder_name_v1-1/report_date=YYYY-MM-DD/filename.csv.gz
 Examples:
 ```
 # Non-versioned file
-gs://my-bucket/youtube_claims/report_date=2024-01-15/YouTube_BrandName_M_20240115_claims.csv.gz
+gs://my-bucket/caravan-versioned/some_file/report_date=2024-01-15/file.csv.gz
 
 # Versioned file (version automatically extracted from filename)
-gs://my-bucket/youtube_claims_v1-1/report_date=2024-01-15/YouTube_BrandName_M_20240115_claims_v1-1.csv.gz
+gs://my-bucket/caravan-versioned/claim_raw_v1-1/report_date=2024-01-15/YouTube_BrandName_M_20240115_claim_raw_v1-1.csv.gz
 ```
 
 This ensures each file version has a stable folder path for BigQuery external table mapping.

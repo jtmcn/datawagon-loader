@@ -8,6 +8,10 @@ from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig
 
+# Constants for root folder migration
+OLD_ROOT_FOLDER = "caravan"  # Where files currently exist
+NEW_ROOT_FOLDER = "caravan-versioned"  # Where files should be migrated to
+
 
 @dataclass
 class MigrationItem:
@@ -34,12 +38,17 @@ def build_migration_plan(
         if not file_source.is_enabled:
             continue
 
+        # Config now has "caravan-versioned/claim_raw"
         storage_folder = (
             file_source.storage_folder_name or file_source.select_file_name_base
         )
 
-        # List all files in this folder
-        prefix = f"{storage_folder}/"
+        # Convert to source prefix (where files currently are)
+        # Replace "caravan-versioned" with "caravan" to find existing files
+        source_folder = storage_folder.replace(NEW_ROOT_FOLDER, OLD_ROOT_FOLDER)
+
+        # List all files from OLD location
+        prefix = f"{source_folder}/"
         blob_names = gcs_manager.list_all_blobs_with_prefix(prefix)
 
         for blob_name in blob_names:
@@ -57,21 +66,26 @@ def build_migration_plan(
                 skip_reason = "No version in filename"
             elif f"_{file_version}/" in blob_name:
                 skip_reason = "Already in versioned folder"
+            elif NEW_ROOT_FOLDER in blob_name:
+                skip_reason = "Already in new root folder (caravan-versioned)"
             else:
                 needs_migration = True
 
             # Build destination path
             if needs_migration:
-                # Parse source path to preserve partitioning
-                # Example: caravan/claim_raw/report_date=2025-07-31/file.csv.gz
-                #       -> caravan/claim_raw_v1-1/report_date=2025-07-31/file.csv.gz
+                # Replace OLD root with NEW root and add version
+                # Example: caravan/claim_raw/report_date=2025-07-31/file_v1-1.csv.gz
+                #       -> caravan-versioned/claim_raw_v1-1/report_date=2025-07-31/file_v1-1.csv.gz
 
                 path_parts = blob_name.split("/")
+
                 # Replace folder name with versioned folder name
                 if len(path_parts) >= 2:
                     # Handle multi-level storage folders like "caravan/claim_raw"
-                    if "/" in storage_folder:
-                        folder_parts = storage_folder.split("/")
+                    if "/" in source_folder:
+                        folder_parts = source_folder.split("/")
+                        # Replace first part with new root
+                        folder_parts[0] = NEW_ROOT_FOLDER
                         # Add version to last part of storage folder
                         folder_parts[-1] = f"{folder_parts[-1]}_{file_version}"
                         versioned_folder = "/".join(folder_parts)
@@ -82,7 +96,7 @@ def build_migration_plan(
                                 path_parts[i] = folder_parts[i]
                     else:
                         # Single-level folder like "test"
-                        path_parts[0] = f"{storage_folder}_{file_version}"
+                        path_parts[0] = f"{NEW_ROOT_FOLDER}_{file_version}"
 
                     destination_path = "/".join(path_parts)
                 else:
