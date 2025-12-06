@@ -12,11 +12,23 @@ from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
 from datawagon.commands.migrate_to_versioned_folders import migrate_to_versioned_folders
 from datawagon.commands.upload_to_storage import upload_all_gzip_csv
+from datawagon.logging_config import setup_logging
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
 
 
 @click.group(chain=True)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Enable verbose logging (DEBUG level)",
+)
+@click.option(
+    "--log-file",
+    type=click.Path(),
+    help="Write logs to file",
+)
 @click.option(
     "--csv-source-dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, readable=True),
@@ -44,11 +56,18 @@ from datawagon.objects.source_config import SourceConfig
 @click.pass_context
 def cli(
     ctx: click.Context,
+    verbose: bool,
+    log_file: str,
     csv_source_dir: Path,
     csv_source_config: Path,
     gcs_project_id: str,
     gcs_bucket: str,
 ) -> None:
+    # Setup logging
+    logger = setup_logging(verbose=verbose, log_file=log_file)
+    ctx.ensure_object(dict)
+    ctx.obj["logger"] = logger
+
     # Validate CLI parameters
     import os
     if not csv_source_dir or not os.path.exists(csv_source_dir):
@@ -60,7 +79,7 @@ def cli(
     if not gcs_bucket:
         raise click.UsageError("GCS_BUCKET must be set")
 
-    print(f"csv_source_config: {csv_source_config}")
+    logger.info(f"csv_source_config: {csv_source_config}")
 
     try:
         source_config_file = toml.load(csv_source_config)
