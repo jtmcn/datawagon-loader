@@ -7,11 +7,15 @@ from typing import List
 import toml
 from pydantic import BaseModel, Field, ValidationError
 
+from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import (
     ManagedFileInput,
     ManagedFileMetadata,
 )
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
+from datawagon.security import SecurityError, validate_path_traversal
+
+logger = get_logger(__name__)
 
 
 class ManagedFiles(BaseModel):
@@ -72,9 +76,14 @@ class ManagedFileScanner:
                 if fnmatch.fnmatch(filename.lower(), match_pattern):
                     if not fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern}*"):
                         if not filename.startswith(".~lock"):
-                            matches.append(
-                                os.path.abspath(os.path.join(root, filename))
-                            )
+                            file_path = os.path.abspath(os.path.join(root, filename))
+                            # Validate path is within base_path to prevent traversal
+                            try:
+                                validate_path_traversal(file_path, base_path)
+                                matches.append(file_path)
+                            except SecurityError as e:
+                                logger.error(f"Path validation failed: {e}")
+                                continue
 
         return [Path(match) for match in matches]
 

@@ -4,7 +4,11 @@ from typing import List
 import pandas as pd
 from google.cloud import storage
 
+from datawagon.logging_config import get_logger
 from datawagon.objects.source_config import SourceConfig
+from datawagon.security import SecurityError, validate_blob_name
+
+logger = get_logger(__name__)
 
 
 class GcsManager:
@@ -80,9 +84,16 @@ class GcsManager:
         return combined_df
 
     def upload_blob(self, source_file_name: str, destination_blob_name: str) -> bool:
+        # Validate blob name for security
+        try:
+            validated_destination = validate_blob_name(destination_blob_name)
+        except SecurityError as e:
+            logger.error(f"Invalid blob name: {e}")
+            raise ValueError(f"Invalid destination blob name: {e}")
+
         try:
             bucket = self.storage_client.bucket(self.source_bucket_name)
-            blob = bucket.blob(destination_blob_name)
+            blob = bucket.blob(validated_destination)
             blob.upload_from_filename(source_file_name)
             return True
         except Exception as e:

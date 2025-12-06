@@ -5,7 +5,11 @@ import zipfile
 from pathlib import Path
 from typing import Dict, List
 
+from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
+from datawagon.security import SecurityError, check_zip_safety
+
+logger = get_logger(__name__)
 
 
 class FileUtils:
@@ -70,6 +74,13 @@ class FileUtils:
     ) -> Path:
         """Convert a ZIP file containing CSV files to a GZIP file containing GZIP compressed CSV files
         Remove any directory structure from the ZIP file"""
+        # Check zip safety before opening
+        try:
+            check_zip_safety(str(input_zip_path))
+        except SecurityError as e:
+            logger.error(f"Unsafe zip file: {e}")
+            raise
+
         current_dir = os.path.dirname(input_zip_path)
         output_gzip_path = Path()
         is_successful = False

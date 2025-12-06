@@ -7,7 +7,11 @@ from typing import Any, List, Tuple
 
 import pandas as pd
 
+from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
+from datawagon.security import SecurityError, check_zip_safety
+
+logger = get_logger(__name__)
 
 
 class CSVLoader:
@@ -57,6 +61,13 @@ class CSVLoader:
             return data, header
 
     def _load_zipped_csv(self) -> Tuple[List[Any], List[str]]:
+        # Check zip safety before opening
+        try:
+            check_zip_safety(self.input_file.file_path)
+        except SecurityError as e:
+            logger.error(f"Unsafe zip file: {e}")
+            raise
+
         with zipfile.ZipFile(self.input_file.file_path, "r") as zipped_file:
             with zipped_file.open(zipped_file.namelist()[0], "r") as csv_file:
                 # convert bytes to strings
