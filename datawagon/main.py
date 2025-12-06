@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 import toml
 from dotenv import find_dotenv, load_dotenv
-from hologram import ValidationError
+from pydantic import ValidationError
 
 from datawagon.commands.compare import compare_local_files_to_bucket
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
@@ -49,6 +49,17 @@ def cli(
     gcs_project_id: str,
     gcs_bucket: str,
 ) -> None:
+    # Validate CLI parameters
+    import os
+    if not csv_source_dir or not os.path.exists(csv_source_dir):
+        raise click.UsageError(f"CSV source directory does not exist: {csv_source_dir}")
+    if not csv_source_config or not os.path.exists(csv_source_config):
+        raise click.UsageError(f"Source config TOML not found: {csv_source_config}")
+    if not gcs_project_id:
+        raise click.UsageError("GCS_PROJECT_ID must be set")
+    if not gcs_bucket:
+        raise click.UsageError("GCS_BUCKET must be set")
+
     print(f"csv_source_config: {csv_source_config}")
 
     try:
