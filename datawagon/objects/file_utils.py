@@ -8,7 +8,7 @@ from typing import Dict, List
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 
 
-class FileUtils(object):
+class FileUtils:
     def group_by_base_name(
         self,
         file_info_list: List[ManagedFileMetadata],

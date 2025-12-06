@@ -10,7 +10,7 @@ import pandas as pd
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 
 
-class CSVLoader(object):
+class CSVLoader:
     def __init__(self, input_file: ManagedFileMetadata) -> None:
         self.input_file = input_file
 

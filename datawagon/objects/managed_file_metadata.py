@@ -47,16 +47,6 @@ class ManagedFileMetadata(ManagedFileInput):
 
         file_name = file_path.name
 
-        # TODO: replace following with FileUtils.remove_file_extension
-        # if file_path.suffix == ".csv":
-        #     file_name_without_extension = re.sub(r"\.csv$", "", file_name)
-        # elif file_path.suffix == ".gz":
-        #     file_name_without_extension = re.sub(r"\.csv(\.gz)?$", "", file_name)
-        # elif file_path.suffix == ".zip":
-        #     file_name_without_extension = re.sub(r"\.csv(\.zip)?$", "", file_name)
-        # else:
-        #     raise ValueError(f"Invalid file name format: {file_name}")
-
         file_version = cls.get_file_version(file_name)
 
         file_attributes_dict = source_file.model_dump()

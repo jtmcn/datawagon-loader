@@ -24,7 +24,7 @@ class ManagedFilesToDatabase(ManagedFiles):
     table_append_or_replace: str
 
 
-class ManagedFileScanner(object):
+class ManagedFileScanner:
     def __init__(self, csv_source_config: Path, csv_source_dir: Path) -> None:
         self.csv_source_dir = csv_source_dir
 
