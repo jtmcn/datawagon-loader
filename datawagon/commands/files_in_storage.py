@@ -16,7 +16,10 @@ def files_in_storage(ctx: click.Context) -> List[CurrentDestinationData]:
     app_config: AppConfig = ctx.obj["CONFIG"]
     gcs_manager = GcsManager(app_config.gcs_project_id, app_config.gcs_bucket)
 
-    if not gcs_manager:
+    if gcs_manager.has_error:
+        click.secho(
+            "Unable to connect to GCS. Check credentials and try again.", fg="red"
+        )
         ctx.abort()
     else:
         ctx.obj["GCS_MANAGER"] = gcs_manager

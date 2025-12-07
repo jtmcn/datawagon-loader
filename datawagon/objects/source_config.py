@@ -1,5 +1,5 @@
 import re
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -18,7 +18,7 @@ class SourceFromLocalFS(BaseModel):
 
     @field_validator("regex_pattern", mode="before")
     @classmethod
-    def validate_regex_pattern(cls, v):
+    def validate_regex_pattern(cls, v: Any) -> Optional[re.Pattern]:
         """Validate regex pattern for security before compilation."""
         if v is None:
             return v

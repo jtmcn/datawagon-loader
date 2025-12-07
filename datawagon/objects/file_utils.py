@@ -62,7 +62,7 @@ class FileUtils:
                     shutil.copyfileobj(f_in, f_out)
                     is_successful = True
                 except Exception as e:
-                    print("Failed to gzip file: ", e)
+                    logger.error(f"Failed to gzip file: {e}")
 
         if remove_original_zip and is_successful:
             os.remove(input_csv_file)

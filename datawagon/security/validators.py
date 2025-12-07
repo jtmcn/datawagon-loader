@@ -3,7 +3,7 @@ import os
 import re
 import zipfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import logging
 
@@ -16,7 +16,7 @@ class SecurityError(Exception):
     pass
 
 
-def validate_path_traversal(file_path: str, base_dir: str) -> Path:
+def validate_path_traversal(file_path: Union[str, Path], base_dir: Union[str, Path]) -> Path:
     """Validate that file_path is within base_dir (prevents path traversal).
 
     Args:
@@ -112,7 +112,9 @@ def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
 MAX_DECOMPRESSED_SIZE = 1024 * 1024 * 1024  # 1GB
 
 
-def check_zip_safety(file_path: str, max_size: int = MAX_DECOMPRESSED_SIZE) -> None:
+def check_zip_safety(
+    file_path: Union[str, Path], max_size: int = MAX_DECOMPRESSED_SIZE
+) -> None:
     """Check if a zip file is safe to extract (prevents zip bombs).
 
     Args:

@@ -2,13 +2,23 @@ import os
 from typing import List
 
 import pandas as pd
+from google.api_core import exceptions as google_api_exceptions
 from google.cloud import storage
 
+from datawagon.bucket.retry_utils import retry_with_backoff
 from datawagon.logging_config import get_logger
 from datawagon.objects.source_config import SourceConfig
 from datawagon.security import SecurityError, validate_blob_name
 
 logger = get_logger(__name__)
+
+# GCS transient failures that should be retried
+TRANSIENT_EXCEPTIONS = (
+    google_api_exceptions.ServiceUnavailable,  # 503
+    google_api_exceptions.DeadlineExceeded,  # 504
+    google_api_exceptions.InternalServerError,  # 500
+    google_api_exceptions.TooManyRequests,  # 429 rate limiting
+)
 
 
 class GcsManager:
@@ -18,17 +28,26 @@ class GcsManager:
         try:
             existing_buckets = self.storage_client.list_buckets()
             for bucket in existing_buckets:
-                print(f"existing_bucket: {bucket.name}")
+                logger.info(f"Found GCS bucket: {bucket.name}")
             self.has_error = False
+        except google_api_exceptions.Unauthenticated as e:
+            logger.error(f"GCS authentication failed: {e}")
+            logger.error(
+                "Authentication required. Run: gcloud auth application-default login"
+            )
+            self.has_error = True
+        except google_api_exceptions.PermissionDenied as e:
+            logger.error(f"GCS permission denied: {e}")
+            self.has_error = True
         except Exception as e:
-            print(f"Error connecting to GCS: {e}")
-            print("Make sure you're logged-in: gcloud auth application-default login")
+            logger.error(f"Error connecting to GCS: {e}", exc_info=True)
             self.has_error = True
         
     def list_buckets(self) -> List[str]:
         buckets = self.storage_client.list_buckets()
         return [bucket.name for bucket in buckets]
 
+    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_blobs(
         self, storage_folder_name: str, file_name_base: str, file_extension: str
     ) -> List[str]:
@@ -53,8 +72,12 @@ class GcsManager:
                     match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
                 )
                 return [blob.name for blob in blobs]
+            except google_api_exceptions.NotFound as e:
+                logger.error(f"Bucket not found: {e}")
+            except google_api_exceptions.PermissionDenied as e:
+                logger.error(f"Permission denied listing blobs: {e}")
             except Exception as e:
-                print("Error: unable to list files in bucket", e)
+                logger.error(f"Unable to list files in bucket: {e}", exc_info=True)
         return []
 
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
@@ -83,6 +106,7 @@ class GcsManager:
 
         return combined_df
 
+    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def upload_blob(self, source_file_name: str, destination_blob_name: str) -> bool:
         # Validate blob name for security
         try:
@@ -96,8 +120,14 @@ class GcsManager:
             blob = bucket.blob(validated_destination)
             blob.upload_from_filename(source_file_name)
             return True
+        except google_api_exceptions.PermissionDenied as e:
+            logger.error(f"Permission denied uploading to bucket: {e}")
+            return False
+        except google_api_exceptions.NotFound as e:
+            logger.error(f"Bucket not found: {e}")
+            return False
         except Exception as e:
-            print("Error: unable to upload file to bucket", e)
+            logger.error(f"Unable to upload file to bucket: {e}", exc_info=True)
             return False
 
     # 10/2/23 - all four of these functions are currently unused
@@ -119,6 +149,7 @@ class GcsManager:
         blob = self.get_blob(blob_name)
         blob.download_to_filename(destination_file_name)
 
+    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def copy_blob_within_bucket(
         self, source_blob_name: str, destination_blob_name: str
     ) -> bool:
@@ -137,16 +168,23 @@ class GcsManager:
                 if destination_blob.exists():
                     return True
                 else:
-                    print(
-                        f"Error: Copy verification failed for {destination_blob_name}"
+                    logger.error(
+                        f"Copy verification failed for {destination_blob_name}"
                     )
                     return False
 
+            except google_api_exceptions.NotFound as e:
+                logger.error(f"Source blob not found: {e}")
+                return False
+            except google_api_exceptions.PermissionDenied as e:
+                logger.error(f"Permission denied copying blob: {e}")
+                return False
             except Exception as e:
-                print(f"Error copying blob: {e}")
+                logger.error(f"Error copying blob: {e}", exc_info=True)
                 return False
         return False
 
+    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_all_blobs_with_prefix(self, prefix: str = "") -> List[str]:
         """List all blobs in bucket with given prefix."""
         if not self.has_error:
@@ -155,7 +193,13 @@ class GcsManager:
                     self.source_bucket_name, prefix=prefix
                 )
                 return [blob.name for blob in blobs]
+            except google_api_exceptions.NotFound as e:
+                logger.error(f"Bucket not found: {e}")
+                return []
+            except google_api_exceptions.PermissionDenied as e:
+                logger.error(f"Permission denied listing blobs: {e}")
+                return []
             except Exception as e:
-                print(f"Error listing blobs: {e}")
+                logger.error(f"Error listing blobs: {e}", exc_info=True)
                 return []
         return []

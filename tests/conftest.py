@@ -32,6 +32,7 @@ def mock_source_config() -> SourceConfig:
     return SourceConfig(
         file={
             "youtube_data": SourceFromLocalFS(
+                is_enabled=True,
                 select_file_name_base="YouTube_*_M_*",
                 exclude_file_name_base=".~lock*",
                 regex_pattern=r"YouTube_(.+)_M_(\d{8}|\d{6})",
@@ -45,7 +46,7 @@ def mock_source_config() -> SourceConfig:
 
 
 @pytest.fixture
-def mock_env_vars(temp_dir: Path, monkeypatch) -> None:
+def mock_env_vars(temp_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Set up mock environment variables."""
     monkeypatch.setenv("DW_CSV_SOURCE_DIR", str(temp_dir))
     monkeypatch.setenv("DW_GCS_PROJECT_ID", "test-project")
