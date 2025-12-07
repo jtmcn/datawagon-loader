@@ -1,3 +1,9 @@
+"""File scanner for discovering and processing CSV files.
+
+This module provides the ManagedFileScanner class for scanning directories,
+matching files against patterns, extracting metadata, and organizing files
+for upload to GCS with version-based folder naming.
+"""
 import fnmatch
 import os
 import re
@@ -19,17 +25,53 @@ logger = get_logger(__name__)
 
 
 class ManagedFiles(BaseModel):
+    """Container for grouped CSV files with selector metadata.
+
+    Groups files matched by a common pattern/selector, used as a base
+    for organizing files by destination.
+
+    Attributes:
+        files: List of file metadata for matched files
+        file_selector_base_name: Pattern used to select these files
+    """
     files: List[ManagedFileMetadata] = Field(default_factory=list)
     file_selector_base_name: str
 
 
 class ManagedFilesToDatabase(ManagedFiles):
+    """Container for files grouped by destination table.
+
+    Extends ManagedFiles with destination table information and upload strategy.
+
+    Attributes:
+        table_name: Destination table name
+        table_append_or_replace: Upload strategy ("append" or "replace")
+    """
     table_name: str
     table_append_or_replace: str
 
 
 class ManagedFileScanner:
+    """Scanner for discovering and processing CSV files based on configuration.
+
+    Scans local filesystem for CSV files matching patterns defined in source_config.toml,
+    extracts metadata using regex patterns, applies security validation, and organizes
+    files for GCS upload with version-based folder naming.
+
+    Attributes:
+        csv_source_dir: Directory to scan for CSV files
+        valid_config: Validated source configuration from TOML file
+    """
     def __init__(self, csv_source_config: Path, csv_source_dir: Path) -> None:
+        """Initialize scanner with configuration and source directory.
+
+        Args:
+            csv_source_config: Path to source_config.toml configuration file
+            csv_source_dir: Directory containing CSV files to scan
+
+        Raises:
+            ValueError: If source_config.toml fails Pydantic validation
+        """
         self.csv_source_dir = csv_source_dir
 
         try:
@@ -46,6 +88,20 @@ class ManagedFileScanner:
         exclude_pattern: str | None,
         file_extension: str | None = None,
     ) -> List[Path]:
+        """Scan directory for CSV files matching pattern.
+
+        Wrapper around find_files() that returns a list of Path objects
+        for matched files.
+
+        Args:
+            source_path: Directory to search
+            glob_pat: Pattern to match filenames
+            exclude_pattern: Pattern to exclude files (optional)
+            file_extension: Specific file extension to filter (optional)
+
+        Returns:
+            List of Path objects for matched files
+        """
         all_csv_files = self.find_files(
             source_path, glob_pat, exclude_pattern, file_extension
         )
@@ -61,6 +117,25 @@ class ManagedFileScanner:
         exclude_pattern: str | None,
         file_extension: str | None = None,
     ) -> List[Path]:
+        """Find files matching pattern with security validation.
+
+        Recursively searches directory tree for files matching the pattern,
+        excluding files matching exclude_pattern or starting with .~lock.
+        Validates all paths to prevent directory traversal attacks.
+
+        Args:
+            base_path: Root directory to search
+            match_pattern: Glob pattern to match filenames
+            exclude_pattern: Glob pattern to exclude files (optional)
+            file_extension: Specific file extension to filter (optional)
+
+        Returns:
+            List of Path objects for matched files
+
+        Example:
+            >>> scanner.find_files(Path("/data"), "YouTube_*", ".~lock*")
+            [Path('/data/YouTube_Brand_M_20230601.csv')]
+        """
         matches = []
 
         if file_extension is not None:
@@ -121,6 +196,29 @@ class ManagedFileScanner:
         file_source: SourceFromLocalFS,
         is_replace_override: bool = False,
     ) -> ManagedFileInput:
+        """Extract file attributes using regex pattern matching.
+
+        Applies regex pattern from configuration to extract metadata fields
+        from filename (e.g., content_owner, file_date_key). Creates ManagedFileInput
+        with extracted attributes.
+
+        Args:
+            file_path: Path to file to process
+            file_source: Source configuration with regex pattern and group names
+            is_replace_override: Override table_append_or_replace to "replace"
+
+        Returns:
+            ManagedFileInput with extracted attributes
+
+        Raises:
+            ValueError: If filename doesn't match regex pattern or group count mismatch
+
+        Example:
+            >>> source = SourceFromLocalFS(regex_pattern=r"YouTube_(.+)_M_(\\d{8})", ...)
+            >>> attrs = scanner.source_file_attrs(Path("YouTube_Brand_M_20230601.csv"), source)
+            >>> attrs.content_owner
+            'Brand'
+        """
         table_append_or_replace = (
             "replace" if is_replace_override else file_source.table_append_or_replace
         )
@@ -158,6 +256,26 @@ class ManagedFileScanner:
     def matched_files(
         self, file_extension: str | None = None
     ) -> List[ManagedFilesToDatabase]:
+        """Scan for all files matching enabled configurations.
+
+        Processes all enabled file sources in configuration, scans for matching
+        files, extracts metadata, and groups by destination table. Applies
+        version-based folder naming for versioned files.
+
+        Args:
+            file_extension: Optional file extension filter (e.g., ".csv.gz")
+
+        Returns:
+            List of ManagedFilesToDatabase objects grouped by destination
+
+        Example:
+            >>> scanner = ManagedFileScanner(config_path, source_dir)
+            >>> matched = scanner.matched_files(file_extension=".csv.gz")
+            >>> matched[0].table_name
+            'youtube_raw'
+            >>> len(matched[0].files)
+            5
+        """
         all_available_files: List[ManagedFilesToDatabase] = []
 
         valid_config = self.valid_config
@@ -197,6 +315,28 @@ class ManagedFileScanner:
         input_file_base_name: str,
         is_replace_override: bool,
     ) -> ManagedFilesToDatabase | None:
+        """Process a single file matching a specific configuration.
+
+        Finds configuration matching the base name, extracts metadata from the
+        file, and creates a ManagedFilesToDatabase object for upload.
+
+        Args:
+            source_file_path: Path to file to process
+            input_file_base_name: Base name pattern to match in configuration
+            is_replace_override: Override table_append_or_replace to "replace"
+
+        Returns:
+            ManagedFilesToDatabase with file metadata, or None if no config matches
+
+        Example:
+            >>> result = scanner.matched_file(
+            ...     Path("YouTube_Brand_M_20230601.csv"),
+            ...     "YouTube_*_M_*",
+            ...     is_replace_override=False
+            ... )
+            >>> result.table_name
+            'youtube_raw'
+        """
         valid_config = self.valid_config
 
         for file_id in valid_config.file:

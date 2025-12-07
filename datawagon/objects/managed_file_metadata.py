@@ -1,3 +1,9 @@
+"""File metadata models for tracking CSV file properties.
+
+This module defines Pydantic models for managing file metadata throughout the
+processing pipeline. Includes utilities for file version extraction, date conversion,
+and human-readable file size formatting.
+"""
 import calendar
 import re
 from datetime import date
@@ -8,6 +14,33 @@ from pydantic import BaseModel
 
 
 class ManagedFileInput(BaseModel):
+    """Input model for CSV file before metadata enrichment.
+
+    Represents basic file attributes extracted from filesystem and configuration,
+    before additional metadata (version, dates, sizes) is computed.
+
+    Attributes:
+        file_name: Name of the file with extension
+        file_path: Full path to the file
+        base_name: Base pattern matched (e.g., "YouTube_Brand_M")
+        table_name: Destination table name
+        table_append_or_replace: Upload strategy ("append" or "replace")
+        storage_folder_name: GCS folder name for upload
+
+    Note:
+        Allows additional fields defined at runtime via regex_group_names
+        (e.g., content_owner, file_date_key).
+
+    Example:
+        >>> file_input = ManagedFileInput(
+        ...     file_name="YouTube_Brand_M_20230601.csv",
+        ...     file_path=Path("/data/file.csv"),
+        ...     base_name="YouTube_Brand_M",
+        ...     table_name="youtube_raw",
+        ...     table_append_or_replace="append",
+        ...     storage_folder_name="youtube_analytics"
+        ... )
+    """
     # TODO: merge with SourceFileMetadata
     file_name: str
     file_path: Path
@@ -22,8 +55,24 @@ class ManagedFileInput(BaseModel):
 
 
 class ManagedFileMetadata(ManagedFileInput):
-    """Class for properties used to upload .csv files into database"""
+    """Enriched metadata for CSV file ready for GCS upload.
 
+    Extends ManagedFileInput with computed metadata including file version,
+    file size, report dates, and content owner. This model represents the
+    complete file context needed for partitioned GCS uploads.
+
+    Attributes:
+        file_dir: Directory path containing the file
+        content_owner: Content owner extracted from filename (optional)
+        report_date_key: Report date in YYYYMMDD format as integer (optional)
+        report_date_str: Report date in YYYY-MM-DD format for partitioning (optional)
+        file_version: Extracted version string (e.g., "v1-1") or empty string
+        file_size_in_bytes: File size in bytes
+        file_size: Human-readable file size (e.g., "2.50 MB")
+
+    Note:
+        Allows additional fields from regex extraction via Config.extra = "allow".
+    """
     file_dir: str
     # file_name_without_extension: str
     content_owner: Optional[str]
@@ -38,6 +87,24 @@ class ManagedFileMetadata(ManagedFileInput):
 
     @classmethod
     def build_data_item(cls, source_file: ManagedFileInput) -> "ManagedFileMetadata":
+        """Build enriched file metadata from basic file input.
+
+        Computes file version, file size, report dates, and content owner from
+        the source file input. Converts file_date_key (YYYYMMDD or YYYYMM) to
+        month-end date for partitioning.
+
+        Args:
+            source_file: Basic file input with path and configuration
+
+        Returns:
+            Enriched ManagedFileMetadata with computed fields
+
+        Example:
+            >>> input_file = ManagedFileInput(...)
+            >>> metadata = ManagedFileMetadata.build_data_item(input_file)
+            >>> metadata.report_date_str
+            '2023-06-30'
+        """
         file_path = source_file.file_path
 
         file_size_in_bytes = file_path.stat().st_size
@@ -94,6 +161,23 @@ class ManagedFileMetadata(ManagedFileInput):
 
     @staticmethod
     def get_file_version(file_name: str) -> str:
+        """Extract version string from filename.
+
+        Searches for version pattern "_v{digits}" or "_v{digits}-{digits}"
+        in filename and returns the version without leading underscore.
+
+        Args:
+            file_name: Filename to extract version from
+
+        Returns:
+            Version string (e.g., "v1", "v1-1") or empty string if no version found
+
+        Example:
+            >>> ManagedFileMetadata.get_file_version("data_v1-1.csv")
+            'v1-1'
+            >>> ManagedFileMetadata.get_file_version("data.csv")
+            ''
+        """
         file_version_pattern = r"_v\d+(-\d+)?"
         match = re.search(file_version_pattern, file_name)
         if match:
@@ -103,6 +187,24 @@ class ManagedFileMetadata(ManagedFileInput):
 
     @staticmethod
     def date_key_to_date(date_key: int) -> date:
+        """Convert integer date key to date object.
+
+        Supports two formats:
+        - YYYYMMDD (8 digits): Full date
+        - YYYYMM (6 digits): Month (day defaults to 1)
+
+        Args:
+            date_key: Date in YYYYMMDD or YYYYMM format
+
+        Returns:
+            date object representing the date
+
+        Example:
+            >>> ManagedFileMetadata.date_key_to_date(20230615)
+            date(2023, 6, 15)
+            >>> ManagedFileMetadata.date_key_to_date(202306)
+            date(2023, 6, 1)
+        """
         date_string = str(date_key)
 
         year = int(date_string[:4])
@@ -113,6 +215,23 @@ class ManagedFileMetadata(ManagedFileInput):
 
     @staticmethod
     def human_readable_size(size: int) -> str:
+        """Convert file size in bytes to human-readable format.
+
+        Converts byte size to appropriate unit (B, KB, MB, GB, TB, PB) with
+        two decimal places.
+
+        Args:
+            size: File size in bytes
+
+        Returns:
+            Formatted size string with unit (e.g., "2.50 MB")
+
+        Example:
+            >>> ManagedFileMetadata.human_readable_size(2048)
+            '2.00 KB'
+            >>> ManagedFileMetadata.human_readable_size(5242880)
+            '5.00 MB'
+        """
         unit_list = ["B", "KB", "MB", "GB", "TB", "PB"]
         index = 0
 

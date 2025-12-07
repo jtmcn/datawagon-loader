@@ -115,6 +115,18 @@ def _net_new_files(
     all_source_files_by_table: List[ManagedFilesToDatabase],
     current_database_files: List[CurrentDestinationData],
 ) -> List[ManagedFilesToDatabase]:
+    """Filter source files to only those not yet in destination.
+
+    Compares local source files against files already in the destination bucket
+    and returns only the new files that haven't been uploaded yet.
+
+    Args:
+        all_source_files_by_table: All local source files grouped by table
+        current_database_files: Files currently in destination bucket
+
+    Returns:
+        List of file groups containing only net new files
+    """
     existing_files: set[str] = set(
         [
             source_file

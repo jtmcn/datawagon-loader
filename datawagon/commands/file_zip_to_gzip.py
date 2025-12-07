@@ -11,6 +11,14 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 @click.command()
 @click.pass_context
 def file_zip_to_gzip(ctx: click.Context) -> None:
+    """Convert ZIP files to GZIP format.
+
+    Scans for .zip files in the source directory, prompts user for confirmation,
+    then converts each ZIP file to .csv.gz format and removes the original ZIP.
+
+    Args:
+        ctx: Click context with application configuration
+    """
     # get list of all zip files
     all_matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
         files_in_local_fs, file_extension="zip"

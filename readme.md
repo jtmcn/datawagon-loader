@@ -1,5 +1,11 @@
 # DataWagon
 
+[![Build Status](https://github.com/joeltkeller/datawagon/workflows/Build/badge.svg)](https://github.com/joeltkeller/datawagon/actions/workflows/build.yml)
+[![Release](https://github.com/joeltkeller/datawagon/workflows/Release/badge.svg)](https://github.com/joeltkeller/datawagon/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/joeltkeller/datawagon/branch/main/graph/badge.svg)](https://codecov.io/gh/joeltkeller/datawagon)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Automated loading of YouTube Analytics CSV files into Google Cloud Storage buckets.
 
 ## Overview
@@ -479,6 +485,12 @@ poetry install
 4. Run `make pre-commit` to verify quality
 5. Commit changes
 6. Push and create pull request
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes and version releases.
 
 ---
 

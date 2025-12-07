@@ -1,3 +1,9 @@
+"""File utility functions for CSV file processing.
+
+This module provides utilities for grouping files, detecting duplicates,
+checking file versions, and converting between compression formats (ZIP to GZIP).
+Includes security validation for zip bombs.
+"""
 import gzip
 import os
 import shutil
@@ -13,10 +19,30 @@ logger = get_logger(__name__)
 
 
 class FileUtils:
+    """Utility class for file operations and validation.
+
+    Provides methods for grouping files, detecting duplicates, checking versions,
+    and converting between compression formats.
+    """
     def group_by_base_name(
         self,
         file_info_list: List[ManagedFileMetadata],
     ) -> Dict[str, List[ManagedFileMetadata]]:
+        """Group files by their base_name.
+
+        Args:
+            file_info_list: List of file metadata objects
+
+        Returns:
+            Dictionary mapping base_name to list of files with that base_name
+
+        Example:
+            >>> utils = FileUtils()
+            >>> files = [file1, file2]  # Same base_name
+            >>> grouped = utils.group_by_base_name(files)
+            >>> grouped["YouTube_Brand_M"]
+            [file1, file2]
+        """
         grouped_files = {}
         for file_info in file_info_list:
             if file_info.base_name not in grouped_files:
@@ -28,6 +54,20 @@ class FileUtils:
     def check_for_duplicate_files(
         self, file_info_list: List[ManagedFileMetadata]
     ) -> List[ManagedFileMetadata]:
+        """Find duplicate files based on file_name.
+
+        Args:
+            file_info_list: List of file metadata objects
+
+        Returns:
+            List of file metadata objects with duplicate file_name
+
+        Example:
+            >>> utils = FileUtils()
+            >>> dupes = utils.check_for_duplicate_files(files)
+            >>> len(dupes)
+            2  # Two files with same name
+        """
         file_names = [file_info.file_name for file_info in file_info_list]
 
         duplicate_files = []
@@ -40,6 +80,23 @@ class FileUtils:
     def check_for_different_file_versions(
         self, file_info_list: List[ManagedFileMetadata]
     ) -> List[List[ManagedFileMetadata]]:
+        """Find groups of files with different versions.
+
+        Groups files by base_name and identifies groups where multiple
+        file_version values exist.
+
+        Args:
+            file_info_list: List of file metadata objects
+
+        Returns:
+            List of file groups with mixed versions
+
+        Example:
+            >>> utils = FileUtils()
+            >>> mixed = utils.check_for_different_file_versions(files)
+            >>> len(mixed[0])
+            2  # Group with v1-0 and v1-1 versions
+        """
         grouped_files = self.group_by_base_name(file_info_list)
         different_file_versions = []
 
@@ -53,6 +110,21 @@ class FileUtils:
     def csv_gzipped(
         self, input_csv_file: Path, remove_original_zip: bool = False
     ) -> Path:
+        """Compress CSV file to GZIP format.
+
+        Args:
+            input_csv_file: Path to CSV file to compress
+            remove_original_zip: Remove original CSV after compression
+
+        Returns:
+            Path to created .csv.gz file
+
+        Example:
+            >>> utils = FileUtils()
+            >>> output = utils.csv_gzipped(Path("data.csv"), remove_original_zip=True)
+            >>> output
+            Path('data.csv.gz')
+        """
         is_successful = False
         output_gzip_path = f"{input_csv_file}.gz"
 
@@ -72,8 +144,31 @@ class FileUtils:
     def csv_zip_to_gzip(
         self, input_zip_path: Path, remove_original_zip: bool = False
     ) -> Path:
-        """Convert a ZIP file containing CSV files to a GZIP file containing GZIP compressed CSV files
-        Remove any directory structure from the ZIP file"""
+        """Convert ZIP file containing CSV to GZIP format.
+
+        Extracts CSV files from ZIP archive and converts to GZIP format,
+        flattening any directory structure. Validates ZIP safety to prevent
+        zip bombs before processing.
+
+        Args:
+            input_zip_path: Path to ZIP file containing CSV files
+            remove_original_zip: Remove original ZIP after conversion
+
+        Returns:
+            Path to created .csv.gz file
+
+        Raises:
+            SecurityError: If ZIP file exceeds safety limits (zip bomb)
+
+        Example:
+            >>> utils = FileUtils()
+            >>> output = utils.csv_zip_to_gzip(Path("data.zip"))
+            >>> output
+            Path('data.csv.gz')
+
+        Note:
+            Excludes __MACOSX metadata files automatically.
+        """
         # Check zip safety before opening
         try:
             check_zip_safety(str(input_zip_path))

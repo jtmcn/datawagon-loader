@@ -1,3 +1,9 @@
+"""Google Cloud Storage bucket management.
+
+This module provides the GcsManager class for interacting with GCS buckets,
+including uploading files, listing blobs, copying blobs, and managing blob
+metadata. Includes retry logic for transient failures and security validation.
+"""
 import os
 from typing import List
 
@@ -22,7 +28,31 @@ TRANSIENT_EXCEPTIONS = (
 
 
 class GcsManager:
+    """Manager for Google Cloud Storage bucket operations.
+
+    Provides high-level interface for GCS operations including file uploads,
+    blob listing, and blob copying. Includes automatic retry logic for transient
+    failures and security validation for blob names.
+
+    Attributes:
+        storage_client: GCS storage client
+        source_bucket_name: Name of the GCS bucket to operate on
+        has_error: Flag indicating if initialization encountered errors
+    """
     def __init__(self, gcs_project: str, source_bucket_name: str) -> None:
+        """Initialize GCS manager and verify access.
+
+        Creates GCS client, lists available buckets to verify authentication,
+        and sets error flag if connection fails.
+
+        Args:
+            gcs_project: GCP project ID
+            source_bucket_name: Name of GCS bucket to use
+
+        Note:
+            Sets has_error=True if authentication or permissions fail.
+            Run 'gcloud auth application-default login' if authentication fails.
+        """
         self.storage_client = storage.Client(project=gcs_project)
         self.source_bucket_name = source_bucket_name
         try:
@@ -44,6 +74,11 @@ class GcsManager:
             self.has_error = True
         
     def list_buckets(self) -> List[str]:
+        """List all accessible GCS buckets in the project.
+
+        Returns:
+            List of bucket names
+        """
         buckets = self.storage_client.list_buckets()
         return [bucket.name for bucket in buckets]
 
@@ -81,6 +116,24 @@ class GcsManager:
         return []
 
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
+        """Get DataFrame of files in bucket for all enabled sources.
+
+        Lists files in bucket matching each enabled source configuration and
+        combines into a single DataFrame.
+
+        Args:
+            source_confg: Source configuration with enabled file sources
+
+        Returns:
+            DataFrame with columns: _file_name, base_name
+
+        Example:
+            >>> df = manager.files_in_blobs_df(config)
+            >>> df.head()
+               _file_name             base_name
+            0  file1.csv.gz           YouTube_*
+            1  file2.csv.gz           YouTube_*
+        """
         combined_df = pd.DataFrame(columns=["_file_name", "base_name"])
 
         for file_id in source_confg.file:
@@ -108,6 +161,25 @@ class GcsManager:
 
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def upload_blob(self, source_file_name: str, destination_blob_name: str) -> bool:
+        """Upload file to GCS bucket with retry logic.
+
+        Validates blob name for security, then uploads file to GCS with automatic
+        retry for transient failures (503, 504, 500, 429).
+
+        Args:
+            source_file_name: Local file path to upload
+            destination_blob_name: Destination path in GCS bucket
+
+        Returns:
+            True if upload succeeded, False otherwise
+
+        Raises:
+            ValueError: If destination blob name is invalid
+
+        Example:
+            >>> manager.upload_blob("/data/file.csv.gz", "youtube/report_date=2023-06-30/file.csv.gz")
+            True
+        """
         # Validate blob name for security
         try:
             validated_destination = validate_blob_name(destination_blob_name)
@@ -132,20 +204,47 @@ class GcsManager:
 
     # 10/2/23 - all four of these functions are currently unused
     def delete_blob(self, blob_name: str) -> None:
+        """Delete a blob from the bucket.
+
+        Args:
+            blob_name: Name of blob to delete
+        """
         bucket = self.storage_client.bucket(self.source_bucket_name)
         blob = bucket.blob(blob_name)
         blob.delete()
 
     def get_blob_metadata(self, blob_name: str) -> dict | None:
+        """Get metadata for a specific blob.
+
+        Args:
+            blob_name: Name of blob to get metadata for
+
+        Returns:
+            Dictionary of blob metadata, or None if blob doesn't exist
+        """
         blob = self.get_blob(blob_name)
         return blob.metadata
 
     def get_blob(self, blob_name: str) -> storage.Blob:
+        """Get blob object by name.
+
+        Args:
+            blob_name: Name of blob to retrieve
+
+        Returns:
+            storage.Blob object
+        """
         bucket = self.storage_client.bucket(self.source_bucket_name)
         blob = bucket.blob(blob_name)
         return blob
 
     def download_blob(self, blob_name: str, destination_file_name: str) -> None:
+        """Download blob to local file.
+
+        Args:
+            blob_name: Name of blob to download
+            destination_file_name: Local path to save downloaded file
+        """
         blob = self.get_blob(blob_name)
         blob.download_to_filename(destination_file_name)
 

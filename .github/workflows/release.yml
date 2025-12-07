@@ -6,31 +6,11 @@ on:
         - "v*.*.*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-
-  createrelease:
-    name: Create Release  
-    runs-on: 'ubuntu-latest'
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref }}
-        name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: Output Release URL File
-      run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-    - name: Save Release URL File for publish
-      uses: actions/upload-artifact@v1
-      with:
-        name: release_url
-        path: release_url.txt
-
   build:
     name: Build packages
-    needs: createrelease
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -39,15 +19,15 @@ jobs:
             CMD_BUILD: >
                 poetry run pyinstaller --onefile datawagon/main.py --name datawagon &&
                 cd dist/ &&
-                zip -r9 datawagon.zip datawagon             
+                zip -r9 datawagon.zip datawagon
             OUT_FILE_NAME: datawagon.zip
             ASSET_MIME: application/zip
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install poetry
-      run: pipx install poetry    
+      run: pipx install poetry
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'poetry'
@@ -58,30 +38,23 @@ jobs:
     - name: Install deps
       run: |
         poetry config virtualenvs.in-project true
-        poetry install --no-interaction  
+        poetry install --no-interaction
     - name: Run tests
       run: poetry run pytest -v
     - name: Build artifacts
-      run: poetry build -v        
+      run: poetry build -v
     - name: Build with pyinstaller for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
-    - name: Load Release URL File from release job
-      uses: actions/download-artifact@v1
+    - name: Create Release and Upload Assets
+      uses: softprops/action-gh-release@v2
       with:
-        name: release_url
-    - name: Get Release File Name & Upload URL
-      id: get_release_info
-      shell: bash
-      run: |
-        value=`cat release_url/release_url.txt`
-        echo ::set-output name=upload_url::$value        
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
+        tag_name: ${{ github.ref }}
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        files: |
+          ./dist/${{ matrix.OUT_FILE_NAME }}
+          ./dist/*.whl
+          ./dist/*.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ./dist/${{ matrix.OUT_FILE_NAME}}
-        asset_name: ${{ matrix.OUT_FILE_NAME}}
-        asset_content_type: ${{ matrix.ASSET_MIME}}

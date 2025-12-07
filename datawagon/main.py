@@ -1,3 +1,12 @@
+"""DataWagon CLI application entry point.
+
+This module provides the main Click CLI interface for DataWagon, which automates
+loading CSV files from local filesystem to Google Cloud Storage buckets. It handles
+configuration loading, validation, logging setup, and command orchestration.
+
+The CLI supports command chaining, allowing multiple operations to be executed in
+sequence (e.g., `datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs`).
+"""
 import importlib.metadata
 from pathlib import Path
 
@@ -63,6 +72,28 @@ def cli(
     gcs_project_id: str,
     gcs_bucket: str,
 ) -> None:
+    """DataWagon CLI group for processing CSV files to Google Cloud Storage.
+
+    This is the main CLI entry point that handles configuration loading, validation,
+    and context setup for all commands. Supports command chaining for sequential
+    operations.
+
+    Args:
+        ctx: Click context object for passing data between commands
+        verbose: Enable DEBUG level logging if True
+        log_file: Optional path to write log output
+        csv_source_dir: Directory containing CSV files to process
+        csv_source_config: Path to source_config.toml configuration file
+        gcs_project_id: Google Cloud Platform project ID
+        gcs_bucket: GCS bucket name for uploads
+
+    Raises:
+        click.UsageError: If required parameters are missing or invalid
+        ValueError: If source_config.toml fails Pydantic validation
+
+    Example:
+        >>> datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
+    """
     # Setup logging
     logger = setup_logging(verbose=verbose, log_file=log_file)
     ctx.ensure_object(dict)
@@ -113,7 +144,23 @@ cli.add_command(migrate_to_versioned_folders)
 
 
 def start_cli() -> click.Group:
-    
+    """Initialize and start the DataWagon CLI application.
+
+    Loads environment variables from .env file, displays application banner with
+    version information, and initializes the Click CLI group.
+
+    Returns:
+        The initialized Click CLI group object
+
+    Raises:
+        FileNotFoundError: If .env file is not found in current or parent directories
+
+    Example:
+        >>> start_cli()
+        DataWagon
+        Version: 1.0.0
+        Configuration loaded from: /path/to/.env
+    """
     env_file = find_dotenv(usecwd=True, raise_error_if_not_found=True)
 
     load_dotenv(env_file, verbose=True)

@@ -29,7 +29,19 @@ class MigrationItem:
 def build_migration_plan(
     gcs_manager: GcsManager, source_config: SourceConfig
 ) -> List[MigrationItem]:
-    """Build migration plan by scanning GCS bucket."""
+    """Build migration plan by scanning GCS bucket for files needing reorganization.
+
+    Scans all files in the GCS bucket and identifies which files need to be
+    migrated to version-based folder structure. Skips files already in correct
+    location or without version information.
+
+    Args:
+        gcs_manager: GCS manager for bucket operations
+        source_config: Source configuration with file patterns
+
+    Returns:
+        List of MigrationItem objects with migration plan
+    """
 
     migration_items: List[MigrationItem] = []
 
@@ -124,7 +136,15 @@ def build_migration_plan(
 
 
 def display_migration_plan(migration_items: List[MigrationItem]):
-    """Display migration plan in a readable format."""
+    """Display migration plan in a readable format with counts and examples.
+
+    Presents migration plan to user showing files to be migrated,
+    files to be skipped, and reasons for skipping. Displays source and
+    destination paths for clarity.
+
+    Args:
+        migration_items: List of migration items from build_migration_plan()
+    """
 
     needs_migration = [item for item in migration_items if item.needs_migration]
     skipped = [item for item in migration_items if not item.needs_migration]
@@ -182,7 +202,16 @@ def display_migration_plan(migration_items: List[MigrationItem]):
 def execute_migration(
     gcs_manager: GcsManager, migration_items: List[MigrationItem], batch_size: int
 ):
-    """Execute the migration plan."""
+    """Execute the migration plan by copying files to version-based folders.
+
+    Copies files from old location to new version-based folder structure in
+    batches. Shows progress with status updates for each batch.
+
+    Args:
+        gcs_manager: GCS manager for bucket operations
+        migration_items: List of migration items to execute
+        batch_size: Number of files to process per batch
+    """
 
     to_migrate = [item for item in migration_items if item.needs_migration]
 
