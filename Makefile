@@ -88,6 +88,10 @@ lint: ## Lint code
 	@echo "Linting code with flake8..."
 	$(CMD) flake8 $(PYMODULE) $(TESTS)
 
+vulture: ## Detect dead code
+	@echo "Detecting dead code with vulture..."
+	$(CMD) vulture $(PYMODULE) --min-confidence 70
+
 test: ## Run tests
 	@echo "Running tests with pytest..."
 	$(CMD) pytest $(TESTS) --quiet

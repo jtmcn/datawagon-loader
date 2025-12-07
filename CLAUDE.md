@@ -33,6 +33,7 @@ make type                # Type check with mypy
 make isort               # Sort imports
 make format              # Format code with black
 make lint                # Lint with flake8
+make vulture             # Detect dead code (optional)
 make test                # Run tests with pytest
 make requirements-check  # Verify requirements.txt is in sync with poetry.lock
 ```
@@ -160,3 +161,38 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - Import sorting with isort
 - Code formatting with black
 - Linting with flake8 (config in `.flake8`)
+
+## Dead Code Detection
+
+DataWagon uses vulture to detect unused code. This is an optional check that helps identify:
+- Unused functions, classes, and variables
+- Unreachable code
+- Redundant imports
+
+### Running Vulture
+
+```bash
+make vulture  # Scan datawagon/ directory for dead code
+```
+
+### Configuration
+
+- **Confidence threshold:** 70 (medium)
+- **Scanned paths:** `datawagon/` only (tests excluded)
+- **CI/CD mode:** Advisory (warnings only, doesn't fail builds)
+
+### Interpreting Results
+
+Vulture reports findings with confidence levels (0-100%):
+- **80-100%:** Likely dead code - investigate for removal
+- **60-79%:** Possibly dead code - review usage patterns
+- **Below 60%:** Often false positives from framework code
+
+### Common False Positives
+
+- Click command functions (called dynamically by CLI)
+- Pydantic validators (invoked by model validation)
+- Entry point functions in `__main__.py`
+- Functions exported via `__all__`
+
+If you encounter frequent false positives for specific patterns, create a `vulture_whitelist.py` file to suppress them.

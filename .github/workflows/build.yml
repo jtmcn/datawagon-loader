@@ -71,10 +71,27 @@ jobs:
           poetry run pip install pip-audit
           poetry run pip-audit --disable-pip
 
+  vulture-dead-code-check:
+    name: Dead code detection
+    runs-on: 'ubuntu-latest'
+    needs: security-scan
+    continue-on-error: true  # Advisory mode - don't fail builds
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+      - name: Install dependencies
+        run: poetry install --with dev
+      - name: Run vulture
+        run: poetry run vulture datawagon/ --min-confidence 70
+
   flake8-linting:
     name: Linting
     runs-on: 'ubuntu-latest'
-    needs: security-scan
+    needs: vulture-dead-code-check
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
