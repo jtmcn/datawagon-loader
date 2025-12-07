@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "datawagon"
-version = "0.4.0"
+version = "1.0.0"
 description = "Automated loading of YouTube Analytics files into a PostgreSQL database"
 authors = ["JM <jtmcn.dev@gmail.com>"]
 license = "MIT"
 readme = "readme.md"
-packages = [{include = "datawagon"}]
+packages = [{ include = "datawagon" }]
 
 [tool.poetry.scripts]
 datawagon = "datawagon.__main__:__main__"
