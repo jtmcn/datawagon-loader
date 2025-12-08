@@ -3,6 +3,7 @@ from typing import List
 
 import click
 
+from datawagon.console import error, info, newline, status
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
@@ -33,18 +34,18 @@ def files_in_local_fs(
     file_utils = FileUtils()
     source_path = Path(source_dir)
 
-    click.secho(f"Scanning for .csv files in {source_path}...", fg="blue")
+    status(f"Scanning for .csv files in {source_path}...")
 
     matched_files = ManagedFileScanner(
         app_config.csv_source_config, app_config.csv_source_dir
     ).matched_files(file_extension)
 
     if len(matched_files) == 0:
-        click.secho(f"No .csv files found in source directory: {source_dir}", fg="red")
+        error(f"No .csv files found in source directory: {source_dir}")
         ctx.abort()
 
     for files_by_table in matched_files:
-        click.secho(
+        info(
             f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector_base_name}"
         )
 
@@ -55,14 +56,14 @@ def files_in_local_fs(
     duplicates = file_utils.check_for_duplicate_files(csv_file_infos)
 
     if len(duplicates) > 0:
-        click.secho("Duplicate files found:", fg="red")
+        error("Duplicate files found:")
         for duplicate in duplicates:
-            click.echo(f"  - {duplicate.file_path}")
+            info(f"  - {duplicate.file_path}")
 
-        click.secho("Please remove duplicate files and try again.", fg="red")
+        error("Please remove duplicate files and try again.")
 
         ctx.abort()
 
-    click.echo(nl=True)
+    newline()
 
     return matched_files

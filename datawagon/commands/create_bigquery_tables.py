@@ -4,11 +4,21 @@ from collections import defaultdict
 from typing import List
 
 import click
-from tabulate import tabulate
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
+from datawagon.console import (
+    confirm,
+    error,
+    info,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    success,
+    table,
+    warning,
+)
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import (
     BigQueryTableInfo,
@@ -46,9 +56,7 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
     if not gcs_manager:
         gcs_manager = GcsManager(app_config.gcs_project_id, app_config.gcs_bucket)
         if gcs_manager.has_error:
-            click.secho(
-                "Unable to connect to GCS. Check credentials and try again.", fg="red"
-            )
+            error("Unable to connect to GCS. Check credentials and try again.")
             ctx.abort()
         ctx.obj["GCS_MANAGER"] = gcs_manager
 
@@ -61,18 +69,16 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
     bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]
 
     # Scan GCS bucket for storage folders
-    click.echo(
-        f"Scanning GCS bucket for folders under '{app_config.bq_storage_prefix}/'..."
-    )
+    info(f"Scanning GCS bucket for folders under '{app_config.bq_storage_prefix}/'...")
     storage_folders = _scan_gcs_storage_folders(
         gcs_manager, app_config.gcs_bucket, storage_prefix=app_config.bq_storage_prefix
     )
 
     if not storage_folders:
-        click.secho("No storage folders found in GCS bucket.", fg="yellow")
+        warning("No storage folders found in GCS bucket.")
         return
 
-    click.secho(f"Found {len(storage_folders)} storage folders in GCS", fg="green")
+    success(f"Found {len(storage_folders)} storage folders in GCS")
 
     # Identify folders without BigQuery tables
     folders_to_create = []
@@ -81,20 +87,14 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
             folders_to_create.append(folder)
 
     if not folders_to_create:
-        click.echo(nl=True)
-        click.secho(
-            "All storage folders already have corresponding BigQuery tables.",
-            fg="green",
-        )
+        newline()
+        success("All storage folders already have corresponding BigQuery tables.")
         return
 
     # Display folders that need tables
-    click.echo(nl=True)
-    click.secho(
-        f"Found {len(folders_to_create)} storage folders without BigQuery tables:",
-        fg="yellow",
-    )
-    click.echo(nl=True)
+    newline()
+    warning(f"Found {len(folders_to_create)} storage folders without BigQuery tables:")
+    newline()
 
     table_data = []
     for folder in folders_to_create:
@@ -108,65 +108,49 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
             ]
         )
 
-    click.echo(
-        tabulate(
-            table_data,
-            headers=["Table to Create", "GCS Folder", "File Count", "Partitioned"],
-            tablefmt="simple",
-            showindex=False,
-            numalign="right",
-            intfmt=",",
-        )
+    table(
+        data=table_data,
+        headers=["Table to Create", "GCS Folder", "File Count", "Partitioned"],
+        title="Tables to Create",
     )
-    click.echo(nl=True)
+    newline()
 
     # Prompt for confirmation
-    click.confirm(
+    confirm(
         f"Create {len(folders_to_create)} BigQuery external tables?",
         default=False,
         abort=True,
     )
 
-    click.echo(nl=True)
+    newline()
 
     # Create tables
     success_count = 0
     error_count = 0
 
     for folder in folders_to_create:
-        click.echo(
-            f"Creating table {folder.proposed_bq_table_name}... ",
-            nl=False,
-        )
+        inline_status_start(f"Creating table {folder.proposed_bq_table_name}...")
 
-        success = bq_manager.create_external_table(
+        success_result = bq_manager.create_external_table(
             table_name=folder.proposed_bq_table_name,
             storage_folder_name=folder.storage_folder_name,
             use_hive_partitioning=folder.has_partitioning,
             partition_column="report_date",
         )
 
-        if success:
+        inline_status_end(success_result)
+
+        if success_result:
             success_count += 1
-            click.secho("Success", fg="green")
         else:
             error_count += 1
-            click.secho("Failed", fg="red")
 
     # Summary
-    click.echo(nl=True)
+    newline()
     if error_count > 0:
-        click.secho(
-            f"Created {success_count} tables, {error_count} errors. Check logs.",
-            fg="yellow",
-            bold=True,
-        )
+        warning(f"Created {success_count} tables, {error_count} errors. Check logs.")
     else:
-        click.secho(
-            f"Successfully created {success_count} external tables!",
-            fg="green",
-            bold=True,
-        )
+        success(f"Successfully created {success_count} external tables!")
 
 
 def _scan_gcs_storage_folders(

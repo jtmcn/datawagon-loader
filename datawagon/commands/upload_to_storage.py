@@ -5,6 +5,14 @@ import click
 
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.compare import compare_local_files_to_bucket
+from datawagon.console import (
+    confirm,
+    error,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    success,
+)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
@@ -24,20 +32,17 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
     ]
 
     if len(csv_file_infos) != 0:
-        click.echo(nl=True)
-        click.echo(nl=True)
+        newline()
+        newline()
 
-        click.confirm(
-            f"Upload {len(csv_file_infos)} new files?", default=False, abort=True
-        )
+        confirm(f"Upload {len(csv_file_infos)} new files?", default=False, abort=True)
 
-        click.echo(nl=True)
+        newline()
 
         has_errors = False
         for csv_info in csv_file_infos:
-            click.echo(
-                f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}... ",
-                nl=False,
+            inline_status_start(
+                f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}..."
             )
 
             str_path = str(csv_info.file_path)
@@ -61,15 +66,11 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
             if not is_success:
                 has_errors = True
-                click.echo(nl=True)
-                click.secho(f"Upload failed for {csv_info.file_name}", fg="red")
+                inline_status_end(False, error_msg=f"Failed: {csv_info.file_name}")
             else:
-                click.secho("Success", fg="green")
+                inline_status_end(True)
 
         if has_errors:
-            click.secho("Import errors, check output", fg="red", bold=True)
+            error("Import errors, check output")
         else:
-            click.secho(
-                "Successfully uploaded files into storage bucket",
-                fg="green",
-            )
+            success("Successfully uploaded files into storage bucket")

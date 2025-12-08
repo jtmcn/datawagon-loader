@@ -2,10 +2,10 @@ from typing import List
 
 import click
 import pandas as pd
-from tabulate import tabulate
 
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
+from datawagon.console import error, file_list, newline, table, warning
 from datawagon.objects.current_table_data import CurrentDestinationData
 from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
@@ -28,21 +28,15 @@ def compare_local_files_to_bucket(ctx: click.Context) -> List[ManagedFilesToData
 
     file_diff_display_df = _file_diff(csv_file_infos, current_bucket_files)
 
-    click.echo(nl=True)
+    newline()
     if len(file_diff_display_df) > 0:
-        click.secho(
-            tabulate(
-                # type ignore because tabulate does support pandas dataframes
-                file_diff_display_df,  # type: ignore
-                headers=["Selector", "Bucket File Count", "Local File Count"],
-                tablefmt="simple",
-                showindex=False,
-                numalign="right",
-                intfmt=",",
-            )
+        table(
+            data=file_diff_display_df.values.tolist(),
+            headers=["Selector", "Bucket File Count", "Local File Count"],
+            title="File Comparison",
         )
     else:
-        click.secho("No tables found.", fg="red")
+        error("No tables found.")
         ctx.abort()
 
     new_files = _net_new_files(matched_files, current_bucket_files)
@@ -53,22 +47,18 @@ def compare_local_files_to_bucket(ctx: click.Context) -> List[ManagedFilesToData
 
     new_file_count = len(new_csv_file_infos)
 
-    click.echo(nl=True)
-    click.echo(nl=True)
+    newline()
+    newline()
 
     if new_file_count == 0:
-        click.secho("No new files found.", fg="yellow")
+        warning("No new files found.")
     else:
-        display_limit = 10
-        i = 0
-        click.secho(f"Found {new_file_count} new files:", fg="green")
-        for file in new_csv_file_infos:
-            if i >= display_limit:
-                break
-            click.secho(f"{file.file_name}")
-            i += 1
-        if new_file_count > display_limit:
-            click.secho(f"...including {new_file_count - display_limit} more.")
+        file_list(
+            files=[f.file_name for f in new_csv_file_infos],
+            max_display=10,
+            title=f"Found {new_file_count} new files:",
+            count_total=new_file_count,
+        )
 
     return new_files
 

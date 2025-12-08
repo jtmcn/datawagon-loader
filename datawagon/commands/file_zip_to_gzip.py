@@ -3,6 +3,7 @@ from typing import List
 import click
 
 from datawagon.commands.files_in_local_fs import files_in_local_fs
+from datawagon.console import confirm, error, status, success
 from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
@@ -30,7 +31,7 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
             if file.file_name.endswith("zip"):
                 zip_files.append(file)
 
-    click.confirm(
+    confirm(
         f"Found {len(zip_files)} zip files. Convert to gzip and remove zip?",
         default=False,
         abort=True,
@@ -38,11 +39,11 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
 
     file_utils = FileUtils()
     for zip_file in zip_files:
-        click.secho(f"Converting {zip_file.file_path} to gzip...", fg="blue")
+        status(f"Converting {zip_file.file_path} to gzip...")
         file_output = file_utils.csv_zip_to_gzip(
             zip_file.file_path, remove_original_zip=True
         )
         if file_output:
-            click.secho(f"Success: {file_output} ", fg="green")
+            success(f"Success: {file_output}")
         else:
-            click.secho("ERROR", fg="red")
+            error("ERROR")

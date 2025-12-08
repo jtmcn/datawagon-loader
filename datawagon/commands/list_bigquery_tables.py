@@ -2,9 +2,9 @@
 from typing import List
 
 import click
-from tabulate import tabulate
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
+from datawagon.console import error, newline, success, table, warning
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
@@ -45,9 +45,7 @@ def list_bigquery_tables(
     )
 
     if bq_manager.has_error:
-        click.secho(
-            "Unable to connect to BigQuery. Check credentials and dataset.", fg="red"
-        )
+        error("Unable to connect to BigQuery. Check credentials and dataset.")
         ctx.abort()
 
     # Store manager in context for other commands
@@ -57,8 +55,8 @@ def list_bigquery_tables(
     tables = bq_manager.list_external_tables()
 
     if not tables:
-        click.echo(nl=True)
-        click.secho("No external tables found in dataset.", fg="yellow")
+        newline()
+        warning("No external tables found in dataset.")
         return []
 
     # Prepare display data
@@ -83,20 +81,14 @@ def list_bigquery_tables(
         )
 
     # Display table
-    click.echo(nl=True)
-    click.secho(
-        f"Found {len(tables)} external tables in dataset '{dataset_id}':",
-        fg="green",
+    newline()
+    success(f"Found {len(tables)} external tables in dataset '{dataset_id}':")
+    newline()
+    table(
+        data=table_data,
+        headers=["Table Name", "Created", "Partitioned", "Source URI Pattern"],
+        title=f"External Tables in {dataset_id}",
     )
-    click.echo(nl=True)
-    click.echo(
-        tabulate(
-            table_data,
-            headers=["Table Name", "Created", "Partitioned", "Source URI Pattern"],
-            tablefmt="simple",
-            showindex=False,
-        )
-    )
-    click.echo(nl=True)
+    newline()
 
     return tables

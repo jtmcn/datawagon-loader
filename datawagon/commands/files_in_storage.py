@@ -3,6 +3,7 @@ from typing import List
 import click
 
 from datawagon.bucket.gcs_manager import GcsManager
+from datawagon.console import error, info, newline
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.current_table_data import CurrentDestinationData
 from datawagon.objects.source_config import SourceConfig
@@ -17,9 +18,7 @@ def files_in_storage(ctx: click.Context) -> List[CurrentDestinationData]:
     gcs_manager = GcsManager(app_config.gcs_project_id, app_config.gcs_bucket)
 
     if gcs_manager.has_error:
-        click.secho(
-            "Unable to connect to GCS. Check credentials and try again.", fg="red"
-        )
+        error("Unable to connect to GCS. Check credentials and try again.")
         ctx.abort()
     else:
         ctx.obj["GCS_MANAGER"] = gcs_manager
@@ -42,8 +41,8 @@ def files_in_storage(ctx: click.Context) -> List[CurrentDestinationData]:
 
     file_count = len(blob_df)
 
-    click.echo(nl=True)
-    click.secho(f"{file_count} files in bucket storage")
-    click.echo(nl=True)
+    newline()
+    info(f"{file_count} files in bucket storage", bold=True)
+    newline()
 
     return all_table_data

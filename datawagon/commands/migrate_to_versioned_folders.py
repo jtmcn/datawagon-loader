@@ -5,6 +5,17 @@ from typing import List
 import click
 
 from datawagon.bucket.gcs_manager import GcsManager
+from datawagon.console import (
+    confirm,
+    error,
+    header,
+    info,
+    newline,
+    panel,
+    progress_bar,
+    success,
+    warning,
+)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig
 
@@ -149,21 +160,18 @@ def display_migration_plan(migration_items: List[MigrationItem]):
     needs_migration = [item for item in migration_items if item.needs_migration]
     skipped = [item for item in migration_items if not item.needs_migration]
 
-    click.secho(f"\n{'='*80}", fg="cyan")
-    click.secho("MIGRATION PLAN", fg="cyan", bold=True)
-    click.secho(f"{'='*80}\n", fg="cyan")
+    newline()
+    header("MIGRATION PLAN", style="cyan")
+    newline()
 
-    click.secho(f"Total files scanned: {len(migration_items)}")
-    click.secho(f"Files to migrate: {len(needs_migration)}", fg="green")
-    click.secho(f"Files to skip: {len(skipped)}", fg="yellow")
+    info(f"Total files scanned: {len(migration_items)}")
+    success(f"Files to migrate: {len(needs_migration)}")
+    warning(f"Files to skip: {len(skipped)}")
 
     # Show files to migrate
     if needs_migration:
-        click.secho(f"\n{'-'*80}")
-        click.secho(
-            f"FILES TO MIGRATE ({len(needs_migration)}):", fg="green", bold=True
-        )
-        click.secho(f"{'-'*80}")
+        newline()
+        header(f"FILES TO MIGRATE ({len(needs_migration)})", style="green")
 
         # Group by base_name
         by_base_name = {}
@@ -173,22 +181,22 @@ def display_migration_plan(migration_items: List[MigrationItem]):
             by_base_name[item.base_name].append(item)
 
         for base_name, items in sorted(by_base_name.items()):
-            click.secho(f"\n{base_name}: {len(items)} files")
+            newline()
+            info(f"{base_name}: {len(items)} files", bold=True)
 
             # Show first few examples
             for item in items[:3]:
-                click.echo(f"  FROM: {item.source_path}")
-                click.echo(f"  TO:   {item.destination_path}")
-                click.echo()
+                info(f"  FROM: {item.source_path}")
+                info(f"  TO:   {item.destination_path}")
+                newline()
 
             if len(items) > 3:
-                click.echo(f"  ... and {len(items) - 3} more files\n")
+                info(f"  ... and {len(items) - 3} more files")
 
     # Show skipped files summary
     if skipped:
-        click.secho(f"\n{'-'*80}")
-        click.secho(f"SKIPPED ({len(skipped)}):", fg="yellow")
-        click.secho(f"{'-'*80}")
+        newline()
+        header(f"SKIPPED ({len(skipped)})", style="yellow")
 
         skip_reasons = {}
         for item in skipped:
@@ -196,7 +204,7 @@ def display_migration_plan(migration_items: List[MigrationItem]):
             skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
 
         for reason, count in sorted(skip_reasons.items()):
-            click.echo(f"  {reason}: {count} files")
+            info(f"  {reason}: {count} files")
 
 
 def execute_migration(
@@ -215,42 +223,47 @@ def execute_migration(
 
     to_migrate = [item for item in migration_items if item.needs_migration]
 
-    click.secho(f"\n{'='*80}", fg="cyan")
-    click.secho("EXECUTING MIGRATION", fg="cyan", bold=True)
-    click.secho(f"{'='*80}\n", fg="cyan")
+    newline()
+    header("EXECUTING MIGRATION", style="cyan")
+    newline()
 
     success_count = 0
     error_count = 0
 
-    with click.progressbar(
-        to_migrate, label="Migrating files", show_pos=True, show_eta=True
-    ) as items:
-        for item in items:
-            success = gcs_manager.copy_blob_within_bucket(
+    with progress_bar(to_migrate, "Migrating files") as progress:
+        task = progress.add_task("Migrating files", total=len(to_migrate))
+        for item in to_migrate:
+            success_result = gcs_manager.copy_blob_within_bucket(
                 item.source_path, item.destination_path
             )
 
-            if success:
+            if success_result:
                 success_count += 1
             else:
                 error_count += 1
-                click.echo(f"\nError migrating: {item.source_path}")
+                error(f"Error migrating: {item.source_path}")
+
+            progress.advance(task)
 
     # Summary
-    click.echo("\n")
-    click.secho(f"{'='*80}", fg="cyan")
-    click.secho("MIGRATION COMPLETE", fg="cyan", bold=True)
-    click.secho(f"{'='*80}\n", fg="cyan")
+    newline()
+    header("MIGRATION COMPLETE", style="cyan")
+    newline()
 
-    click.secho(f"Successfully migrated: {success_count}", fg="green")
+    success(f"Successfully migrated: {success_count}")
     if error_count > 0:
-        click.secho(f"Errors: {error_count}", fg="red")
+        error(f"Errors: {error_count}")
 
-    click.echo("\nNext steps:")
-    click.echo("1. Verify files in new locations using: datawagon files-in-storage")
-    click.echo("2. Update BigQuery external table URIs to point to versioned folders")
-    click.echo("3. Test BigQuery queries against new table locations")
-    click.echo("4. Once verified, manually delete original files from GCS")
+    newline()
+    panel(
+        "1. Verify files in new locations using: datawagon files-in-storage\n"
+        "2. Update BigQuery external table URIs to point to versioned folders\n"
+        "3. Test BigQuery queries against new table locations\n"
+        "4. Once verified, manually delete original files from GCS",
+        title="Next Steps",
+        style="cyan",
+        border_style="cyan",
+    )
 
 
 @click.command(name="migrate-to-versioned-folders")

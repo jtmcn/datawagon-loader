@@ -16,6 +16,7 @@ from dotenv import find_dotenv, load_dotenv
 from pydantic import ValidationError
 
 from datawagon.commands.compare import compare_local_files_to_bucket
+from datawagon.console import brand, info, newline
 from datawagon.commands.create_bigquery_tables import create_bigquery_tables
 from datawagon.commands.drop_bigquery_tables import drop_bigquery_tables
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
@@ -193,10 +194,10 @@ def start_cli() -> click.Group:
 
     load_dotenv(env_file, verbose=True)
 
-    click.secho("DataWagon", fg="magenta", bold=True)
-    click.echo(f"Version: {importlib.metadata.version('datawagon')}")
-    click.secho(f"Configuration loaded from: {env_file}")
-    click.echo(nl=True)
+    brand("DataWagon")
+    info(f"Version: {importlib.metadata.version('datawagon')}")
+    info(f"Configuration loaded from: {env_file}")
+    newline()
 
     return cli(obj={})  # type: ignore
 

@@ -2,10 +2,21 @@
 from typing import List
 
 import click
-from tabulate import tabulate
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
+from datawagon.console import (
+    confirm,
+    error,
+    info,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    panel,
+    success,
+    table,
+    warning,
+)
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
@@ -69,7 +80,7 @@ def drop_bigquery_tables(
     )
 
     if not existing_tables:
-        click.secho("No external tables found in dataset.", fg="yellow")
+        warning("No external tables found in dataset.")
         return
 
     bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]
@@ -79,111 +90,90 @@ def drop_bigquery_tables(
         # Drop specific table
         tables_to_drop = [t for t in existing_tables if t.table_name == table_name]
         if not tables_to_drop:
-            click.secho(f"Table '{table_name}' not found in dataset.", fg="red")
+            error(f"Table '{table_name}' not found in dataset.")
             return
     else:
         # Drop all tables
         tables_to_drop = existing_tables
 
     # Display tables to be dropped
-    click.echo(nl=True)
-    click.secho(
-        f"Tables to drop in dataset '{dataset_id}':",
-        fg="yellow",
-        bold=True,
-    )
-    click.echo(nl=True)
+    newline()
+    warning(f"Tables to drop in dataset '{dataset_id}':")
+    newline()
 
     table_data = []
-    for table in tables_to_drop:
-        partitioned = "Yes" if table.is_partitioned else "No"
+    for tbl in tables_to_drop:
+        partitioned = "Yes" if tbl.is_partitioned else "No"
         created_str = (
-            table.created_time.strftime("%Y-%m-%d %H:%M")
-            if table.created_time
+            tbl.created_time.strftime("%Y-%m-%d %H:%M")
+            if tbl.created_time
             else "Unknown"
         )
         table_data.append(
             [
-                table.table_name,
+                tbl.table_name,
                 created_str,
                 partitioned,
-                table.source_uri_pattern[:50] + "..."
-                if len(table.source_uri_pattern) > 50
-                else table.source_uri_pattern,
+                tbl.source_uri_pattern[:50] + "..."
+                if len(tbl.source_uri_pattern) > 50
+                else tbl.source_uri_pattern,
             ]
         )
 
-    click.echo(
-        tabulate(
-            table_data,
-            headers=["Table Name", "Created", "Partitioned", "Source URI Pattern"],
-            tablefmt="simple",
-        )
+    table(
+        data=table_data,
+        headers=["Table Name", "Created", "Partitioned", "Source URI Pattern"],
+        title=f"Tables to Drop from {dataset_id}",
     )
-    click.echo(nl=True)
+    newline()
 
     # Dry-run mode
     if dry_run:
-        click.secho(
-            f"DRY-RUN MODE: Would drop {len(tables_to_drop)} table(s).",
-            fg="yellow",
-            bold=True,
-        )
-        click.echo("Run with --execute to actually delete these tables.")
-        click.echo(nl=True)
-        click.secho(
-            "⚠️  Note: Only table metadata is deleted. CSV files in GCS remain untouched.",
-            fg="cyan",
+        panel(
+            f"DRY-RUN MODE: Would drop {len(tables_to_drop)} table(s).\n\n"
+            f"Run with --execute to actually delete these tables.\n\n"
+            f"⚠️  Note: Only table metadata is deleted. CSV files in GCS remain untouched.",
+            title="Dry Run",
+            style="yellow",
+            border_style="yellow",
         )
         return
 
     # Execute mode - require confirmation
-    click.secho(
-        "⚠️  WARNING: This will permanently delete table metadata!",
-        fg="red",
-        bold=True,
-    )
-    click.echo("The underlying CSV files in GCS will NOT be deleted.")
-    click.echo(nl=True)
+    error("⚠️  WARNING: This will permanently delete table metadata!")
+    info("The underlying CSV files in GCS will NOT be deleted.")
+    newline()
 
     try:
-        click.confirm(
+        confirm(
             f"Are you sure you want to drop {len(tables_to_drop)} table(s)?",
             default=False,
             abort=True,
         )
     except click.Abort:
-        click.echo("Aborted.")
+        info("Aborted.")
         return
 
     # Drop tables
-    click.echo(nl=True)
+    newline()
     success_count = 0
     error_count = 0
 
-    for table in tables_to_drop:
-        click.echo(f"Dropping table {table.table_name}... ", nl=False)
+    for tbl in tables_to_drop:
+        inline_status_start(f"Dropping table {tbl.table_name}...")
 
-        success = bq_manager.delete_table(table.table_name)
+        success_result = bq_manager.delete_table(tbl.table_name)
 
-        if success:
+        inline_status_end(success_result)
+
+        if success_result:
             success_count += 1
-            click.secho("Success", fg="green")
         else:
             error_count += 1
-            click.secho("Failed", fg="red")
 
     # Summary
-    click.echo(nl=True)
+    newline()
     if error_count > 0:
-        click.secho(
-            f"Dropped {success_count} table(s), {error_count} error(s). Check logs.",
-            fg="yellow",
-            bold=True,
-        )
+        warning(f"Dropped {success_count} table(s), {error_count} error(s). Check logs.")
     else:
-        click.secho(
-            f"Successfully dropped {success_count} table(s)!",
-            fg="green",
-            bold=True,
-        )
+        success(f"Successfully dropped {success_count} table(s)!")
