@@ -94,46 +94,6 @@ class SourceFromLocalFS(BaseModel):
         return self
 
 
-class Destination(BaseModel):
-    """Base destination configuration.
-
-    Defines the type of destination for processed files (table or bucket).
-
-    Attributes:
-        destination_type: Type of destination ("table" or "bucket")
-    """
-
-    destination_type: Literal["table", "bucket"]
-
-
-class DestinationAsBucket(BaseModel):
-    """GCS bucket destination configuration.
-
-    Configures uploads to a GCS bucket with optional partitioning.
-
-    Attributes:
-        destination_bucket: Name of the GCS bucket
-        partitions: Optional list of partition column names
-    """
-
-    destination_bucket: str
-    partitions: Optional[List[str]] = None
-
-
-class DestinationAsTable(BaseModel):
-    """Table destination configuration.
-
-    Configures uploads to a destination table with append or replace strategy.
-
-    Attributes:
-        destination_table: Name of the destination table
-        append_or_replace: Upload strategy ("append" or "replace")
-    """
-
-    destination_table: str
-    append_or_replace: Literal["append", "replace"]
-
-
 class SourceConfig(BaseModel):
     """Root configuration for all file sources.
 
