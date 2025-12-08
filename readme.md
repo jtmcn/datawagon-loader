@@ -35,22 +35,42 @@ This project was built to replace an existing process which used a bash script t
 ## Prerequisites
 
 - Python 3.9 or higher (3.12 recommended)
-- [Poetry](https://python-poetry.org/) 2.0 or higher
 - Google Cloud Platform account with Storage and BigQuery access
 - Google Cloud credentials configured locally
+
+**Optional:**
+- [Poetry](https://python-poetry.org/) 2.0 or higher (for dependency management)
 
 ---
 
 ## First-Time Setup
 
-### 1. Clone Repository
+### Option 1: Quick Setup (Without Poetry)
+
+For users who want to use DataWagon without Poetry:
+
+```bash
+git clone https://github.com/jtmcn/datawagon.git
+cd datawagon
+./setup-venv.sh
+source .venv/bin/activate
+datawagon --help
+```
+
+This creates a standard Python virtual environment and installs DataWagon from source.
+
+### Option 2: Development Setup (With Poetry)
+
+Poetry is recommended if you plan to modify dependencies or contribute to development.
+
+#### 1. Clone Repository
 
 ```bash
 git clone https://github.com/jtmcn/datawagon.git
 cd datawagon
 ```
 
-### 2. Install Poetry
+#### 2. Install Poetry
 
 If you don't have Poetry installed:
 
@@ -67,10 +87,10 @@ Verify installation:
 poetry --version
 ```
 
-### 3. Run Setup
+#### 3. Run Setup
 
 ```bash
-make setup
+make setup-poetry
 ```
 
 This will:
@@ -80,7 +100,23 @@ This will:
 - Install all dependencies
 - Create virtual environment in `.venv/`
 
-### 4. Configure Environment
+### Installation Methods Compared
+
+| Feature | Poetry | Standard venv |
+|---------|--------|---------------|
+| Install DataWagon | ✓ | ✓ |
+| Run commands | ✓ | ✓ |
+| Modify code | ✓ | ✓ |
+| Add dependencies | ✓ | Request via issue |
+| Lock dependencies | ✓ | Use requirements.txt |
+| Setup time | ~2 min | ~1 min |
+| Disk space | ~500MB | ~300MB |
+
+**Recommendation:**
+- Use **standard venv** if you just want to use DataWagon
+- Use **Poetry** if you're developing or managing dependencies
+
+### Configuration (Both Options)
 
 Edit `.env` with your settings:
 
@@ -121,10 +157,20 @@ datawagon --help
 
 ## Updating Existing Installation
 
+### With Poetry
+
 To pull latest changes and update dependencies:
 
 ```bash
 ./update.sh
+```
+
+### Without Poetry (Standard venv)
+
+To pull latest changes and update dependencies:
+
+```bash
+./update-venv.sh
 ```
 
 Or manually:

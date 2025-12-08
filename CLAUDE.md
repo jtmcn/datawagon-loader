@@ -10,22 +10,62 @@ DataWagon automates loading YouTube Analytics CSV files into Google Cloud Storag
 
 ### Environment Setup
 
-#### First-Time Setup
+DataWagon supports two installation methods:
+
+#### Method 1: Poetry (Recommended for Development)
+
+**First-time setup:**
 ```bash
-make setup               # Complete setup (Poetry, plugins, .env, deps)
+make setup               # Detects Poetry and runs full setup
+# OR explicitly:
+make setup-poetry        # Poetry-specific setup
 source .venv/bin/activate
 ```
 
-#### Updating Environment
+**Updating environment:**
 ```bash
-./update.sh              # Pull changes and update
+./update.sh              # Pull changes and update with Poetry
 # OR manually:
 git pull
 poetry install
 make requirements
 ```
 
+#### Method 2: Standard Python Virtual Environment
+
+For users who prefer not to install Poetry:
+
+**First-time setup:**
+```bash
+./setup-venv.sh          # Automated setup script
+# OR manually:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+pip install -r requirements-dev.txt  # For development
+```
+
+**Updating environment:**
+```bash
+./update-venv.sh         # Automated update script
+# OR manually:
+git pull
+source .venv/bin/activate
+pip install -e . --upgrade
+pip install -r requirements-dev.txt --upgrade
+```
+
+**Verifying Installation (Both Methods):**
+```bash
+source .venv/bin/activate
+datawagon --help
+make test
+```
+
 ### Code Quality (Pre-commit Checks)
+
+The Makefile automatically detects whether you're using Poetry or a standard venv:
+
 ```bash
 make pre-commit          # Run all checks (type, isort, format, lint, test, requirements-check)
 make pre-commit-fast     # Run faster checks (type, lint, test only)
@@ -37,6 +77,8 @@ make vulture             # Detect dead code (optional)
 make test                # Run tests with pytest
 make requirements-check  # Verify requirements.txt is in sync with poetry.lock
 ```
+
+**Note:** If using Poetry, these run via `poetry run`. Otherwise, they use your active virtual environment.
 
 ### Testing
 ```bash
@@ -196,3 +238,51 @@ Vulture reports findings with confidence levels (0-100%):
 - Functions exported via `__all__`
 
 If you encounter frequent false positives for specific patterns, create a `vulture_whitelist.py` file to suppress them.
+
+## Dependency Management
+
+DataWagon supports both Poetry and pip-based dependency management:
+
+### For Poetry Users
+
+Add or update dependencies:
+```bash
+poetry add pandas         # Add runtime dependency
+poetry add --group dev mypy  # Add dev dependency
+poetry lock               # Update lock file
+make requirements         # Export to requirements.txt and requirements-dev.txt
+```
+
+Update all dependencies:
+```bash
+poetry update
+make requirements
+```
+
+### For Non-Poetry Users
+
+Dependencies are managed via `requirements.txt` and `requirements-dev.txt`:
+
+```bash
+# These files are auto-generated from poetry.lock
+# DO NOT edit manually - changes will be overwritten
+
+# To install/update dependencies:
+pip install -e . --upgrade
+pip install -r requirements-dev.txt --upgrade
+```
+
+**Note:** Non-Poetry users cannot modify dependencies directly. To request dependency changes:
+1. Open a GitHub issue describing the needed dependency
+2. A Poetry user will update `pyproject.toml` and run `poetry lock && make requirements`
+3. Pull the changes and update your environment
+
+### Keeping Requirements in Sync
+
+Poetry users must regenerate requirements files after any dependency change:
+
+```bash
+make requirements         # Generates requirements.txt and requirements-dev.txt
+```
+
+Pre-commit hooks automatically check that requirements files are in sync (Poetry users only).

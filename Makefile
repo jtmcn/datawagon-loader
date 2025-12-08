@@ -1,5 +1,17 @@
 .ONESHELL:
-CMD:=poetry run
+# Auto-detect if we're in a Poetry environment or standard venv
+HAS_POETRY := $(shell command -v poetry 2> /dev/null)
+ifdef HAS_POETRY
+    IN_POETRY_ENV := $(shell poetry env info --path 2>/dev/null)
+    ifdef IN_POETRY_ENV
+        CMD := poetry run
+    else
+        CMD :=
+    endif
+else
+    CMD :=
+endif
+
 PYMODULE:=datawagon
 ENTRYPOINT:=main.py
 TESTS:=tests
@@ -12,13 +24,35 @@ help: ## Show this help.
 # Setup and Installation
 # ============================================================================
 
-setup: check-poetry install-poetry-plugins check-env install-deps ## First-time setup (run this for new installations)
-	@echo "✓ Setup complete!"
+setup: ## Auto-detect and run appropriate setup
+	@if command -v poetry >/dev/null 2>&1; then \
+		$(MAKE) setup-poetry; \
+	else \
+		$(MAKE) setup-venv; \
+	fi
+
+setup-poetry: check-poetry install-poetry-plugins check-env install-deps-poetry ## Poetry-based setup
+	@echo "✓ Poetry setup complete!"
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Edit .env with your configuration"
 	@echo "  2. Activate virtualenv: source .venv/bin/activate"
 	@echo "  3. Run application: datawagon --help"
+
+setup-venv: check-python check-env install-deps-venv ## Non-Poetry setup (standard venv)
+	@echo "✓ Virtual environment setup complete!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Edit .env with your configuration"
+	@echo "  2. Activate virtualenv: source .venv/bin/activate"
+	@echo "  3. Run application: datawagon --help"
+
+check-python: ## Check if Python 3.9+ is available
+	@python3 --version | grep -qE "Python 3\.(9|1[0-2])" || { \
+		echo "⚠ Python 3.9+ required"; \
+		exit 1; \
+	}
+	@echo "✓ Python found: $$(python3 --version)"
 
 check-poetry: ## Check if Poetry is installed
 	@command -v poetry >/dev/null 2>&1 || { \
@@ -48,10 +82,20 @@ check-env: ## Check if .env file exists, create from .env.example if not
 		echo "✓ .env file exists"; \
 	fi
 
-install-deps: ## Install dependencies with Poetry
+install-deps-poetry: ## Install dependencies with Poetry
 	@echo "Installing dependencies..."
 	@poetry config virtualenvs.in-project true
 	@poetry install
+	@echo "✓ Dependencies installed"
+
+install-deps-venv: ## Install dependencies with pip (non-Poetry)
+	@echo "Creating virtual environment..."
+	@python3 -m venv .venv
+	@echo "Installing datawagon and dependencies..."
+	@.venv/bin/pip install --upgrade pip --quiet
+	@.venv/bin/pip install -e . --quiet
+	@echo "Installing dev dependencies..."
+	@.venv/bin/pip install -r requirements-dev.txt --quiet
 	@echo "✓ Dependencies installed"
 
 update: ## Update dependencies and regenerate lock file
@@ -96,19 +140,27 @@ test: ## Run tests
 	@echo "Running tests with pytest..."
 	$(CMD) pytest $(TESTS) --quiet
 
-requirements: ## Generate requirements.txt from poetry.lock
+requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.lock
 	@echo "Generating requirements.txt..."
 	@poetry export --without-hashes -f requirements.txt -o requirements.txt
-	@echo "✓ requirements.txt generated"
+	@echo "Generating requirements-dev.txt..."
+	@poetry export --with dev --with test --without-hashes -f requirements.txt -o requirements-dev.txt
+	@echo "✓ requirements files generated"
 
-requirements-check: ## Verify requirements.txt is in sync with poetry.lock
+requirements-check: ## Verify requirements files are in sync with poetry.lock
 	@echo "Checking if requirements.txt is in sync..."
 	@poetry export --without-hashes -f requirements.txt | diff -q - requirements.txt > /dev/null || { \
 		echo "⚠ requirements.txt is out of sync with poetry.lock"; \
 		echo "Run 'make requirements' to update"; \
 		exit 1; \
 	}
-	@echo "✓ requirements.txt is in sync"
+	@echo "Checking if requirements-dev.txt is in sync..."
+	@poetry export --with dev --with test --without-hashes -f requirements.txt | diff -q - requirements-dev.txt > /dev/null || { \
+		echo "⚠ requirements-dev.txt is out of sync with poetry.lock"; \
+		echo "Run 'make requirements' to update"; \
+		exit 1; \
+	}
+	@echo "✓ requirements files are in sync"
 
 # ============================================================================
 # Application Commands (not used for automation)
