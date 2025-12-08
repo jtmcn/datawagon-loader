@@ -41,6 +41,7 @@ class ManagedFileInput(BaseModel):
         ...     storage_folder_name="youtube_analytics"
         ... )
     """
+
     # TODO: merge with SourceFileMetadata
     file_name: str
     file_path: Path
@@ -73,6 +74,7 @@ class ManagedFileMetadata(ManagedFileInput):
     Note:
         Allows additional fields from regex extraction via Config.extra = "allow".
     """
+
     file_dir: str
     # file_name_without_extension: str
     content_owner: Optional[str]

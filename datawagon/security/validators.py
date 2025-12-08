@@ -1,11 +1,10 @@
 """Security validation utilities for DataWagon."""
+import logging
 import os
 import re
 import zipfile
 from pathlib import Path
 from typing import Optional, Union
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,9 @@ class SecurityError(Exception):
     pass
 
 
-def validate_path_traversal(file_path: Union[str, Path], base_dir: Union[str, Path]) -> Path:
+def validate_path_traversal(
+    file_path: Union[str, Path], base_dir: Union[str, Path]
+) -> Path:
     """Validate that file_path is within base_dir (prevents path traversal).
 
     Args:

@@ -1,0 +1,90 @@
+"""List BigQuery external tables command."""
+from typing import List
+
+import click
+from tabulate import tabulate
+
+from datawagon.bucket.bigquery_manager import BigQueryManager
+from datawagon.objects.app_config import AppConfig
+from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
+
+
+@click.command(name="list-bigquery-tables")
+@click.pass_context
+def list_bigquery_tables(ctx: click.Context) -> List[BigQueryTableInfo]:
+    """List existing external tables in BigQuery dataset.
+
+    Displays:
+    - Table name
+    - Creation time
+    - Partitioning status
+    - Source URI pattern
+
+    Returns:
+        List of BigQueryTableInfo objects
+    """
+    app_config: AppConfig = ctx.obj["CONFIG"]
+
+    # Initialize BigQuery manager
+    bq_manager = BigQueryManager(
+        project_id=app_config.gcs_project_id,
+        dataset_id=app_config.bq_dataset,
+        bucket_name=app_config.gcs_bucket,
+    )
+
+    if bq_manager.has_error:
+        click.secho(
+            "Unable to connect to BigQuery. Check credentials and dataset.", fg="red"
+        )
+        ctx.abort()
+
+    # Store manager in context for other commands
+    ctx.obj["BQ_MANAGER"] = bq_manager
+
+    # List external tables
+    tables = bq_manager.list_external_tables()
+
+    if not tables:
+        click.echo(nl=True)
+        click.secho("No external tables found in dataset.", fg="yellow")
+        return []
+
+    # Prepare display data
+    table_data = []
+    for table in tables:
+        partitioned = "Yes" if table.is_partitioned else "No"
+        created_str = (
+            table.created_time.strftime("%Y-%m-%d %H:%M")
+            if table.created_time
+            else "Unknown"
+        )
+
+        table_data.append(
+            [
+                table.table_name,
+                created_str,
+                partitioned,
+                table.source_uri_pattern[:60] + "..."
+                if len(table.source_uri_pattern) > 60
+                else table.source_uri_pattern,
+            ]
+        )
+
+    # Display table
+    click.echo(nl=True)
+    click.secho(
+        f"Found {len(tables)} external tables in dataset '{app_config.bq_dataset}':",
+        fg="green",
+    )
+    click.echo(nl=True)
+    click.echo(
+        tabulate(
+            table_data,
+            headers=["Table Name", "Created", "Partitioned", "Source URI Pattern"],
+            tablefmt="simple",
+            showindex=False,
+        )
+    )
+    click.echo(nl=True)
+
+    return tables

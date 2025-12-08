@@ -16,6 +16,7 @@ class CurrentDestinationData(BaseModel):
         file_count: Number of files with this base_name
         source_files: List of source file names
     """
+
     base_name: str
     file_count: int
     source_files: List[str]
@@ -30,6 +31,7 @@ class CurrentTableData(BaseModel):
         file_count: Number of source files loaded
         source_files: List of source file names
     """
+
     table_name: str
     total_rows: int
     file_count: int

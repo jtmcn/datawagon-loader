@@ -41,6 +41,7 @@ class SourceFromLocalFS(BaseModel):
         ...     table_append_or_replace="append"
         ... )
     """
+
     is_enabled: bool
     storage_folder_name: Optional[str] = None
     table_name: Optional[str] = None
@@ -78,6 +79,7 @@ class Destination(BaseModel):
     Attributes:
         destination_type: Type of destination ("table" or "bucket")
     """
+
     destination_type: Literal["table", "bucket"]
 
 
@@ -90,6 +92,7 @@ class DestinationAsBucket(BaseModel):
         destination_bucket: Name of the GCS bucket
         partitions: Optional list of partition column names
     """
+
     destination_bucket: str
     partitions: Optional[List[str]] = None
 
@@ -103,6 +106,7 @@ class DestinationAsTable(BaseModel):
         destination_table: Name of the destination table
         append_or_replace: Upload strategy ("append" or "replace")
     """
+
     destination_table: str
     append_or_replace: Literal["append", "replace"]
 
@@ -122,4 +126,5 @@ class SourceConfig(BaseModel):
         ...     "tiktok": SourceFromLocalFS(...)
         ... })
     """
+
     file: dict[str, SourceFromLocalFS]

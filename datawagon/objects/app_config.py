@@ -19,16 +19,20 @@ class AppConfig(BaseModel):
         csv_source_config: Path to source_config.toml configuration file
         gcs_project_id: Google Cloud Platform project ID for GCS access
         gcs_bucket: GCS bucket name where files will be uploaded
+        bq_dataset: BigQuery dataset name for external tables
 
     Example:
         >>> config = AppConfig(
         ...     csv_source_dir=Path("/data/csv"),
         ...     csv_source_config=Path("/config/source.toml"),
         ...     gcs_project_id="my-project",
-        ...     gcs_bucket="my-bucket"
+        ...     gcs_bucket="my-bucket",
+        ...     bq_dataset="my_dataset"
         ... )
     """
+
     csv_source_dir: Path
     csv_source_config: Path
     gcs_project_id: str
     gcs_bucket: str
+    bq_dataset: str

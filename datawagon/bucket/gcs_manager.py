@@ -39,6 +39,7 @@ class GcsManager:
         source_bucket_name: Name of the GCS bucket to operate on
         has_error: Flag indicating if initialization encountered errors
     """
+
     def __init__(self, gcs_project: str, source_bucket_name: str) -> None:
         """Initialize GCS manager and verify access.
 
@@ -72,7 +73,7 @@ class GcsManager:
         except Exception as e:
             logger.error(f"Error connecting to GCS: {e}", exc_info=True)
             self.has_error = True
-        
+
     def list_buckets(self) -> List[str]:
         """List all accessible GCS buckets in the project.
 

@@ -56,7 +56,9 @@ class FileUtilsTestCase(TestCase):
 class TestCsvGzipped:
     """Test csv_gzipped method."""
 
-    def test_csv_gzipped_creates_gz_file(self, temp_dir: Path, sample_csv_content: str) -> None:
+    def test_csv_gzipped_creates_gz_file(
+        self, temp_dir: Path, sample_csv_content: str
+    ) -> None:
         """Test that CSV file is gzipped successfully."""
         # Create input CSV file
         input_csv = temp_dir / "test.csv"
@@ -77,7 +79,9 @@ class TestCsvGzipped:
         # Original file should still exist
         assert input_csv.exists()
 
-    def test_csv_gzipped_removes_original(self, temp_dir: Path, sample_csv_content: str) -> None:
+    def test_csv_gzipped_removes_original(
+        self, temp_dir: Path, sample_csv_content: str
+    ) -> None:
         """Test that original CSV is removed when requested."""
         input_csv = temp_dir / "test.csv"
         input_csv.write_text(sample_csv_content)

@@ -24,6 +24,7 @@ class FileUtils:
     Provides methods for grouping files, detecting duplicates, checking versions,
     and converting between compression formats.
     """
+
     def group_by_base_name(
         self,
         file_info_list: List[ManagedFileMetadata],

@@ -255,7 +255,9 @@ def execute_migration(
 
 @click.command(name="migrate-to-versioned-folders")
 @click.option(
-    "--dry-run/--execute", default=True, help="Show plan without executing (default: dry-run)"
+    "--dry-run/--execute",
+    default=True,
+    help="Show plan without executing (default: dry-run)",
 )
 @click.option(
     "--batch-size", default=100, help="Files to process per batch (default: 100)"

@@ -6,8 +6,8 @@ import toml
 from pydantic import ValidationError
 
 from datawagon.objects.managed_file_scanner import (
-    ManagedFileScanner,
     ManagedFiles,
+    ManagedFileScanner,
     ManagedFilesToDatabase,
 )
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS

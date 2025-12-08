@@ -34,6 +34,7 @@ class ManagedFiles(BaseModel):
         files: List of file metadata for matched files
         file_selector_base_name: Pattern used to select these files
     """
+
     files: List[ManagedFileMetadata] = Field(default_factory=list)
     file_selector_base_name: str
 
@@ -47,6 +48,7 @@ class ManagedFilesToDatabase(ManagedFiles):
         table_name: Destination table name
         table_append_or_replace: Upload strategy ("append" or "replace")
     """
+
     table_name: str
     table_append_or_replace: str
 
@@ -62,6 +64,7 @@ class ManagedFileScanner:
         csv_source_dir: Directory to scan for CSV files
         valid_config: Validated source configuration from TOML file
     """
+
     def __init__(self, csv_source_config: Path, csv_source_dir: Path) -> None:
         """Initialize scanner with configuration and source directory.
 
@@ -186,9 +189,7 @@ class ManagedFileScanner:
             for file_metadata in file_group.files:
                 # Only append version if file has one
                 if file_metadata.file_version:
-                    file_metadata.storage_folder_name = (
-                        f"{file_metadata.storage_folder_name}_{file_metadata.file_version}"
-                    )
+                    file_metadata.storage_folder_name = f"{file_metadata.storage_folder_name}_{file_metadata.file_version}"
 
     def source_file_attrs(
         self,

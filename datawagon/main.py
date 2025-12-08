@@ -16,9 +16,11 @@ from dotenv import find_dotenv, load_dotenv
 from pydantic import ValidationError
 
 from datawagon.commands.compare import compare_local_files_to_bucket
+from datawagon.commands.create_bigquery_tables import create_bigquery_tables
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
+from datawagon.commands.list_bigquery_tables import list_bigquery_tables
 from datawagon.commands.migrate_to_versioned_folders import migrate_to_versioned_folders
 from datawagon.commands.upload_to_storage import upload_all_gzip_csv
 from datawagon.logging_config import setup_logging
@@ -62,6 +64,12 @@ from datawagon.objects.source_config import SourceConfig
     help="Bucket used for Google Cloud Storage",
     envvar="DW_GCS_BUCKET",
 )
+@click.option(
+    "--bq-dataset",
+    type=str,
+    help="BigQuery dataset for external tables",
+    envvar="DW_BQ_DATASET",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -71,6 +79,7 @@ def cli(
     csv_source_config: Path,
     gcs_project_id: str,
     gcs_bucket: str,
+    bq_dataset: str,
 ) -> None:
     """DataWagon CLI group for processing CSV files to Google Cloud Storage.
 
@@ -101,6 +110,7 @@ def cli(
 
     # Validate CLI parameters
     import os
+
     if not csv_source_dir or not os.path.exists(csv_source_dir):
         raise click.UsageError(f"CSV source directory does not exist: {csv_source_dir}")
     if not csv_source_config or not os.path.exists(csv_source_config):
@@ -109,6 +119,8 @@ def cli(
         raise click.UsageError("GCS_PROJECT_ID must be set")
     if not gcs_bucket:
         raise click.UsageError("GCS_BUCKET must be set")
+    if not bq_dataset:
+        raise click.UsageError("BQ_DATASET must be set")
 
     logger.info(f"csv_source_config: {csv_source_config}")
 
@@ -129,6 +141,7 @@ def cli(
         csv_source_config=csv_source_config,
         gcs_project_id=gcs_project_id,
         gcs_bucket=gcs_bucket,
+        bq_dataset=bq_dataset,
     )
 
     ctx.obj["CONFIG"] = app_config
@@ -140,6 +153,8 @@ cli.add_command(compare_local_files_to_bucket)
 cli.add_command(upload_all_gzip_csv)
 cli.add_command(file_zip_to_gzip)
 cli.add_command(files_in_storage)
+cli.add_command(list_bigquery_tables)
+cli.add_command(create_bigquery_tables)
 cli.add_command(migrate_to_versioned_folders)
 
 
