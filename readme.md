@@ -6,11 +6,11 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Automated loading of YouTube Analytics CSV files into Google Cloud Storage buckets.
+Automated loading of YouTube Analytics CSV files into Google Cloud Storage buckets with BigQuery external table management.
 
 ## Overview
 
-DataWagon processes compressed YouTube Analytics files (.csv.gz, .csv.zip), validates filenames against regex patterns, extracts metadata, and uploads them to Google Cloud Storage with automatic partitioning by report date.
+DataWagon processes compressed YouTube Analytics files (.csv.gz, .csv.zip), validates filenames against regex patterns, extracts metadata, and uploads them to Google Cloud Storage with automatic partitioning by report date. It also manages BigQuery external tables that reference the uploaded files, enabling direct SQL queries without data duplication.
 
 ### Background
 
@@ -25,7 +25,10 @@ This project was built to replace an existing process which used a bash script t
 5. Metadata extraction from filenames using regex
 6. Version-based folder organization for BigQuery external table mapping
 7. Migration tools for reorganizing existing files into versioned folders
-8. Comprehensive validation and user feedback
+8. **BigQuery external table management** - create and list tables that reference GCS files
+9. Automatic schema detection from CSV headers
+10. Hive partitioning support for efficient date-based queries
+11. Comprehensive validation and user feedback
 
 ---
 
@@ -33,7 +36,7 @@ This project was built to replace an existing process which used a bash script t
 
 - Python 3.9 or higher (3.12 recommended)
 - [Poetry](https://python-poetry.org/) 2.0 or higher
-- Google Cloud Platform account with Storage access
+- Google Cloud Platform account with Storage and BigQuery access
 - Google Cloud credentials configured locally
 
 ---
@@ -91,6 +94,10 @@ DW_CSV_SOURCE_TOML=./datawagon-config.toml
 # Google Cloud Storage settings
 DW_GCS_PROJECT_ID=your-gcp-project-id
 DW_GCS_BUCKET=your-bucket-name
+
+# BigQuery settings
+DW_BQ_DATASET=your_dataset_name
+DW_BQ_STORAGE_PREFIX=caravan-versioned  # Optional: filter which folders to scan (default: caravan-versioned)
 ```
 
 ### 5. Configure Google Cloud Credentials
@@ -146,6 +153,7 @@ poetry run datawagon --help
 
 ### Available Commands
 
+**File Management:**
 ```bash
 # List files in local source directory
 datawagon files-in-local-fs
@@ -164,6 +172,15 @@ datawagon file-zip-to-gzip
 
 # Migrate existing files to versioned folder structure
 datawagon migrate-to-versioned-folders
+```
+
+**BigQuery External Tables:**
+```bash
+# List existing external tables in BigQuery dataset
+datawagon list-bigquery-tables
+
+# Create external tables for GCS folders without tables
+datawagon create-bigquery-tables
 ```
 
 ### Migrating to Versioned Folders
@@ -223,6 +240,87 @@ Note: The migration changes the root folder from `caravan` to `caravan-versioned
 - Each copy is verified before marking success
 - Individual file errors don't stop the migration
 
+### BigQuery External Tables
+
+After uploading files to GCS, you can create BigQuery external tables that reference the files directly. This allows you to query the CSV data using SQL without loading it into BigQuery storage.
+
+**List existing tables:**
+
+```bash
+datawagon list-bigquery-tables
+```
+
+This displays:
+- Table names (with version suffixes, e.g., `claim_raw_v1_1`)
+- Creation timestamps
+- Partitioning status
+- Source URI patterns
+
+**Create missing tables:**
+
+```bash
+datawagon create-bigquery-tables
+```
+
+This will:
+1. Scan GCS bucket for folders under the configured prefix (default: `caravan-versioned`)
+2. List existing BigQuery external tables
+3. Identify folders without corresponding tables
+4. Show a summary of tables to be created
+5. Prompt for confirmation
+6. Create external tables with:
+   - Auto-detected schema from CSV headers
+   - Hive partitioning on `report_date` column (for partitioned folders)
+   - GZIP compression support
+   - CSV format configuration
+
+**Example table creation:**
+
+```
+Storage folder: caravan-versioned/claim_raw_v1-1
+→ BigQuery table: claim_raw_v1_1
+→ Source URI: gs://bucket/caravan-versioned/claim_raw_v1-1/*
+→ Partitioning: Yes (report_date)
+```
+
+**Querying external tables:**
+
+Once created, query the tables in BigQuery:
+
+```sql
+-- Query with partition filtering for efficiency
+SELECT * FROM `project.dataset.claim_raw_v1_1`
+WHERE report_date = '2023-06-30'
+LIMIT 10;
+
+-- Aggregate across all partitions
+SELECT report_date, COUNT(*) as claim_count
+FROM `project.dataset.claim_raw_v1_1`
+GROUP BY report_date
+ORDER BY report_date DESC;
+```
+
+**Key benefits:**
+- No data duplication (files stay in GCS, BigQuery reads directly)
+- Automatic schema detection (no manual schema definition)
+- Partition pruning for fast date-filtered queries
+- Multiple versions can coexist as separate tables
+
+**Configuration:**
+
+Control which folders are scanned with the `DW_BQ_STORAGE_PREFIX` setting:
+
+```bash
+# Only scan caravan-versioned folders (default)
+DW_BQ_STORAGE_PREFIX=caravan-versioned
+
+# Scan all folders (legacy behavior)
+DW_BQ_STORAGE_PREFIX=""
+
+# Scan a different prefix
+DW_BQ_STORAGE_PREFIX=my-custom-folder
+```
+
 ### Chaining Commands
 
 Commands can be chained together:
@@ -233,7 +331,7 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 
 ### Typical Workflow
 
-When you have new files to upload:
+**When you have new files to upload:**
 
 ```bash
 cd ~/Code/datawagon
@@ -248,6 +346,14 @@ This will:
 4. Show summary of new files to upload
 5. Prompt for confirmation
 6. Upload files with partitioning by report date
+
+**Complete workflow with BigQuery table creation:**
+
+```bash
+datawagon upload-to-gcs create-bigquery-tables
+```
+
+This uploads new files and automatically creates any missing BigQuery external tables in one command chain.
 
 ---
 
@@ -399,15 +505,23 @@ datawagon/
 │   │   ├── compare.py
 │   │   ├── upload_to_storage.py
 │   │   ├── file_zip_to_gzip.py
-│   │   └── migrate_to_versioned_folders.py
+│   │   ├── migrate_to_versioned_folders.py
+│   │   ├── list_bigquery_tables.py
+│   │   └── create_bigquery_tables.py
 │   ├── objects/                 # Core data models
 │   │   ├── app_config.py
 │   │   ├── source_config.py
 │   │   ├── managed_file_metadata.py
-│   │   └── managed_file_scanner.py
-│   └── bucket/                  # GCS integration
-│       └── gcs_manager.py
+│   │   ├── managed_file_scanner.py
+│   │   └── bigquery_table_metadata.py
+│   └── bucket/                  # GCS and BigQuery integration
+│       ├── gcs_manager.py
+│       └── bigquery_manager.py
 ├── tests/                       # Test suite
+│   ├── test_bigquery_manager.py
+│   ├── test_bigquery_table_metadata.py
+│   ├── test_create_bigquery_tables.py
+│   └── ...
 ├── pyproject.toml               # Poetry configuration
 ├── poetry.lock                  # Locked dependencies
 ├── datawagon-config.toml        # File type configuration
@@ -474,6 +588,30 @@ Ensure dependencies are installed:
 ```bash
 poetry install
 ```
+
+### BigQuery dataset not found
+
+Create the dataset before running BigQuery commands:
+
+```bash
+bq mk --dataset your-project-id:your_dataset_name
+```
+
+### BigQuery authentication errors
+
+Ensure you have BigQuery permissions:
+
+```bash
+# Authenticate with GCP
+gcloud auth application-default login
+
+# Verify you have BigQuery access
+bq ls --project_id=your-project-id
+```
+
+Required IAM roles:
+- `roles/bigquery.dataEditor` - Create and manage tables
+- `roles/storage.objectViewer` - Read CSV files from GCS
 
 ---
 

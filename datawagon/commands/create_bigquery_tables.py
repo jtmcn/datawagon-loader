@@ -49,8 +49,12 @@ def create_bigquery_tables(ctx: click.Context) -> None:
     bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]
 
     # Scan GCS bucket for storage folders
-    click.echo("Scanning GCS bucket for storage folders...")
-    storage_folders = _scan_gcs_storage_folders(gcs_manager, app_config.gcs_bucket)
+    click.echo(
+        f"Scanning GCS bucket for folders under '{app_config.bq_storage_prefix}/'..."
+    )
+    storage_folders = _scan_gcs_storage_folders(
+        gcs_manager, app_config.gcs_bucket, storage_prefix=app_config.bq_storage_prefix
+    )
 
     if not storage_folders:
         click.secho("No storage folders found in GCS bucket.", fg="yellow")
@@ -154,18 +158,23 @@ def create_bigquery_tables(ctx: click.Context) -> None:
 
 
 def _scan_gcs_storage_folders(
-    gcs_manager: GcsManager, bucket_name: str
+    gcs_manager: GcsManager, bucket_name: str, storage_prefix: str = ""
 ) -> List[StorageFolderSummary]:
     """Scan GCS bucket and identify storage folders with CSV files.
 
     Groups files by storage folder, extracts version information,
     and detects partitioning patterns.
 
+    Args:
+        gcs_manager: GCS manager instance
+        bucket_name: GCS bucket name
+        storage_prefix: Optional prefix to filter folders (e.g., "caravan-versioned")
+
     Returns:
         List of StorageFolderSummary objects
     """
-    # List all CSV.GZ files in bucket
-    all_blobs = gcs_manager.list_all_blobs_with_prefix(prefix="")
+    # List all CSV.GZ files in bucket under the specified prefix
+    all_blobs = gcs_manager.list_all_blobs_with_prefix(prefix=storage_prefix)
     csv_blobs = [blob for blob in all_blobs if blob.endswith(".csv.gz")]
 
     if not csv_blobs:

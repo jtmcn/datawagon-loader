@@ -20,6 +20,8 @@ class AppConfig(BaseModel):
         gcs_project_id: Google Cloud Platform project ID for GCS access
         gcs_bucket: GCS bucket name where files will be uploaded
         bq_dataset: BigQuery dataset name for external tables
+        bq_storage_prefix: GCS folder prefix for BigQuery table creation
+            (default: "caravan-versioned")
 
     Example:
         >>> config = AppConfig(
@@ -36,3 +38,4 @@ class AppConfig(BaseModel):
     gcs_project_id: str
     gcs_bucket: str
     bq_dataset: str
+    bq_storage_prefix: str = "caravan-versioned"

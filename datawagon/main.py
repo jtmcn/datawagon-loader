@@ -70,6 +70,13 @@ from datawagon.objects.source_config import SourceConfig
     help="BigQuery dataset for external tables",
     envvar="DW_BQ_DATASET",
 )
+@click.option(
+    "--bq-storage-prefix",
+    type=str,
+    default="caravan-versioned",
+    help="GCS folder prefix for BigQuery table creation (default: caravan-versioned)",
+    envvar="DW_BQ_STORAGE_PREFIX",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -80,6 +87,7 @@ def cli(
     gcs_project_id: str,
     gcs_bucket: str,
     bq_dataset: str,
+    bq_storage_prefix: str,
 ) -> None:
     """DataWagon CLI group for processing CSV files to Google Cloud Storage.
 
@@ -95,6 +103,8 @@ def cli(
         csv_source_config: Path to source_config.toml configuration file
         gcs_project_id: Google Cloud Platform project ID
         gcs_bucket: GCS bucket name for uploads
+        bq_dataset: BigQuery dataset for external tables
+        bq_storage_prefix: GCS folder prefix for BigQuery table creation
 
     Raises:
         click.UsageError: If required parameters are missing or invalid
@@ -142,6 +152,7 @@ def cli(
         gcs_project_id=gcs_project_id,
         gcs_bucket=gcs_bucket,
         bq_dataset=bq_dataset,
+        bq_storage_prefix=bq_storage_prefix,
     )
 
     ctx.obj["CONFIG"] = app_config
