@@ -87,34 +87,51 @@ class GcsManager:
     def list_blobs(
         self, storage_folder_name: str, file_name_base: str, file_extension: str
     ) -> List[str]:
-        """List blobs matching pattern in both versioned and non-versioned folders."""
-        if not self.has_error:
-            try:
-                # Extract parent directory for efficient search
-                if "/" in storage_folder_name:
-                    parts = storage_folder_name.rsplit("/", 1)
-                    parent_prefix = parts[0] + "/"
-                    folder_base = parts[1]
-                else:
-                    parent_prefix = ""
-                    folder_base = storage_folder_name
+        """List blobs matching pattern with proper error propagation."""
+        if self.has_error:
+            logger.error("GCS client has errors, cannot list blobs")
+            return []
 
-                # Search with glob that matches both:
-                # - caravan/claim_raw/report_date=*/file.csv.gz
-                # - caravan/claim_raw_v1-0/report_date=*/file.csv.gz
-                blobs = self.storage_client.list_blobs(
-                    self.source_bucket_name,
-                    prefix=parent_prefix,
-                    match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
-                )
-                return [blob.name for blob in blobs]
-            except google_api_exceptions.NotFound as e:
-                logger.error(f"Bucket not found: {e}")
-            except google_api_exceptions.PermissionDenied as e:
-                logger.error(f"Permission denied listing blobs: {e}")
-            except Exception as e:
-                logger.error(f"Unable to list files in bucket: {e}", exc_info=True)
-        return []
+        try:
+            # Extract parent directory for efficient search
+            if "/" in storage_folder_name:
+                parts = storage_folder_name.rsplit("/", 1)
+                parent_prefix = parts[0] + "/"
+                folder_base = parts[1]
+            else:
+                parent_prefix = ""
+                folder_base = storage_folder_name
+
+            # Search with glob that matches both:
+            # - caravan/claim_raw/report_date=*/file.csv.gz
+            # - caravan/claim_raw_v1-0/report_date=*/file.csv.gz
+            blobs = self.storage_client.list_blobs(
+                self.source_bucket_name,
+                prefix=parent_prefix,
+                match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
+            )
+            return [blob.name for blob in blobs]
+
+        except google_api_exceptions.NotFound:
+            # Bucket not found - return empty (expected case)
+            logger.warning(f"Bucket not found: {self.source_bucket_name}")
+            return []
+
+        except (
+            google_api_exceptions.Unauthenticated,
+            google_api_exceptions.PermissionDenied,
+        ) as e:
+            # FIX: Auth/permission errors should be fatal, not silent
+            logger.error(
+                f"GCS access error: {e}. Run: gcloud auth application-default login"
+            )
+            self.has_error = True
+            raise  # Re-raise to signal caller
+
+        except Exception as e:
+            # Other errors - log with full trace and return empty
+            logger.error(f"Unable to list files in bucket: {e}", exc_info=True)
+            return []
 
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
         """Get DataFrame of files in bucket for all enabled sources.
@@ -156,20 +173,25 @@ class GcsManager:
                 df = pd.DataFrame(file_list, columns=["_file_name"])
                 df["base_name"] = file_source.select_file_name_base
 
-                combined_df = pd.concat([combined_df, df])
+                # FIX: Reset index to prevent duplicate indices after concat
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
 
         return combined_df
 
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
-    def upload_blob(self, source_file_name: str, destination_blob_name: str) -> bool:
-        """Upload file to GCS bucket with retry logic.
+    def upload_blob(
+        self, source_file_name: str, destination_blob_name: str, overwrite: bool = False
+    ) -> bool:
+        """Upload file to GCS bucket with retry logic and race condition protection.
 
         Validates blob name for security, then uploads file to GCS with automatic
-        retry for transient failures (503, 504, 500, 429).
+        retry for transient failures (503, 504, 500, 429). Uses atomic operations
+        to prevent race conditions when overwrite=False.
 
         Args:
             source_file_name: Local file path to upload
             destination_blob_name: Destination path in GCS bucket
+            overwrite: If False, fails if blob already exists (prevents races)
 
         Returns:
             True if upload succeeded, False otherwise
@@ -191,8 +213,17 @@ class GcsManager:
         try:
             bucket = self.storage_client.bucket(self.source_bucket_name)
             blob = bucket.blob(validated_destination)
-            blob.upload_from_filename(source_file_name)
+
+            # FIX: Use atomic create-if-not-exists to prevent race conditions
+            # if_generation_match=0 means only succeed if blob doesn't exist
+            generation_match = None if overwrite else 0
+
+            blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
+            logger.info(f"Uploaded: {destination_blob_name}")
             return True
+        except google_api_exceptions.PreconditionFailed:
+            logger.warning(f"Blob already exists, skipping: {destination_blob_name}")
+            return False
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"Permission denied uploading to bucket: {e}")
             return False
@@ -253,23 +284,29 @@ class GcsManager:
     def copy_blob_within_bucket(
         self, source_blob_name: str, destination_blob_name: str
     ) -> bool:
-        """Copy a blob to a new location within the same bucket."""
+        """Copy a blob to a new location within the same bucket with atomic verification."""
         if not self.has_error:
             try:
                 bucket = self.storage_client.bucket(self.source_bucket_name)
                 source_blob = bucket.blob(source_blob_name)
 
-                # Copy blob within same bucket
+                # Copy blob within same bucket - returns new blob with metadata
                 destination_blob = bucket.copy_blob(
                     source_blob, bucket, destination_blob_name
                 )
 
-                # Verify copy succeeded
-                if destination_blob.exists():
+                # FIX: Verify immediately using returned object (no TOCTOU gap)
+                # Compare sizes to ensure copy completed successfully
+                if destination_blob.size == source_blob.size:
+                    logger.info(
+                        f"Copied: {source_blob_name} -> {destination_blob_name} "
+                        f"({destination_blob.size} bytes)"
+                    )
                     return True
                 else:
                     logger.error(
-                        f"Copy verification failed for {destination_blob_name}"
+                        f"Size mismatch after copy: expected {source_blob.size}, "
+                        f"got {destination_blob.size}"
                     )
                     return False
 

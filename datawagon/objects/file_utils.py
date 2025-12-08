@@ -144,8 +144,8 @@ class FileUtils:
 
     def csv_zip_to_gzip(
         self, input_zip_path: Path, remove_original_zip: bool = False
-    ) -> Path:
-        """Convert ZIP file containing CSV to GZIP format.
+    ) -> List[Path]:
+        """Convert ZIP file containing CSV(s) to GZIP format.
 
         Extracts CSV files from ZIP archive and converts to GZIP format,
         flattening any directory structure. Validates ZIP safety to prevent
@@ -156,16 +156,17 @@ class FileUtils:
             remove_original_zip: Remove original ZIP after conversion
 
         Returns:
-            Path to created .csv.gz file
+            List[Path]: List of created .csv.gz files
 
         Raises:
+            ValueError: If ZIP contains no CSV files
             SecurityError: If ZIP file exceeds safety limits (zip bomb)
 
         Example:
             >>> utils = FileUtils()
-            >>> output = utils.csv_zip_to_gzip(Path("data.zip"))
-            >>> output
-            Path('data.csv.gz')
+            >>> outputs = utils.csv_zip_to_gzip(Path("data.zip"))
+            >>> outputs
+            [Path('data.csv.gz')]
 
         Note:
             Excludes __MACOSX metadata files automatically.
@@ -177,24 +178,33 @@ class FileUtils:
             logger.error(f"Unsafe zip file: {e}")
             raise
 
-        current_dir = os.path.dirname(input_zip_path)
-        output_gzip_path = Path()
-        is_successful = False
+        current_dir = os.path.dirname(input_zip_path) or "."
+        output_gzip_paths = []
+
         with zipfile.ZipFile(input_zip_path, "r") as input_zip:
             for file_info in input_zip.infolist():
+                # Only process CSV files, ignore macOS metadata
                 if "__MACOSX" not in file_info.filename:
-                    filename = os.path.basename(file_info.filename)
-                    output_gzip_path = Path(f"{current_dir}/{filename}.gz")
-                    with input_zip.open(file_info.filename) as input_file:
-                        if file_info.filename.lower().endswith(".csv"):
+                    if file_info.filename.lower().endswith(".csv"):
+                        filename = os.path.basename(file_info.filename)
+                        output_gzip_path = Path(f"{current_dir}/{filename}.gz")
+
+                        with input_zip.open(file_info.filename) as input_file:
                             with gzip.open(output_gzip_path, "wb") as gzip_file:
                                 for chunk in iter(
                                     lambda: input_file.read(1024 * 1024), b""
                                 ):  # 1MB chunks
                                     gzip_file.write(chunk)
-                                is_successful = True
 
-        if remove_original_zip and is_successful:
+                        output_gzip_paths.append(output_gzip_path)
+
+        # Explicit error if no CSV files found
+        if not output_gzip_paths:
+            raise ValueError(f"No CSV files found in ZIP: {input_zip_path}")
+
+        # Only remove original after successful processing
+        if remove_original_zip:
             os.remove(input_zip_path)
 
-        return Path(output_gzip_path)
+        logger.info(f"Converted {len(output_gzip_paths)} CSV files from ZIP to GZIP")
+        return output_gzip_paths

@@ -40,10 +40,17 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
     file_utils = FileUtils()
     for zip_file in zip_files:
         status(f"Converting {zip_file.file_path} to gzip...")
-        file_output = file_utils.csv_zip_to_gzip(
-            zip_file.file_path, remove_original_zip=True
-        )
-        if file_output:
-            success(f"Success: {file_output}")
-        else:
-            error("ERROR")
+        try:
+            file_outputs = file_utils.csv_zip_to_gzip(
+                zip_file.file_path, remove_original_zip=True
+            )
+            if file_outputs:
+                for output_file in file_outputs:
+                    success(f"Created: {output_file}")
+                success(f"Converted {len(file_outputs)} CSV files from {zip_file.file_name}")
+            else:
+                error("No files created")
+        except ValueError as e:
+            error(f"Error: {e}")
+        except Exception as e:
+            error(f"Conversion failed: {e}")

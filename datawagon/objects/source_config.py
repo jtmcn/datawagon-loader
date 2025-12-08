@@ -7,7 +7,7 @@ validation for regex patterns to prevent ReDoS attacks.
 import re
 from typing import Any, List, Literal, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from datawagon.security import SecurityError, validate_regex_complexity
 
@@ -69,6 +69,29 @@ class SourceFromLocalFS(BaseModel):
             raise ValueError(f"Unsafe regex pattern: {e}")
         except re.error as e:
             raise ValueError(f"Invalid regex pattern: {e}")
+
+    @model_validator(mode="after")
+    def validate_regex_consistency(self) -> "SourceFromLocalFS":
+        """Validate regex pattern and group names match at config load time."""
+        # Both must be set or both None
+        if (self.regex_pattern is None) != (self.regex_group_names is None):
+            raise ValueError(
+                "regex_pattern and regex_group_names must both be set or both None"
+            )
+
+        # FIX: Validate group count at config load time to catch errors early
+        if self.regex_pattern and self.regex_group_names:
+            num_groups = self.regex_pattern.groups
+            expected_groups = len(self.regex_group_names)
+            if num_groups != expected_groups:
+                raise ValueError(
+                    f"Regex pattern has {num_groups} groups but "
+                    f"regex_group_names has {expected_groups} names. "
+                    f"Pattern: {self.regex_pattern.pattern}, "
+                    f"Names: {self.regex_group_names}"
+                )
+
+        return self
 
 
 class Destination(BaseModel):

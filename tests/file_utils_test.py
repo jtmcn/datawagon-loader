@@ -124,7 +124,12 @@ class TestCsvZipToGzip:
             zf.writestr("test.csv", sample_csv_content)
 
         file_utils = FileUtils()
-        result = file_utils.csv_zip_to_gzip(zip_path, remove_original_zip=False)
+        results = file_utils.csv_zip_to_gzip(zip_path, remove_original_zip=False)
+
+        # Check that we got a list with one file
+        assert isinstance(results, list)
+        assert len(results) == 1
+        result = results[0]
 
         # Check output file was created
         assert result.exists()
@@ -147,7 +152,12 @@ class TestCsvZipToGzip:
             zf.writestr("test.csv", sample_csv_content)
 
         file_utils = FileUtils()
-        result = file_utils.csv_zip_to_gzip(zip_path, remove_original_zip=True)
+        results = file_utils.csv_zip_to_gzip(zip_path, remove_original_zip=True)
+
+        # Should get list with one file
+        assert isinstance(results, list)
+        assert len(results) == 1
+        result = results[0]
 
         # Output should exist
         assert result.exists()
@@ -165,7 +175,12 @@ class TestCsvZipToGzip:
             zf.writestr("folder/subfolder/data.csv", sample_csv_content)
 
         file_utils = FileUtils()
-        result = file_utils.csv_zip_to_gzip(zip_path)
+        results = file_utils.csv_zip_to_gzip(zip_path)
+
+        # Should get list with one file
+        assert isinstance(results, list)
+        assert len(results) == 1
+        result = results[0]
 
         # Output filename should be flattened (no directory structure)
         assert result.name == "data.csv.gz"
@@ -181,7 +196,12 @@ class TestCsvZipToGzip:
             zf.writestr("__MACOSX/._data.csv", "junk")
 
         file_utils = FileUtils()
-        result = file_utils.csv_zip_to_gzip(zip_path)
+        results = file_utils.csv_zip_to_gzip(zip_path)
+
+        # Should get list with one file
+        assert isinstance(results, list)
+        assert len(results) == 1
+        result = results[0]
 
         # Should only process the CSV file, not __MACOSX
         assert result.exists()
@@ -212,7 +232,12 @@ class TestCsvZipToGzip:
             zf.writestr("data.csv", sample_csv_content)
 
         file_utils = FileUtils()
-        result = file_utils.csv_zip_to_gzip(zip_path)
+        results = file_utils.csv_zip_to_gzip(zip_path)
+
+        # Should get list with one file
+        assert isinstance(results, list)
+        assert len(results) == 1
+        result = results[0]
 
         # Should create gzip for the CSV file
         assert result.name == "data.csv.gz"

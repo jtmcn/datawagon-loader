@@ -83,7 +83,16 @@ def drop_bigquery_tables(
         warning("No external tables found in dataset.")
         return
 
-    bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]
+    # FIX: Lazy initialization with error handling
+    bq_manager = ctx.obj.get("BQ_MANAGER")
+    if not bq_manager:
+        bq_manager = BigQueryManager(
+            app_config.gcs_project_id, dataset_id, app_config.gcs_bucket
+        )
+        if bq_manager.has_error:
+            error("Failed to connect to BigQuery. Check credentials and project settings.")
+            ctx.abort()
+        ctx.obj["BQ_MANAGER"] = bq_manager
 
     # Filter to tables to drop
     if table_name:

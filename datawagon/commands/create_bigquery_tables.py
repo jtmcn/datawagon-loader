@@ -66,7 +66,16 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
     )
     existing_table_names = {table.table_name for table in existing_tables}
 
-    bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]
+    # FIX: Lazy initialization with error handling
+    bq_manager = ctx.obj.get("BQ_MANAGER")
+    if not bq_manager:
+        bq_manager = BigQueryManager(
+            app_config.gcs_project_id, dataset_id, app_config.gcs_bucket
+        )
+        if bq_manager.has_error:
+            error("Failed to connect to BigQuery. Check credentials and project settings.")
+            ctx.abort()
+        ctx.obj["BQ_MANAGER"] = bq_manager
 
     # Scan GCS bucket for storage folders
     info(f"Scanning GCS bucket for folders under '{app_config.bq_storage_prefix}/'...")

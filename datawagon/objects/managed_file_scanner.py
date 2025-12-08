@@ -146,22 +146,27 @@ class ManagedFileScanner:
         else:
             match_pattern = f"*{match_pattern.lower()}*"
 
-        if exclude_pattern is not None:
-            exclude_pattern = exclude_pattern.lower()
+        # FIX: Only process exclude_pattern if not None
+        exclude_pattern_lower = exclude_pattern.lower() if exclude_pattern is not None else None
 
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
                 if fnmatch.fnmatch(filename.lower(), match_pattern):
-                    if not fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern}*"):
-                        if not filename.startswith(".~lock"):
-                            file_path = os.path.abspath(os.path.join(root, filename))
-                            # Validate path is within base_path to prevent traversal
-                            try:
-                                validate_path_traversal(file_path, base_path)
-                                matches.append(file_path)
-                            except SecurityError as e:
-                                logger.error(f"Path validation failed: {e}")
-                                continue
+                    # FIX: Check None before pattern matching
+                    should_exclude = (
+                        exclude_pattern_lower is not None
+                        and fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern_lower}*")
+                    )
+
+                    if not should_exclude and not filename.startswith(".~lock"):
+                        file_path = os.path.abspath(os.path.join(root, filename))
+                        # Validate path is within base_path to prevent traversal
+                        try:
+                            validate_path_traversal(file_path, base_path)
+                            matches.append(file_path)
+                        except SecurityError as e:
+                            logger.error(f"Path validation failed: {e}")
+                            continue
 
         return [Path(match) for match in matches]
 
@@ -242,12 +247,8 @@ class ManagedFileScanner:
             if not match:
                 raise ValueError(f"Invalid file name format: {file_path}")
 
-            if len(r_groups) != len(match.groups()):
-                raise ValueError(
-                    "File regex config generated mismatched groups."
-                    + f"\nFile name: {file_path.name}, regex: {r_pattern}, groups: {r_groups}"
-                    ""
-                )
+            # Group count validation moved to config load time (source_config.py)
+            # This ensures mismatches are caught early, not per-file
 
             for i in range(len(match.groups())):
                 file_dict[r_groups[i]] = match.group(i + 1)

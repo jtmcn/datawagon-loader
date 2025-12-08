@@ -189,7 +189,7 @@ class ManagedFileMetadata(ManagedFileInput):
 
     @staticmethod
     def date_key_to_date(date_key: int) -> date:
-        """Convert integer date key to date object.
+        """Convert integer date key to date object with validation.
 
         Supports two formats:
         - YYYYMMDD (8 digits): Full date
@@ -201,6 +201,9 @@ class ManagedFileMetadata(ManagedFileInput):
         Returns:
             date object representing the date
 
+        Raises:
+            ValueError: If date_key is invalid format or represents invalid date
+
         Example:
             >>> ManagedFileMetadata.date_key_to_date(20230615)
             date(2023, 6, 15)
@@ -209,11 +212,33 @@ class ManagedFileMetadata(ManagedFileInput):
         """
         date_string = str(date_key)
 
-        year = int(date_string[:4])
-        month = int(date_string[4:6])
-        day = int(date_string[6:]) if len(date_string) > 6 else 1
+        # Validate format
+        if len(date_string) not in [6, 8]:
+            raise ValueError(
+                f"Invalid date_key format: {date_key}. "
+                f"Expected YYYYMMDD (8 digits) or YYYYMM (6 digits), got {len(date_string)} digits"
+            )
 
-        return date(year, month, day)
+        try:
+            year = int(date_string[:4])
+            month = int(date_string[4:6])
+            day = int(date_string[6:8]) if len(date_string) == 8 else 1
+
+            # Validate ranges
+            if not (1900 <= year <= 2100):
+                raise ValueError(f"Year out of range: {year}")
+            if not (1 <= month <= 12):
+                raise ValueError(f"Invalid month: {month}")
+            if not (1 <= day <= 31):
+                raise ValueError(f"Invalid day: {day}")
+
+            # Let date() constructor validate day for month
+            return date(year, month, day)
+
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid date_key: {date_key} -> {date_string}. {str(e)}"
+            ) from e
 
     @staticmethod
     def human_readable_size(size: int) -> str:

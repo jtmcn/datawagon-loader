@@ -2,6 +2,7 @@
 import logging
 import os
 import re
+import urllib.parse
 import zipfile
 from pathlib import Path
 from typing import Optional, Union
@@ -80,7 +81,7 @@ def validate_regex_complexity(pattern: str, max_length: int = 500) -> None:
 
 
 def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
-    """Validate GCS blob name for security.
+    """Validate GCS blob name with URL decode check.
 
     Args:
         blob_name: Blob name to validate
@@ -90,7 +91,7 @@ def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
         Validated blob name
 
     Raises:
-        SecurityError: If blob name is invalid
+        SecurityError: If blob name is invalid or contains attacks
 
     Example:
         >>> validate_blob_name("folder/file.csv")
@@ -99,12 +100,19 @@ def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
     if len(blob_name) > max_length:
         raise SecurityError(f"Blob name too long: {len(blob_name)} > {max_length}")
 
+    # FIX: Detect and validate URL-encoded names to prevent bypass
+    decoded = urllib.parse.unquote(blob_name)
+    if decoded != blob_name:
+        logger.warning(f"Blob name URL-encoded: {blob_name} -> {decoded}")
+        # Recursively validate decoded version to prevent ..%2F..%2F attacks
+        validate_blob_name(decoded, max_length)
+
     # Check for path traversal attempts
     if ".." in blob_name or blob_name.startswith("/"):
         raise SecurityError(f"Invalid blob name (path traversal): {blob_name}")
 
-    # Check for control characters
-    if any(ord(c) < 32 for c in blob_name):
+    # Check for control characters (including null bytes)
+    if any(ord(c) < 32 for c in blob_name) or "\x00" in blob_name:
         raise SecurityError(f"Control characters in blob name: {blob_name}")
 
     return blob_name

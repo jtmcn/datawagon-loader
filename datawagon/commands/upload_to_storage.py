@@ -25,7 +25,17 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
     matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(
         compare_local_files_to_bucket
     )
-    gcs_manager: GcsManager = ctx.obj["GCS_MANAGER"]
+
+    # FIX: Lazy initialization with error handling
+    gcs_manager = ctx.obj.get("GCS_MANAGER")
+    if not gcs_manager:
+        from datawagon.objects.app_config import AppConfig
+        app_config: AppConfig = ctx.obj["CONFIG"]
+        gcs_manager = GcsManager(app_config.gcs_project_id, app_config.gcs_bucket)
+        if gcs_manager.has_error:
+            error("Failed to connect to GCS. Check credentials and project settings.")
+            ctx.abort()
+        ctx.obj["GCS_MANAGER"] = gcs_manager
 
     csv_file_infos: List[ManagedFileMetadata] = [
         file_info for src in matched_new_files for file_info in src.files
