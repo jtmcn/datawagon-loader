@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from datawagon.objects.managed_file_metadata import (ManagedFileInput,
-                                                     ManagedFileMetadata)
+from datawagon.objects.managed_file_metadata import (
+    ManagedFileInput,
+    ManagedFileMetadata,
+)
 
 
 @pytest.mark.unit

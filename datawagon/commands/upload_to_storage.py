@@ -5,8 +5,14 @@ import click
 
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.compare import compare_local_files_to_bucket
-from datawagon.console import (confirm, error, inline_status_end,
-                               inline_status_start, newline, success)
+from datawagon.console import (
+    confirm,
+    error,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    success,
+)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
@@ -24,6 +30,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
     gcs_manager = ctx.obj.get("GCS_MANAGER")
     if not gcs_manager:
         from datawagon.objects.app_config import AppConfig
+
         app_config: AppConfig = ctx.obj["CONFIG"]
         gcs_manager = GcsManager(app_config.gcs_project_id, app_config.gcs_bucket)
         if gcs_manager.has_error:

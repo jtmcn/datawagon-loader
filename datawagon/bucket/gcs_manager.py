@@ -218,7 +218,9 @@ class GcsManager:
             # if_generation_match=0 means only succeed if blob doesn't exist
             generation_match = None if overwrite else 0
 
-            blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
+            blob.upload_from_filename(
+                source_file_name, if_generation_match=generation_match
+            )
             logger.info(f"Uploaded: {destination_blob_name}")
             return True
         except google_api_exceptions.PreconditionFailed:
@@ -287,12 +289,34 @@ class GcsManager:
         """Copy a blob to a new location within the same bucket with atomic verification."""
         if not self.has_error:
             try:
+                # Validate destination path before attempting copy
+                try:
+                    validate_blob_name(destination_blob_name)
+                except SecurityError as e:
+                    logger.error(f"Invalid destination blob name: {e}")
+                    return False
+
+                # Log the copy operation
+                logger.info(
+                    f"Attempting copy: {source_blob_name} -> {destination_blob_name}"
+                )
+
                 bucket = self.storage_client.bucket(self.source_bucket_name)
                 source_blob = bucket.blob(source_blob_name)
+
+                # Fetch source blob metadata from GCS (required for size comparison)
+                source_blob.reload()
+                logger.debug(f"Source blob size: {source_blob.size} bytes")
 
                 # Copy blob within same bucket - returns new blob with metadata
                 destination_blob = bucket.copy_blob(
                     source_blob, bucket, destination_blob_name
+                )
+
+                # Reload destination blob to get fresh metadata from GCS
+                destination_blob.reload()
+                logger.debug(
+                    f"Destination blob created with size: {destination_blob.size} bytes"
                 )
 
                 # FIX: Verify immediately using returned object (no TOCTOU gap)
@@ -305,8 +329,9 @@ class GcsManager:
                     return True
                 else:
                     logger.error(
-                        f"Size mismatch after copy: expected {source_blob.size}, "
-                        f"got {destination_blob.size}"
+                        f"Size mismatch: source={source_blob_name} "
+                        f"({source_blob.size}B) dest={destination_blob_name} "
+                        f"({destination_blob.size}B)"
                     )
                     return False
 

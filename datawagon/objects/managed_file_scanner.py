@@ -14,8 +14,10 @@ import toml
 from pydantic import BaseModel, Field, ValidationError
 
 from datawagon.logging_config import get_logger
-from datawagon.objects.managed_file_metadata import (ManagedFileInput,
-                                                     ManagedFileMetadata)
+from datawagon.objects.managed_file_metadata import (
+    ManagedFileInput,
+    ManagedFileMetadata,
+)
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
 from datawagon.security import SecurityError, validate_path_traversal
 
@@ -145,7 +147,9 @@ class ManagedFileScanner:
             match_pattern = f"*{match_pattern.lower()}*"
 
         # FIX: Only process exclude_pattern if not None
-        exclude_pattern_lower = exclude_pattern.lower() if exclude_pattern is not None else None
+        exclude_pattern_lower = (
+            exclude_pattern.lower() if exclude_pattern is not None else None
+        )
 
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
@@ -153,7 +157,9 @@ class ManagedFileScanner:
                     # FIX: Check None before pattern matching
                     should_exclude = (
                         exclude_pattern_lower is not None
-                        and fnmatch.fnmatch(filename.lower(), f"*{exclude_pattern_lower}*")
+                        and fnmatch.fnmatch(
+                            filename.lower(), f"*{exclude_pattern_lower}*"
+                        )
                     )
 
                     if not should_exclude and not filename.startswith(".~lock"):

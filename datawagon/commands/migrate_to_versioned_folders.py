@@ -5,8 +5,16 @@ from typing import List
 import click
 
 from datawagon.bucket.gcs_manager import GcsManager
-from datawagon.console import (error, header, info, newline, panel,
-                               progress_bar, success, warning)
+from datawagon.console import (
+    error,
+    header,
+    info,
+    newline,
+    panel,
+    progress_bar,
+    success,
+    warning,
+)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig
 
