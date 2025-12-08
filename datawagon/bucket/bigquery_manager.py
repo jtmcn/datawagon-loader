@@ -296,3 +296,36 @@ class BigQueryManager:
         except Exception as e:
             logger.error(f"Error checking table existence: {e}", exc_info=True)
             return False
+
+    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
+    def delete_table(self, table_name: str) -> bool:
+        """Delete a BigQuery external table.
+
+        Args:
+            table_name: Name of table to delete
+
+        Returns:
+            True if deletion succeeded, False otherwise
+
+        Note:
+            Only deletes table metadata (external tables don't contain data in BigQuery).
+            The underlying CSV files in GCS remain untouched.
+        """
+        if self.has_error:
+            return False
+
+        try:
+            table_ref = f"{self.project_id}.{self.dataset_id}.{table_name}"
+            self.bq_client.delete_table(table_ref)
+            logger.info(f"Deleted external table: {table_ref}")
+            return True
+
+        except google_api_exceptions.NotFound:
+            logger.error(f"Table not found: {table_name}")
+            return False
+        except google_api_exceptions.PermissionDenied as e:
+            logger.error(f"Permission denied deleting table: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting table: {e}", exc_info=True)
+            return False

@@ -17,8 +17,15 @@ from datawagon.objects.bigquery_table_metadata import (
 
 
 @click.command(name="create-bigquery-tables")
+@click.option(
+    "--dataset",
+    type=click.STRING,
+    default=None,
+    required=False,
+    help="BigQuery dataset name (defaults to DW_BQ_DATASET env var)",
+)
 @click.pass_context
-def create_bigquery_tables(ctx: click.Context) -> None:
+def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
     """Create BigQuery external tables for GCS folders without tables.
 
     Workflow:
@@ -30,6 +37,9 @@ def create_bigquery_tables(ctx: click.Context) -> None:
     6. Create external tables with Hive partitioning
     """
     app_config: AppConfig = ctx.obj["CONFIG"]
+
+    # Use provided dataset or default from config
+    dataset_id = dataset or app_config.bq_dataset
 
     # Initialize managers
     gcs_manager = ctx.obj.get("GCS_MANAGER")
@@ -43,7 +53,9 @@ def create_bigquery_tables(ctx: click.Context) -> None:
         ctx.obj["GCS_MANAGER"] = gcs_manager
 
     # Get existing BigQuery tables
-    existing_tables: List[BigQueryTableInfo] = ctx.invoke(list_bigquery_tables)
+    existing_tables: List[BigQueryTableInfo] = ctx.invoke(
+        list_bigquery_tables, dataset=dataset_id
+    )
     existing_table_names = {table.table_name for table in existing_tables}
 
     bq_manager: BigQueryManager = ctx.obj["BQ_MANAGER"]

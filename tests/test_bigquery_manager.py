@@ -228,6 +228,80 @@ def test_table_exists_false(mock_client_class: Mock) -> None:
     assert exists is False
 
 
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_delete_table_success(mock_client_class: Mock) -> None:
+    """Test successfully deleting a table."""
+    # Setup mock
+    mock_client = Mock()
+    mock_client_class.return_value = mock_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_client.get_dataset.return_value = mock_dataset
+    mock_client.delete_table.return_value = None  # Success returns None
+
+    # Initialize manager and delete table
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.delete_table("claim_raw_v1_1")
+
+    # Assertions
+    assert success is True
+    mock_client.delete_table.assert_called_once_with(
+        "test-project.test_dataset.claim_raw_v1_1"
+    )
+
+
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_delete_table_not_found(mock_client_class: Mock) -> None:
+    """Test deleting non-existent table."""
+    # Setup mock
+    mock_client = Mock()
+    mock_client_class.return_value = mock_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_client.get_dataset.return_value = mock_dataset
+    mock_client.delete_table.side_effect = google_api_exceptions.NotFound("Not found")
+
+    # Initialize manager and attempt deletion
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.delete_table("missing_table")
+
+    # Assertions
+    assert success is False
+
+
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_delete_table_permission_denied(mock_client_class: Mock) -> None:
+    """Test deleting table without permissions."""
+    # Setup mock
+    mock_client = Mock()
+    mock_client_class.return_value = mock_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_client.get_dataset.return_value = mock_dataset
+    mock_client.delete_table.side_effect = google_api_exceptions.PermissionDenied(
+        "Permission denied"
+    )
+
+    # Initialize manager and attempt deletion
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.delete_table("claim_raw_v1_1")
+
+    # Assertions
+    assert success is False
+
+
 def test_extract_partition_columns() -> None:
     """Test extracting partition columns from GCS URI pattern."""
     uri = "gs://bucket/folder/report_date=*/file.csv.gz"

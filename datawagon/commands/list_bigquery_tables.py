@@ -10,8 +10,17 @@ from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
 
 @click.command(name="list-bigquery-tables")
+@click.option(
+    "--dataset",
+    type=click.STRING,
+    default=None,
+    required=False,
+    help="BigQuery dataset name (defaults to DW_BQ_DATASET env var)",
+)
 @click.pass_context
-def list_bigquery_tables(ctx: click.Context) -> List[BigQueryTableInfo]:
+def list_bigquery_tables(
+    ctx: click.Context, dataset: str | None
+) -> List[BigQueryTableInfo]:
     """List existing external tables in BigQuery dataset.
 
     Displays:
@@ -25,10 +34,13 @@ def list_bigquery_tables(ctx: click.Context) -> List[BigQueryTableInfo]:
     """
     app_config: AppConfig = ctx.obj["CONFIG"]
 
+    # Use provided dataset or default from config
+    dataset_id = dataset or app_config.bq_dataset
+
     # Initialize BigQuery manager
     bq_manager = BigQueryManager(
         project_id=app_config.gcs_project_id,
-        dataset_id=app_config.bq_dataset,
+        dataset_id=dataset_id,
         bucket_name=app_config.gcs_bucket,
     )
 
@@ -73,7 +85,7 @@ def list_bigquery_tables(ctx: click.Context) -> List[BigQueryTableInfo]:
     # Display table
     click.echo(nl=True)
     click.secho(
-        f"Found {len(tables)} external tables in dataset '{app_config.bq_dataset}':",
+        f"Found {len(tables)} external tables in dataset '{dataset_id}':",
         fg="green",
     )
     click.echo(nl=True)

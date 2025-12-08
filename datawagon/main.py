@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from datawagon.commands.compare import compare_local_files_to_bucket
 from datawagon.commands.create_bigquery_tables import create_bigquery_tables
+from datawagon.commands.drop_bigquery_tables import drop_bigquery_tables
 from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
@@ -166,6 +167,7 @@ cli.add_command(file_zip_to_gzip)
 cli.add_command(files_in_storage)
 cli.add_command(list_bigquery_tables)
 cli.add_command(create_bigquery_tables)
+cli.add_command(drop_bigquery_tables)
 cli.add_command(migrate_to_versioned_folders)
 
 

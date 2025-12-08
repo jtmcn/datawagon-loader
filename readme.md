@@ -181,6 +181,12 @@ datawagon list-bigquery-tables
 
 # Create external tables for GCS folders without tables
 datawagon create-bigquery-tables
+
+# Drop external tables (dry-run by default)
+datawagon drop-bigquery-tables
+
+# Actually execute deletion (requires confirmation)
+datawagon drop-bigquery-tables --execute
 ```
 
 ### Migrating to Versioned Folders
@@ -320,6 +326,36 @@ DW_BQ_STORAGE_PREFIX=""
 # Scan a different prefix
 DW_BQ_STORAGE_PREFIX=my-custom-folder
 ```
+
+**Drop tables:**
+
+```bash
+# Dry-run: Show what would be deleted (safe, default)
+datawagon drop-bigquery-tables
+
+# Drop all tables in dataset (requires confirmation)
+datawagon drop-bigquery-tables --execute
+
+# Drop specific table
+datawagon drop-bigquery-tables --execute --table-name claim_raw_v1_1
+
+# Drop from specific dataset
+datawagon drop-bigquery-tables --execute --dataset my_dataset
+```
+
+This command:
+- Defaults to dry-run mode (safe preview)
+- Requires `--execute` flag to actually delete
+- Shows all tables to be dropped before deletion
+- Requires explicit user confirmation
+- Only deletes table metadata (CSV files in GCS remain untouched)
+- Provides detailed progress and error reporting
+
+**Safety features:**
+- Dry-run mode by default prevents accidental deletions
+- User must explicitly confirm before any deletion
+- Individual table errors don't stop batch operations
+- Comprehensive logging for audit trail
 
 ### Chaining Commands
 
