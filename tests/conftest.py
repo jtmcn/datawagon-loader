@@ -1,6 +1,5 @@
 """Pytest fixtures and configuration."""
 import gzip
-import os
 import tempfile
 import zipfile
 from pathlib import Path

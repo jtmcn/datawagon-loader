@@ -5,7 +5,6 @@ import pytest
 from pydantic import ValidationError
 
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
-from datawagon.security import SecurityError
 
 
 @pytest.mark.unit

@@ -4,7 +4,7 @@ from typing import List
 import click
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
-from datawagon.console import error, newline, success, table, warning
+from datawagon.console import error, newline, success, warning
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
@@ -81,6 +81,8 @@ def list_bigquery_tables(
         )
 
     # Display table
+    from datawagon.console import table
+
     newline()
     success(f"Found {len(tables)} external tables in dataset '{dataset_id}':")
     newline()

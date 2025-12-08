@@ -5,16 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from datawagon.console import (
-    confirm,
-    error,
-    file_list,
-    get_console,
-    info,
-    success,
-    table,
-    warning,
-)
+from datawagon.console import (confirm, error, file_list, get_console, info,
+                               success, table, warning)
 
 
 @pytest.fixture(autouse=True)
@@ -160,8 +152,6 @@ def test_table_creation():
 
 def test_table_numeric_alignment():
     """Test that tables right-align columns with 'count' in header."""
-    from rich.table import Table as RichTable
-
     with patch("datawagon.console.get_console") as mock:
         mock_instance = MagicMock()
         mock.return_value = mock_instance

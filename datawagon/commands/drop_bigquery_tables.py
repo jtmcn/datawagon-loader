@@ -5,18 +5,9 @@ import click
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
-from datawagon.console import (
-    confirm,
-    error,
-    info,
-    inline_status_end,
-    inline_status_start,
-    newline,
-    panel,
-    success,
-    table,
-    warning,
-)
+from datawagon.console import (confirm, error, info, inline_status_end,
+                               inline_status_start, newline, panel, success,
+                               table, warning)
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 

@@ -14,10 +14,8 @@ import toml
 from pydantic import BaseModel, Field, ValidationError
 
 from datawagon.logging_config import get_logger
-from datawagon.objects.managed_file_metadata import (
-    ManagedFileInput,
-    ManagedFileMetadata,
-)
+from datawagon.objects.managed_file_metadata import (ManagedFileInput,
+                                                     ManagedFileMetadata)
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
 from datawagon.security import SecurityError, validate_path_traversal
 
@@ -194,7 +192,10 @@ class ManagedFileScanner:
             for file_metadata in file_group.files:
                 # Only append version if file has one
                 if file_metadata.file_version:
-                    file_metadata.storage_folder_name = f"{file_metadata.storage_folder_name}_{file_metadata.file_version}"
+                    file_metadata.storage_folder_name = (
+                        f"{file_metadata.storage_folder_name}_"
+                        f"{file_metadata.file_version}"
+                    )
 
     def source_file_attrs(
         self,

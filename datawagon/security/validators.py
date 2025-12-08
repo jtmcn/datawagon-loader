@@ -5,7 +5,7 @@ import re
 import urllib.parse
 import zipfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 logger = logging.getLogger(__name__)
 

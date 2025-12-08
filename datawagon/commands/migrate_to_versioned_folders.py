@@ -5,17 +5,8 @@ from typing import List
 import click
 
 from datawagon.bucket.gcs_manager import GcsManager
-from datawagon.console import (
-    confirm,
-    error,
-    header,
-    info,
-    newline,
-    panel,
-    progress_bar,
-    success,
-    warning,
-)
+from datawagon.console import (error, header, info, newline, panel,
+                               progress_bar, success, warning)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig
 
@@ -111,7 +102,6 @@ def build_migration_plan(
                         folder_parts[0] = NEW_ROOT_FOLDER
                         # Add version to last part of storage folder
                         folder_parts[-1] = f"{folder_parts[-1]}_{file_version}"
-                        versioned_folder = "/".join(folder_parts)
 
                         # Replace storage folder in path
                         for i, part in enumerate(folder_parts):

@@ -13,14 +13,8 @@ from typing import Any, Iterator, List, Optional, Sequence
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    TimeElapsedColumn,
-)
+from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
+                           SpinnerColumn, TextColumn, TimeElapsedColumn)
 from rich.rule import Rule
 from rich.table import Table
 
