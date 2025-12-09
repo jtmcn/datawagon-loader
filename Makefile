@@ -1,13 +1,8 @@
 .ONESHELL:
-# Auto-detect if we're in a Poetry environment or standard venv
+# Auto-detect if Poetry is available (simple check, no expensive calls)
 HAS_POETRY := $(shell command -v poetry 2> /dev/null)
 ifdef HAS_POETRY
-    IN_POETRY_ENV := $(shell poetry env info --path 2>/dev/null)
-    ifdef IN_POETRY_ENV
-        CMD := poetry run
-    else
-        CMD :=
-    endif
+    CMD := poetry run
 else
     CMD :=
 endif
@@ -39,7 +34,7 @@ setup-poetry: check-poetry install-poetry-plugins check-env install-deps-poetry 
 	@echo "  2. Activate virtualenv: source .venv/bin/activate"
 	@echo "  3. Run application: datawagon --help"
 
-setup-venv: check-python check-env install-deps-venv ## Non-Poetry setup (standard venv)
+setup-venv: check-python check-env install-deps-venv verify-install ## Non-Poetry setup
 	@echo "✓ Virtual environment setup complete!"
 	@echo ""
 	@echo "Next steps:"
@@ -94,9 +89,31 @@ install-deps-venv: ## Install dependencies with pip (non-Poetry)
 	@echo "Installing datawagon and dependencies..."
 	@.venv/bin/pip install --upgrade pip --quiet
 	@.venv/bin/pip install -e . --quiet
-	@echo "Installing dev dependencies..."
-	@.venv/bin/pip install -r requirements-dev.txt --quiet
-	@echo "✓ Dependencies installed"
+	@echo "✓ Runtime dependencies installed (dev tools not included)"
+	@echo "  For development, use Poetry: make setup-poetry"
+
+verify-install: ## Verify DataWagon installation
+	@echo "→ Verifying DataWagon installation..."
+	@if [ ! -d ".venv" ]; then \
+		echo "✗ Virtual environment not found"; \
+		echo "→ Run './setup-venv.sh' or 'make setup' first"; \
+		exit 1; \
+	fi
+	@.venv/bin/python -c "import datawagon" 2>/dev/null || { \
+		echo "✗ Failed to import datawagon"; \
+		exit 1; \
+	}
+	@.venv/bin/datawagon --help >/dev/null 2>&1 || { \
+		echo "✗ datawagon command failed"; \
+		exit 1; \
+	}
+	@echo "✓ Installation verified"
+	@echo ""
+	@if command -v poetry >/dev/null 2>&1 && [ -f "poetry.lock" ]; then \
+		echo "Type: Poetry-managed"; \
+	else \
+		echo "Type: Standard venv (runtime-only)"; \
+	fi
 
 update: ## Update dependencies and regenerate lock file
 	@echo "Updating dependencies..."
@@ -147,20 +164,25 @@ requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.
 	@poetry export --with dev --with test --without-hashes -f requirements.txt -o requirements-dev.txt
 	@echo "✓ requirements files generated"
 
-requirements-check: ## Verify requirements files are in sync with poetry.lock
-	@echo "Checking if requirements.txt is in sync..."
-	@poetry export --without-hashes -f requirements.txt | diff -q - requirements.txt > /dev/null || { \
-		echo "⚠ requirements.txt is out of sync with poetry.lock"; \
+requirements-check: ## Verify requirements files in sync with poetry.lock
+	@if ! command -v poetry >/dev/null 2>&1; then \
+		echo "ℹ Skipping requirements sync check"; \
+		echo "  (Poetry not installed - check only needed for Poetry users)"; \
+		exit 0; \
+	fi
+	@echo "Checking requirements.txt sync..."
+	@poetry export --without-hashes -f requirements.txt | diff -q - requirements.txt >/dev/null || { \
+		echo "⚠ requirements.txt out of sync"; \
 		echo "Run 'make requirements' to update"; \
 		exit 1; \
 	}
-	@echo "Checking if requirements-dev.txt is in sync..."
-	@poetry export --with dev --with test --without-hashes -f requirements.txt | diff -q - requirements-dev.txt > /dev/null || { \
-		echo "⚠ requirements-dev.txt is out of sync with poetry.lock"; \
+	@echo "Checking requirements-dev.txt sync..."
+	@poetry export --with dev --with test --without-hashes -f requirements.txt | diff -q - requirements-dev.txt >/dev/null || { \
+		echo "⚠ requirements-dev.txt out of sync"; \
 		echo "Run 'make requirements' to update"; \
 		exit 1; \
 	}
-	@echo "✓ requirements files are in sync"
+	@echo "✓ Requirements files in sync"
 
 # ============================================================================
 # Application Commands (not used for automation)

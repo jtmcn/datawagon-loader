@@ -102,19 +102,21 @@ This will:
 
 ### Installation Methods Compared
 
-| Feature | Poetry | Standard venv |
-|---------|--------|---------------|
+| Feature | Poetry (Development) | Standard venv (Runtime) |
+|---------|---------------------|------------------------|
 | Install DataWagon | ✓ | ✓ |
 | Run commands | ✓ | ✓ |
-| Modify code | ✓ | ✓ |
-| Add dependencies | ✓ | Request via issue |
+| Modify application code | ✓ | ✓ |
+| Development tools (mypy, black, flake8, pytest) | ✓ | ✗ |
+| Add/modify dependencies | ✓ | Request via issue |
 | Lock dependencies | ✓ | Use requirements.txt |
-| Setup time | ~2 min | ~1 min |
-| Disk space | ~500MB | ~300MB |
+| Installation time | ~2 min | ~30 sec |
+| Disk space | ~500MB | ~200MB |
+| Use case | Development, contributions | Running the app only |
 
 **Recommendation:**
-- Use **standard venv** if you just want to use DataWagon
-- Use **Poetry** if you're developing or managing dependencies
+- Use **standard venv** if you just want to use DataWagon (simpler, faster, smaller)
+- Use **Poetry** if you're developing, contributing, or managing dependencies
 
 ### Configuration (Both Options)
 
@@ -177,8 +179,46 @@ Or manually:
 
 ```bash
 git pull
-poetry install
-make requirements
+source .venv/bin/activate
+pip install -e . --upgrade
+```
+
+### Switching Installation Methods
+
+#### From Poetry to Standard venv
+
+```bash
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+datawagon --help
+```
+
+**What changes:**
+- Smaller: ~200MB vs ~500MB
+- No dev tools (mypy, black, flake8, pytest)
+- Faster setup: ~30 sec vs ~2 min
+- Cannot modify dependencies
+
+#### From Standard venv to Poetry
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+rm -rf .venv
+make setup-poetry
+source .venv/bin/activate
+make test
+```
+
+**What you gain:**
+- Full development tooling
+- Ability to modify dependencies
+- Run pre-commit checks locally
+
+#### Verifying Installation Type
+
+```bash
+make verify-install  # Shows installation type
 ```
 
 ---
@@ -650,6 +690,66 @@ Regenerate from poetry.lock:
 ```bash
 make requirements
 ```
+
+### Command not found after setup
+
+If `datawagon` command is not found after running setup:
+
+```bash
+# Verify virtual environment activation
+which python  # Should show /path/to/datawagon/.venv/bin/python
+
+# If not in venv, activate it
+source .venv/bin/activate
+
+# Verify installation
+datawagon --help
+```
+
+If still not working:
+```bash
+# Reinstall from scratch
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+```
+
+### Why don't I have pytest/mypy/black?
+
+These are development tools, not included in standard venv installation (runtime-only).
+
+**If you need development tools**, use Poetry:
+```bash
+rm -rf .venv
+make setup-poetry
+```
+
+**If you just want to run tests occasionally**, install manually:
+```bash
+source .venv/bin/activate
+pip install pytest mypy black flake8
+```
+
+### Can I develop without Poetry?
+
+Yes, but it's not recommended:
+- **Code changes**: Edit files normally in either installation
+- **Run application**: Works the same in both
+- **Run tests**: Manually install dev dependencies (see above)
+- **Modify dependencies**: Not possible - must request via GitHub issue
+
+For serious development or contributions, Poetry is strongly recommended.
+
+### How do I know which installation I have?
+
+```bash
+make verify-install
+```
+
+This will show:
+- Installation type (Poetry vs Standard venv)
+- Virtual environment location
+- Whether installation is healthy
 
 ### Google Cloud authentication errors
 

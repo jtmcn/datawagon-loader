@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# DataWagon Setup Script - Runtime Installation (Non-Poetry)
+# This script creates a standard Python virtual environment and installs
+# DataWagon with runtime dependencies ONLY (no development tools).
+# For development with full tooling, use Poetry: make setup-poetry
+
 # Variables
 VENV=".venv"
 ENV_FILE=".env"
@@ -67,16 +72,37 @@ install_deps() {
         exit 1
     }
 
-    if [ -f "requirements-dev.txt" ]; then
-        print_info "Installing development dependencies..."
-        "$VENV/bin/pip" install -r requirements-dev.txt --quiet || {
-            print_warning "Failed to install some dev dependencies (continuing...)"
-        }
-    else
-        print_warning "requirements-dev.txt not found, skipping dev dependencies"
+    print_success "Dependencies installed"
+}
+
+# Verify installation
+verify_installation() {
+    print_info "Verifying installation..."
+
+    if ! "$VENV/bin/pip" show datawagon &> /dev/null; then
+        print_error "DataWagon package not found in virtual environment"
+        return 1
     fi
 
-    print_success "Dependencies installed"
+    if ! "$VENV/bin/python" -c "import datawagon" 2>/dev/null; then
+        print_error "Failed to import datawagon module"
+        return 1
+    fi
+
+    if ! "$VENV/bin/datawagon" --help &> /dev/null; then
+        print_error "datawagon command exists but failed to run"
+        return 1
+    fi
+
+    for pkg in click pandas pydantic google-cloud-storage; do
+        if ! "$VENV/bin/pip" show "$pkg" &> /dev/null; then
+            print_error "Required package '$pkg' not found"
+            return 1
+        fi
+    done
+
+    print_success "Installation verified successfully"
+    return 0
 }
 
 # Check and create .env file
@@ -109,21 +135,22 @@ main() {
     create_venv
     install_deps
 
+    if ! verify_installation; then
+        print_error "Installation verification failed"
+        print_info "Try: rm -rf .venv && ./setup-venv.sh"
+        exit 1
+    fi
+
     print_info ""
     print_success "Setup complete!"
     print_info ""
     print_info "Next steps:"
     print_info "  1. Edit .env with your configuration"
-    print_info "  2. Activate the virtual environment:"
-    print_info "     source .venv/bin/activate"
-    print_info "  3. Run the application:"
-    print_info "     datawagon --help"
+    print_info "  2. Activate: source .venv/bin/activate"
+    print_info "  3. Run: datawagon --help"
     print_info ""
-    print_info "For development:"
-    print_info "  - Run tests: pytest tests/"
-    print_info "  - Type check: mypy datawagon tests"
-    print_info "  - Format code: black datawagon tests"
-    print_info "  - Lint: flake8 datawagon tests"
+    print_info "Note: Runtime-only install (no dev tools)."
+    print_info "For development, use Poetry: make setup-poetry"
 }
 
 main "$@"

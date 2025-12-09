@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# DataWagon Update Script - Runtime Updates (Non-Poetry)
+# Updates DataWagon and runtime dependencies only.
+
 # Variables
 BRANCH="main"
 VENV=".venv"
@@ -63,14 +66,42 @@ update_deps() {
         exit 1
     }
 
-    if [ -f "requirements-dev.txt" ]; then
-        print_info "Upgrading dev dependencies..."
-        "$VENV/bin/pip" install -r requirements-dev.txt --upgrade --quiet || {
-            print_warning "Failed to upgrade some dev dependencies"
-        }
+    print_success "Dependencies updated"
+
+    if ! verify_installation; then
+        print_warning "Update completed but verification failed"
+        print_info "May need reinstall: rm -rf .venv && ./setup-venv.sh"
+    fi
+}
+
+# Verify installation
+verify_installation() {
+    print_info "Verifying installation..."
+
+    if ! "$VENV/bin/pip" show datawagon &> /dev/null; then
+        print_error "DataWagon package not found in virtual environment"
+        return 1
     fi
 
-    print_success "Dependencies updated"
+    if ! "$VENV/bin/python" -c "import datawagon" 2>/dev/null; then
+        print_error "Failed to import datawagon module"
+        return 1
+    fi
+
+    if ! "$VENV/bin/datawagon" --help &> /dev/null; then
+        print_error "datawagon command exists but failed to run"
+        return 1
+    fi
+
+    for pkg in click pandas pydantic google-cloud-storage; do
+        if ! "$VENV/bin/pip" show "$pkg" &> /dev/null; then
+            print_error "Required package '$pkg' not found"
+            return 1
+        fi
+    done
+
+    print_success "Installation verified successfully"
+    return 0
 }
 
 # Check .env file

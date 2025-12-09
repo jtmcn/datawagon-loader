@@ -14,6 +14,12 @@ DataWagon supports two installation methods:
 
 #### Method 1: Poetry (Recommended for Development)
 
+**Use this if you:**
+- Want to contribute to DataWagon
+- Need to modify dependencies
+- Want full development tooling (mypy, black, flake8, pytest)
+- Plan to run tests and code quality checks
+
 **First-time setup:**
 ```bash
 make setup               # Detects Poetry and runs full setup
@@ -31,9 +37,15 @@ poetry install
 make requirements
 ```
 
-#### Method 2: Standard Python Virtual Environment
+#### Method 2: Standard Python Virtual Environment (Runtime Only)
 
-For users who prefer not to install Poetry:
+**Use this if you:**
+- Just want to run DataWagon
+- Don't need development tools
+- Want faster, lighter installation
+- Don't plan to modify dependencies
+
+**Important:** This installs runtime dependencies only (no mypy, black, flake8, pytest).
 
 **First-time setup:**
 ```bash
@@ -42,7 +54,6 @@ For users who prefer not to install Poetry:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-pip install -r requirements-dev.txt  # For development
 ```
 
 **Updating environment:**
@@ -52,7 +63,6 @@ pip install -r requirements-dev.txt  # For development
 git pull
 source .venv/bin/activate
 pip install -e . --upgrade
-pip install -r requirements-dev.txt --upgrade
 ```
 
 **Verifying Installation (Both Methods):**
@@ -239,50 +249,91 @@ Vulture reports findings with confidence levels (0-100%):
 
 If you encounter frequent false positives for specific patterns, create a `vulture_whitelist.py` file to suppress them.
 
+## Migration Guide: Switching Installation Methods
+
+### From Poetry to Standard venv
+
+If you only need to run DataWagon (not develop):
+
+```bash
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+make verify-install
+```
+
+**Trade-offs:**
+- Lose: Dev tools, dependency modification
+- Gain: 60% faster install, 60% less disk space
+
+### From Standard venv to Poetry
+
+For development/contributions:
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+rm -rf .venv
+make setup-poetry
+make test
+```
+
+**What you gain:**
+- Full development tooling
+- Dependency management
+- Pre-commit hooks
+
+### Clean Migration Checklist
+
+1. Deactivate: `deactivate`
+2. Remove: `rm -rf .venv`
+3. Setup: `./setup-venv.sh` or `make setup-poetry`
+4. Activate: `source .venv/bin/activate`
+5. Verify: `make verify-install`
+6. Check: `.env` still configured
+7. Test: Run typical commands
+
 ## Dependency Management
 
 DataWagon supports both Poetry and pip-based dependency management:
 
-### For Poetry Users
-
-Add or update dependencies:
-```bash
-poetry add pandas         # Add runtime dependency
-poetry add --group dev mypy  # Add dev dependency
-poetry lock               # Update lock file
-make requirements         # Export to requirements.txt and requirements-dev.txt
-```
-
-Update all dependencies:
-```bash
-poetry update
-make requirements
-```
-
-### For Non-Poetry Users
-
-Dependencies are managed via `requirements.txt` and `requirements-dev.txt`:
+### For Poetry Users (Development)
 
 ```bash
-# These files are auto-generated from poetry.lock
-# DO NOT edit manually - changes will be overwritten
-
-# To install/update dependencies:
-pip install -e . --upgrade
-pip install -r requirements-dev.txt --upgrade
+poetry add pandas              # Add runtime
+poetry add --group dev mypy    # Add dev
+poetry lock                    # Update lock
+make requirements              # Export
 ```
 
-**Note:** Non-Poetry users cannot modify dependencies directly. To request dependency changes:
-1. Open a GitHub issue describing the needed dependency
-2. A Poetry user will update `pyproject.toml` and run `poetry lock && make requirements`
-3. Pull the changes and update your environment
+### For Non-Poetry Users (Runtime Only)
 
-### Keeping Requirements in Sync
+```bash
+pip install -e . --upgrade     # Update DataWagon
+```
 
-Poetry users must regenerate requirements files after any dependency change:
+**Cannot modify dependencies.** To request changes:
+1. Open GitHub issue with justification
+2. Poetry user updates pyproject.toml
+3. Pull changes: `./update-venv.sh`
+
+**Why:** Ensures dependency consistency and maintains poetry.lock as single source of truth.
+
+### Requirements File Structure
+
+- **requirements.txt** (41 packages): Runtime only
+  - click, pandas, pydantic, google-cloud-storage
+  - Used by: Standard venv, Docker, CI/CD
+
+- **requirements-dev.txt** (106 packages): Runtime + Dev
+  - All runtime + mypy, black, flake8, pytest
+  - Used by: Poetry install, contributors
+
+**Both auto-generated - do not edit manually.**
+
+### Keeping Requirements in Sync (Poetry Users Only)
 
 ```bash
 make requirements         # Generates requirements.txt and requirements-dev.txt
 ```
 
-Pre-commit hooks automatically check that requirements files are in sync (Poetry users only).
+Pre-commit hooks automatically check that requirements files are in sync (Poetry users only). Non-Poetry users will see a skip message, which is expected and normal.
