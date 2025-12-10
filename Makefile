@@ -159,9 +159,25 @@ test: ## Run tests
 
 requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.lock
 	@echo "Generating requirements.txt..."
-	@poetry export --without-hashes -f requirements.txt -o requirements.txt
+	@( \
+		echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"; \
+		echo "# Generated from poetry.lock using 'make requirements'"; \
+		echo "# To update: modify pyproject.toml, run 'poetry lock', then 'make requirements'"; \
+		echo "#"; \
+		echo "# Generated: $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"; \
+		echo ""; \
+		poetry export --without-hashes -f requirements.txt; \
+	) > requirements.txt
 	@echo "Generating requirements-dev.txt..."
-	@poetry export --with dev --with test --without-hashes -f requirements.txt -o requirements-dev.txt
+	@( \
+		echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"; \
+		echo "# Generated from poetry.lock using 'make requirements'"; \
+		echo "# Includes: runtime + dev + test dependencies"; \
+		echo "#"; \
+		echo "# Generated: $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"; \
+		echo ""; \
+		poetry export --with dev --with test --without-hashes -f requirements.txt; \
+	) > requirements-dev.txt
 	@echo "✓ requirements files generated"
 
 requirements-check: ## Verify requirements files in sync with poetry.lock
@@ -171,17 +187,41 @@ requirements-check: ## Verify requirements files in sync with poetry.lock
 		exit 0; \
 	fi
 	@echo "Checking requirements.txt sync..."
-	@poetry export --without-hashes -f requirements.txt | diff -q - requirements.txt >/dev/null || { \
-		echo "⚠ requirements.txt out of sync"; \
-		echo "Run 'make requirements' to update"; \
+	@TMP1=$$(mktemp); TMP2=$$(mktemp); \
+	grep -v '^#' requirements.txt | grep -v '^$$' > "$$TMP1"; \
+	poetry export --without-hashes -f requirements.txt > "$$TMP2"; \
+	DIFF_OUT=$$(diff -u "$$TMP1" "$$TMP2" 2>&1); \
+	rm -f "$$TMP1" "$$TMP2"; \
+	if [ -n "$$DIFF_OUT" ]; then \
+		echo "⚠ requirements.txt out of sync with poetry.lock"; \
+		echo ""; \
+		echo "Differences found:"; \
+		echo "$$DIFF_OUT" | head -20; \
+		if [ $$(echo "$$DIFF_OUT" | wc -l) -gt 20 ]; then \
+			echo "... (output truncated, showing first 20 lines)"; \
+		fi; \
+		echo ""; \
+		echo "To fix: make requirements"; \
 		exit 1; \
-	}
+	fi
 	@echo "Checking requirements-dev.txt sync..."
-	@poetry export --with dev --with test --without-hashes -f requirements.txt | diff -q - requirements-dev.txt >/dev/null || { \
-		echo "⚠ requirements-dev.txt out of sync"; \
-		echo "Run 'make requirements' to update"; \
+	@TMP1=$$(mktemp); TMP2=$$(mktemp); \
+	grep -v '^#' requirements-dev.txt | grep -v '^$$' > "$$TMP1"; \
+	poetry export --with dev --with test --without-hashes -f requirements.txt > "$$TMP2"; \
+	DIFF_OUT=$$(diff -u "$$TMP1" "$$TMP2" 2>&1); \
+	rm -f "$$TMP1" "$$TMP2"; \
+	if [ -n "$$DIFF_OUT" ]; then \
+		echo "⚠ requirements-dev.txt out of sync with poetry.lock"; \
+		echo ""; \
+		echo "Differences found:"; \
+		echo "$$DIFF_OUT" | head -20; \
+		if [ $$(echo "$$DIFF_OUT" | wc -l) -gt 20 ]; then \
+			echo "... (output truncated, showing first 20 lines)"; \
+		fi; \
+		echo ""; \
+		echo "To fix: make requirements"; \
 		exit 1; \
-	}
+	fi
 	@echo "✓ Requirements files in sync"
 
 # ============================================================================

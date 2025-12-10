@@ -1,3 +1,9 @@
+# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
+# Generated from poetry.lock using 'make requirements'
+# Includes: runtime + dev + test dependencies
+#
+# Generated: 2025-12-10 07:23:49 UTC
+
 altgraph==0.17.5 ; python_version >= "3.9" and python_version < "3.13"
 annotated-types==0.6.0 ; python_version >= "3.9" and python_version < "3.13"
 black==23.12.1 ; python_version >= "3.9" and python_version < "3.13"

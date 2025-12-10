@@ -140,11 +140,19 @@ setup_python_env() {
 # Update requirements.txt from poetry.lock
 update_requirements() {
     print_info "Generating requirements.txt from poetry.lock..."
-    poetry export --without-hashes -f requirements.txt -o requirements.txt || {
+
+    {
+        echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"
+        echo "# Generated from poetry.lock using 'make requirements'"
+        echo "# Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo ""
+        poetry export --without-hashes -f requirements.txt
+    } > requirements.txt || {
         print_error "Failed to generate requirements.txt"
         print_warning "Make sure poetry-plugin-export is installed"
         return 1
     }
+
     print_success "requirements.txt updated"
 }
 
