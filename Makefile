@@ -125,9 +125,9 @@ update: ## Update dependencies and regenerate lock file
 # Code Quality Checks
 # ============================================================================
 
-pre-commit: check type isort format lint test requirements requirements-check ## Run all pre-commit checks
+pre-commit: check type isort format lint shellcheck test requirements requirements-check ## Run all pre-commit checks
 
-pre-commit-fast: type lint test ## Run faster pre-commit checks (skip format/isort)
+pre-commit-fast: type lint shellcheck test ## Run faster pre-commit checks (skip format/isort)
 
 check:
 	@echo "Checking poetry..."
@@ -156,6 +156,18 @@ vulture: ## Detect dead code
 test: ## Run tests
 	@echo "Running tests with pytest..."
 	$(CMD) pytest $(TESTS) --quiet
+
+shellcheck: ## Lint shell scripts with shellcheck
+	@echo "Linting shell scripts with shellcheck..."
+	@if ! command -v shellcheck >/dev/null 2>&1; then \
+		echo "⚠ shellcheck not found - install from: https://www.shellcheck.net/"; \
+		exit 1; \
+	fi
+	@shellcheck setup-venv.sh update-venv.sh update.sh || { \
+		echo "⚠ Shell script linting failed"; \
+		exit 1; \
+	}
+	@echo "✓ Shell scripts passed linting"
 
 requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.lock
 	@echo "Generating requirements.txt..."

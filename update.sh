@@ -141,6 +141,7 @@ setup_python_env() {
 update_requirements() {
     print_info "Generating requirements.txt from poetry.lock..."
 
+    # shellcheck disable=SC2094
     {
         echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"
         echo "# Generated from poetry.lock using 'make requirements'"

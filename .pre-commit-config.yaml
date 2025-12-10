@@ -14,4 +14,11 @@ repos:
         language: system
         pass_filenames: false
         files: 'poetry.lock|pyproject.toml'
+        stages: [commit]
+      - id: shellcheck
+        name: Shell script linting
+        entry: bash -c 'if command -v shellcheck >/dev/null 2>&1; then shellcheck setup-venv.sh update-venv.sh update.sh; else echo "ℹ Skipping shellcheck (not installed)"; fi'
+        language: system
+        pass_filenames: false
+        files: '\.sh$'
         stages: [commit] 

@@ -11,9 +11,20 @@ defaults:
     shell: bash
 
 jobs:
+  shellcheck-linting:
+    name: Shell script linting
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Run shellcheck
+        run: shellcheck setup-venv.sh update-venv.sh update.sh
+
   black-formatting-check:
     name: Check formatting
     runs-on: 'ubuntu-latest'
+    needs: shellcheck-linting
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
