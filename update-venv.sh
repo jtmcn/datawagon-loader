@@ -26,6 +26,27 @@ check_venv() {
     print_success "Virtual environment found"
 }
 
+# Check Python version
+check_python() {
+    if ! command -v python3 &> /dev/null; then
+        print_error "Python 3 is not installed"
+        exit 1
+    fi
+
+    # Use Python itself to check version (portable & reliable)
+    python3 - <<'EOF'
+import sys
+if sys.version_info < (3, 9):
+    print(f"Error: Python 3.9+ required (found: Python {sys.version_info.major}.{sys.version_info.minor})")
+    sys.exit(1)
+print(f"✓ Python found: Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+EOF
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
+
 # Update git repository
 update_git() {
     print_info "Checking for git updates on $BRANCH..."
@@ -122,13 +143,21 @@ verify_installation() {
 
 # Check .env file
 check_env_file() {
+    # Verify .env.example exists (critical repo file)
+    if [ ! -f "$ENV_EXAMPLE" ]; then
+        print_error ".env.example not found in repository"
+        print_error "Repository may be corrupted. Try: git fetch && git reset --hard origin/main"
+        exit 1
+    fi
+
     if [ ! -f "$ENV_FILE" ]; then
-        if [ -f "$ENV_EXAMPLE" ]; then
-            print_warning ".env file not found"
-            print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
-            cp "$ENV_EXAMPLE" "$ENV_FILE"
-            print_warning "Please edit .env with your configuration"
-        fi
+        print_warning ".env file not found"
+        print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
+        cp "$ENV_EXAMPLE" "$ENV_FILE" || {
+            print_error "Failed to copy .env.example to .env"
+            exit 1
+        }
+        print_warning "Please edit .env with your configuration"
     else
         print_success ".env file exists"
     fi
@@ -143,6 +172,7 @@ main() {
     print_info ""
 
     check_venv
+    check_python
     check_env_file
 
     if update_git; then

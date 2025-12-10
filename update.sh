@@ -38,19 +38,22 @@ check_poetry_export_plugin() {
 
 # Check and create .env file if needed
 check_env_file() {
+    # Verify .env.example exists (critical repo file)
+    if [ ! -f "$ENV_EXAMPLE" ]; then
+        print_error ".env.example not found in repository"
+        print_error "Repository may be corrupted or incomplete"
+        print_info "Try: git fetch origin && git reset --hard origin/main"
+        exit 1
+    fi
+
     if [ ! -f "$ENV_FILE" ]; then
-        if [ -f "$ENV_EXAMPLE" ]; then
-            print_warning ".env file not found"
-            print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
-            cp "$ENV_EXAMPLE" "$ENV_FILE"
-            print_warning "Please edit .env and configure your settings:"
-            print_info "  - DW_CSV_SOURCE_DIR"
-            print_info "  - DW_GCS_PROJECT_ID"
-            print_info "  - DW_GCS_BUCKET"
-        else
-            print_error ".env file not found and no .env.example to copy from"
+        print_warning ".env file not found"
+        print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
+        cp "$ENV_EXAMPLE" "$ENV_FILE" || {
+            print_error "Failed to copy .env.example to .env"
             exit 1
-        fi
+        }
+        print_warning "Please edit .env and configure: DW_CSV_SOURCE_DIR, DW_GCS_PROJECT_ID, DW_GCS_BUCKET"
     else
         print_success ".env file exists"
     fi

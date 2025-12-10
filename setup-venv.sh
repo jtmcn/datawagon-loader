@@ -24,16 +24,18 @@ check_python() {
         exit 1
     fi
 
-    version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
-    major=$(echo "$version" | cut -d'.' -f1)
-    minor=$(echo "$version" | cut -d'.' -f2)
+    # Use Python itself to check version (portable & reliable)
+    python3 - <<'EOF'
+import sys
+if sys.version_info < (3, 9):
+    print(f"Error: Python 3.9+ required (found: Python {sys.version_info.major}.{sys.version_info.minor})")
+    sys.exit(1)
+print(f"✓ Python found: Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+EOF
 
-    if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -lt 9 ]; }; then
-        print_error "Python 3.9+ required (found: Python $version)"
+    if [ $? -ne 0 ]; then
         exit 1
     fi
-
-    print_success "Python found: $(python3 --version)"
 }
 
 # Create virtual environment
@@ -107,18 +109,22 @@ verify_installation() {
 
 # Check and create .env file
 check_env_file() {
+    # Verify .env.example exists (critical repo file)
+    if [ ! -f "$ENV_EXAMPLE" ]; then
+        print_error ".env.example not found in repository"
+        print_error "Repository may be corrupted or incomplete"
+        print_info "Try: git fetch origin && git reset --hard origin/main"
+        exit 1
+    fi
+
     if [ ! -f "$ENV_FILE" ]; then
-        if [ -f "$ENV_EXAMPLE" ]; then
-            print_warning ".env file not found"
-            print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
-            cp "$ENV_EXAMPLE" "$ENV_FILE"
-            print_warning "Please edit .env and configure your settings:"
-            print_info "  - DW_CSV_SOURCE_DIR"
-            print_info "  - DW_GCS_PROJECT_ID"
-            print_info "  - DW_GCS_BUCKET"
-        else
-            print_warning ".env file not found and no .env.example to copy from"
-        fi
+        print_warning ".env file not found"
+        print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
+        cp "$ENV_EXAMPLE" "$ENV_FILE" || {
+            print_error "Failed to copy .env.example to .env"
+            exit 1
+        }
+        print_warning "Please edit .env and configure: DW_CSV_SOURCE_DIR, DW_GCS_PROJECT_ID, DW_GCS_BUCKET"
     else
         print_success ".env file exists"
     fi
