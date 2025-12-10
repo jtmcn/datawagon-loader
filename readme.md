@@ -751,6 +751,184 @@ This will show:
 - Virtual environment location
 - Whether installation is healthy
 
+### Python version mismatch
+
+**Symptom**: `setup-venv.sh` fails with "Python 3.9+ required".
+
+**Solution**:
+```bash
+# Check your Python version
+python3 --version
+
+# If Python 3.8 or earlier, upgrade Python first
+# On macOS with Homebrew:
+brew install python@3.11
+
+# On Ubuntu/Debian:
+sudo apt update
+sudo apt install python3.11
+
+# Verify new version
+python3.11 --version
+
+# Create venv with specific Python version
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+**Common causes**:
+- System Python is outdated
+- Multiple Python versions installed (using wrong one)
+- Virtual environment created with old Python
+
+### pip installation fails with "externally-managed-environment"
+
+**Symptom**: `pip install` fails with:
+```
+error: externally-managed-environment
+```
+
+**Solution**: This is expected on some modern Linux distros (Debian 12+, Ubuntu 23.04+). The virtual environment approach handles this:
+
+```bash
+# Virtual environment bypasses external management
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .  # Now works inside venv
+```
+
+**Don't**: Never use `pip --break-system-packages` - this is dangerous.
+
+### Shell script fails with "command not found: poetry"
+
+**Symptom**: `update.sh` fails because Poetry not found.
+
+**This is expected**:
+- `update.sh` is for Poetry users only
+- For non-Poetry users, use `update-venv.sh` instead
+
+**Solution**:
+```bash
+# Non-Poetry users:
+./update-venv.sh
+
+# Poetry users - install Poetry first:
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+### Installation succeeds but datawagon command not found
+
+**Symptom**: After `./setup-venv.sh` completes, `datawagon` command not found.
+
+**Cause**: Virtual environment not activated.
+
+**Solution**:
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Verify activation (should show .venv path)
+which python
+
+# Now datawagon should work
+datawagon --help
+```
+
+**To avoid**: Add activation to your shell profile:
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias dw='cd /path/to/datawagon && source .venv/bin/activate'
+```
+
+### setup-venv.sh hangs on "Installing dependencies"
+
+**Symptom**: Script appears frozen during `pip install -e .`.
+
+**This is usually normal**: First installation downloads ~100MB of packages. Can take 2-5 minutes on slow connections.
+
+**To monitor progress**:
+```bash
+# Run with verbose output
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e . -v  # Verbose mode shows progress
+```
+
+**If truly stuck** (>10 minutes):
+```bash
+# Ctrl+C to cancel
+# Check disk space
+df -h .
+
+# Check network
+curl -I https://pypi.org/simple/
+
+# Try with timeout
+pip install -e . --timeout 60
+```
+
+### Requirements file has merge conflict
+
+**Symptom**: After git merge, `requirements.txt` has conflict markers:
+```
+<<<<<<< HEAD
+package==1.0.0
+=======
+package==2.0.0
+>>>>>>> branch
+```
+
+**Solution**: Never manually edit requirements files. Regenerate from poetry.lock:
+
+```bash
+# Don't manually resolve conflict
+# Instead, resolve poetry.lock conflict first
+
+git checkout --theirs poetry.lock  # Or --ours, depending on which you want
+
+# Then regenerate requirements
+make requirements
+
+# Stage the regenerated files
+git add requirements.txt requirements-dev.txt poetry.lock
+```
+
+### Tests pass locally but fail in CI
+
+**Symptom**: `make test` passes locally, but GitHub Actions fails.
+
+**Common causes**:
+1. **Missing dependency in poetry.lock**: CI installs from lock file only
+   ```bash
+   # Add missing dependency
+   poetry add missing-package
+   poetry lock
+   make requirements
+   git add pyproject.toml poetry.lock requirements*.txt
+   git commit
+   ```
+
+2. **Local vs CI Python version**: CI tests on 3.9, 3.10, 3.11
+   ```bash
+   # Test with specific Python version locally (requires pyenv)
+   pyenv install 3.9.18
+   pyenv local 3.9.18
+   rm -rf .venv
+   make setup
+   make test
+   ```
+
+3. **Environment variable differences**: CI doesn't have your local `.env`
+   ```bash
+   # Check which env vars your code uses
+   grep -r "os.environ" datawagon/
+
+   # Ensure tests mock external dependencies
+   # (GCS, BigQuery, etc.)
+   ```
+
 ### Google Cloud authentication errors
 
 Ensure credentials are configured:

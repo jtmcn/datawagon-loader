@@ -154,3 +154,43 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Build artifacts
         run: poetry build -v
+
+  test-venv-installation:
+    name: Test non-Poetry installation
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest']
+        python-version: ['3.9', '3.11']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{matrix.python-version}}
+
+      - name: Run setup-venv.sh
+        run: |
+          cp .env.example .env
+          ./setup-venv.sh
+
+      - name: Verify installation
+        run: |
+          source .venv/bin/activate
+          datawagon --help
+          python -c "import click, pandas, pydantic, google.cloud.storage"
+
+      - name: Test update script
+        run: |
+          ./update-venv.sh
+          source .venv/bin/activate
+          datawagon --help
+
+      - name: Verify dev tools NOT installed
+        run: |
+          source .venv/bin/activate
+          if python -c "import pytest" 2>/dev/null; then
+            echo "ERROR: pytest should not be in runtime-only install"
+            exit 1
+          fi
+          echo "✓ Runtime-only installation verified"
