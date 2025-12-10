@@ -8,10 +8,10 @@ ENV_FILE=".env"
 ENV_EXAMPLE=".env.example"
 
 # Utility functions for colored output
-print_success() { echo -e "\033[0;32m✓\033[0m $1"; }
-print_error() { echo -e "\033[0;31m✗\033[0m $1"; }
-print_warning() { echo -e "\033[1;33m!\033[0m $1"; }
-print_info() { echo -e "→ $1"; }
+print_success() { printf '\033[0;32m✓\033[0m %s\n' "$1"; }
+print_error() { printf '\033[0;31m✗\033[0m %s\n' "$1"; }
+print_warning() { printf '\033[1;33m!\033[0m %s\n' "$1"; }
+print_info() { printf '→ %s\n' "$1"; }
 
 # Check if Poetry is installed
 check_poetry() {
@@ -75,6 +75,19 @@ update_git() {
     # Check if there are any changes
     if ! git diff --quiet origin/"$BRANCH" "$BRANCH" 2>/dev/null; then
         print_info "Updates found, pulling changes..."
+
+        # Check for uncommitted changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            print_warning "You have uncommitted changes"
+            print_info "Git will temporarily stash them during the update"
+            read -p "Continue? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Update cancelled"
+                exit 0
+            fi
+        fi
+
         git pull --quiet -r --autostash origin "$BRANCH" || {
             print_error "Failed to pull from origin"
             exit 1

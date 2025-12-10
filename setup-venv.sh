@@ -12,10 +12,10 @@ ENV_FILE=".env"
 ENV_EXAMPLE=".env.example"
 
 # Utility functions for colored output
-print_success() { echo -e "\033[0;32m✓\033[0m $1"; }
-print_error() { echo -e "\033[0;31m✗\033[0m $1"; }
-print_warning() { echo -e "\033[1;33m!\033[0m $1"; }
-print_info() { echo -e "→ $1"; }
+print_success() { printf '\033[0;32m✓\033[0m %s\n' "$1"; }
+print_error() { printf '\033[0;31m✗\033[0m %s\n' "$1"; }
+print_warning() { printf '\033[1;33m!\033[0m %s\n' "$1"; }
+print_info() { printf '→ %s\n' "$1"; }
 
 # Check Python version
 check_python() {
@@ -25,10 +25,10 @@ check_python() {
     fi
 
     version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
-    major=$(echo $version | cut -d'.' -f1)
-    minor=$(echo $version | cut -d'.' -f2)
+    major=$(echo "$version" | cut -d'.' -f1)
+    minor=$(echo "$version" | cut -d'.' -f2)
 
-    if [ "$major" -lt 3 ] || ([ "$major" -eq 3 ] && [ "$minor" -lt 9 ]); then
+    if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -lt 9 ]; }; then
         print_error "Python 3.9+ required (found: Python $version)"
         exit 1
     fi
