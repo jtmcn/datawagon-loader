@@ -17,14 +17,10 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 def compare_local_files_to_bucket(ctx: click.Context) -> List[ManagedFilesToDatabase]:
     """Compare files in source directory to files in storage bucket."""
 
-    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
-        files_in_local_fs, file_extension="gz"
-    )
+    matched_files: List[ManagedFilesToDatabase] = ctx.invoke(files_in_local_fs, file_extension="gz")
     current_bucket_files: List[CurrentDestinationData] = ctx.invoke(files_in_storage)
 
-    csv_file_infos: List[ManagedFileMetadata] = [
-        file_info for src in matched_files for file_info in src.files
-    ]
+    csv_file_infos: List[ManagedFileMetadata] = [file_info for src in matched_files for file_info in src.files]
 
     file_diff_display_df = _file_diff(csv_file_infos, current_bucket_files)
 
@@ -41,9 +37,7 @@ def compare_local_files_to_bucket(ctx: click.Context) -> List[ManagedFilesToData
 
     new_files = _net_new_files(matched_files, current_bucket_files)
 
-    new_csv_file_infos: List[ManagedFileMetadata] = [
-        file_info for src in new_files for file_info in src.files
-    ]
+    new_csv_file_infos: List[ManagedFileMetadata] = [file_info for src in new_files for file_info in src.files]
 
     new_file_count = len(new_csv_file_infos)
 
@@ -75,10 +69,7 @@ def _file_diff(
     file_utils = FileUtils()
     grouped_files = file_utils.group_by_base_name(csv_file_infos)
 
-    current_database_file_dict = {
-        table_data.base_name: table_data.file_count
-        for table_data in current_database_files
-    }
+    current_database_file_dict = {table_data.base_name: table_data.file_count for table_data in current_database_files}
 
     all_tables = set(grouped_files.keys()).union(current_database_file_dict.keys())
 
@@ -127,11 +118,7 @@ def _net_new_files(
 
     for range_index in range(len(all_source_files_by_table)):
         all_source_files_by_table[range_index].files = sorted(
-            [
-                file
-                for file in all_source_files_by_table[range_index].files
-                if (file.file_name not in existing_files)
-            ],
+            [file for file in all_source_files_by_table[range_index].files if (file.file_name not in existing_files)],
             key=lambda x: x.base_name,
         )
 

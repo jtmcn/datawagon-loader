@@ -53,9 +53,7 @@ class FileUtils:
                 grouped_files[file_info.base_name].append(file_info)
         return grouped_files
 
-    def check_for_duplicate_files(
-        self, file_info_list: List[ManagedFileMetadata]
-    ) -> List[ManagedFileMetadata]:
+    def check_for_duplicate_files(self, file_info_list: List[ManagedFileMetadata]) -> List[ManagedFileMetadata]:
         """Find duplicate files based on file_name.
 
         Args:
@@ -109,9 +107,7 @@ class FileUtils:
 
         return different_file_versions
 
-    def csv_gzipped(
-        self, input_csv_file: Path, remove_original_zip: bool = False
-    ) -> Path:
+    def csv_gzipped(self, input_csv_file: Path, remove_original_zip: bool = False) -> Path:
         """Compress CSV file to GZIP format.
 
         Args:
@@ -143,9 +139,7 @@ class FileUtils:
 
         return Path(output_gzip_path)
 
-    def csv_zip_to_gzip(
-        self, input_zip_path: Path, remove_original_zip: bool = False
-    ) -> List[Path]:
+    def csv_zip_to_gzip(self, input_zip_path: Path, remove_original_zip: bool = False) -> List[Path]:
         """Convert ZIP file containing CSV(s) to GZIP format.
 
         Extracts CSV files from ZIP archive and converts to GZIP format,
@@ -192,9 +186,7 @@ class FileUtils:
 
                         with input_zip.open(file_info.filename) as input_file:
                             with gzip.open(output_gzip_path, "wb") as gzip_file:
-                                for chunk in iter(
-                                    lambda: input_file.read(1024 * 1024), b""
-                                ):  # 1MB chunks
+                                for chunk in iter(lambda: input_file.read(1024 * 1024), b""):  # 1MB chunks
                                     gzip_file.write(chunk)
 
                         output_gzip_paths.append(output_gzip_path)

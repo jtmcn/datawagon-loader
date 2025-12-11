@@ -128,9 +128,7 @@ class ManagedFileMetadata(ManagedFileInput):
 
             file_date = cls.date_key_to_date(file_date_key)
 
-            file_month_end_date = file_date.replace(
-                day=calendar.monthrange(file_date.year, file_date.month)[1]
-            )
+            file_month_end_date = file_date.replace(day=calendar.monthrange(file_date.year, file_date.month)[1])
 
             report_date_str = file_month_end_date.strftime("%Y-%m-%d")
 
@@ -156,8 +154,7 @@ class ManagedFileMetadata(ManagedFileInput):
             report_date_key=report_date_key,
             report_date_str=report_date_str,
             content_owner=content_owner,
-            storage_folder_name=source_file.storage_folder_name
-            or source_file.base_name,
+            storage_folder_name=source_file.storage_folder_name or source_file.base_name,
         )
 
         return data_item
@@ -237,9 +234,7 @@ class ManagedFileMetadata(ManagedFileInput):
             return date(year, month, day)
 
         except ValueError as e:
-            raise ValueError(
-                f"Invalid date_key: {date_key} -> {date_string}. {str(e)}"
-            ) from e
+            raise ValueError(f"Invalid date_key: {date_key} -> {date_string}. {str(e)}") from e
 
     @staticmethod
     def human_readable_size(size: int) -> str:

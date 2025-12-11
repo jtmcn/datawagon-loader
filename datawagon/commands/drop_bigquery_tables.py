@@ -6,9 +6,18 @@ import click
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
-from datawagon.console import (confirm, error, info, inline_status_end,
-                               inline_status_start, newline, panel, success,
-                               table, warning)
+from datawagon.console import (
+    confirm,
+    error,
+    info,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    panel,
+    success,
+    table,
+    warning,
+)
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
@@ -34,9 +43,7 @@ from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
     help="BigQuery dataset name (defaults to DW_BQ_DATASET env var)",
 )
 @click.pass_context
-def drop_bigquery_tables(
-    ctx: click.Context, dry_run: bool, table_name: str | None, dataset: str | None
-) -> None:
+def drop_bigquery_tables(ctx: click.Context, dry_run: bool, table_name: str | None, dataset: str | None) -> None:
     """Drop BigQuery external tables.
 
     By default, this command runs in DRY-RUN mode and shows what would be deleted
@@ -67,9 +74,7 @@ def drop_bigquery_tables(
     dataset_id = dataset or app_config.bq_dataset
 
     # Get existing BigQuery tables
-    existing_tables: List[BigQueryTableInfo] = ctx.invoke(
-        list_bigquery_tables, dataset=dataset_id
-    )
+    existing_tables: List[BigQueryTableInfo] = ctx.invoke(list_bigquery_tables, dataset=dataset_id)
 
     if not existing_tables:
         warning("No external tables found in dataset.")
@@ -78,13 +83,9 @@ def drop_bigquery_tables(
     # FIX: Lazy initialization with error handling
     bq_manager = ctx.obj.get("BQ_MANAGER")
     if not bq_manager:
-        bq_manager = BigQueryManager(
-            app_config.gcs_project_id, dataset_id, app_config.gcs_bucket
-        )
+        bq_manager = BigQueryManager(app_config.gcs_project_id, dataset_id, app_config.gcs_bucket)
         if bq_manager.has_error:
-            error(
-                "Failed to connect to BigQuery. Check credentials and project settings."
-            )
+            error("Failed to connect to BigQuery. Check credentials and project settings.")
             ctx.abort()
         ctx.obj["BQ_MANAGER"] = bq_manager
 
@@ -107,21 +108,13 @@ def drop_bigquery_tables(
     table_data = []
     for tbl in tables_to_drop:
         partitioned = "Yes" if tbl.is_partitioned else "No"
-        created_str = (
-            tbl.created_time.strftime("%Y-%m-%d %H:%M")
-            if tbl.created_time
-            else "Unknown"
-        )
+        created_str = tbl.created_time.strftime("%Y-%m-%d %H:%M") if tbl.created_time else "Unknown"
         table_data.append(
             [
                 tbl.table_name,
                 created_str,
                 partitioned,
-                (
-                    tbl.source_uri_pattern[:50] + "..."
-                    if len(tbl.source_uri_pattern) > 50
-                    else tbl.source_uri_pattern
-                ),
+                (tbl.source_uri_pattern[:50] + "..." if len(tbl.source_uri_pattern) > 50 else tbl.source_uri_pattern),
             ]
         )
 
@@ -179,8 +172,6 @@ def drop_bigquery_tables(
     # Summary
     newline()
     if error_count > 0:
-        warning(
-            f"Dropped {success_count} table(s), {error_count} error(s). Check logs."
-        )
+        warning(f"Dropped {success_count} table(s), {error_count} error(s). Check logs.")
     else:
         success(f"Successfully dropped {success_count} table(s)!")

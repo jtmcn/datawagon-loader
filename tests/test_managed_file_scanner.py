@@ -5,9 +5,7 @@ from pathlib import Path
 import pytest
 import toml
 
-from datawagon.objects.managed_file_scanner import (ManagedFiles,
-                                                    ManagedFileScanner,
-                                                    ManagedFilesToDatabase)
+from datawagon.objects.managed_file_scanner import ManagedFiles, ManagedFileScanner, ManagedFilesToDatabase
 from datawagon.objects.source_config import SourceConfig
 
 
@@ -103,9 +101,7 @@ class TestManagedFileScannerInit:
 class TestFindFiles:
     """Test find_files method."""
 
-    def test_find_files_with_match(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_with_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files that match pattern."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -123,16 +119,12 @@ class TestFindFiles:
         scanner.csv_source_dir = source_dir
         scanner.valid_config = mock_source_config
 
-        results = scanner.find_files(
-            source_dir, match_pattern="YouTube_*_M", exclude_pattern=None
-        )
+        results = scanner.find_files(source_dir, match_pattern="YouTube_*_M", exclude_pattern=None)
 
         assert len(results) == 2
         assert all("YouTube" in str(f) for f in results)
 
-    def test_find_files_with_extension_filter(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_with_extension_filter(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files with specific extension."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -156,9 +148,7 @@ class TestFindFiles:
         assert len(results) == 1
         assert results[0].suffix == ".gz"
 
-    def test_find_files_with_exclude_pattern(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_with_exclude_pattern(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files while excluding specific patterns."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -182,9 +172,7 @@ class TestFindFiles:
         assert len(results) == 2
         assert not any("backup" in str(f) for f in results)
 
-    def test_find_files_excludes_lock_files(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_excludes_lock_files(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that .~lock files are excluded."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -197,17 +185,13 @@ class TestFindFiles:
         scanner.csv_source_dir = source_dir
         scanner.valid_config = mock_source_config
 
-        results = scanner.find_files(
-            source_dir, match_pattern="YouTube_*_M", exclude_pattern=None
-        )
+        results = scanner.find_files(source_dir, match_pattern="YouTube_*_M", exclude_pattern=None)
 
         # Should exclude .~lock files
         assert len(results) == 1
         assert not any(".~lock" in str(f) for f in results)
 
-    def test_find_files_in_nested_directories(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_in_nested_directories(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files in nested directory structure."""
         source_dir = temp_dir / "source"
         nested_dir = source_dir / "subdir" / "nested"
@@ -221,16 +205,12 @@ class TestFindFiles:
         scanner.csv_source_dir = source_dir
         scanner.valid_config = mock_source_config
 
-        results = scanner.find_files(
-            source_dir, match_pattern="YouTube_*_M", exclude_pattern=None
-        )
+        results = scanner.find_files(source_dir, match_pattern="YouTube_*_M", exclude_pattern=None)
 
         # Should find files at all levels
         assert len(results) == 2
 
-    def test_find_files_empty_directory(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_find_files_empty_directory(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files in empty directory."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -239,9 +219,7 @@ class TestFindFiles:
         scanner.csv_source_dir = source_dir
         scanner.valid_config = mock_source_config
 
-        results = scanner.find_files(
-            source_dir, match_pattern="YouTube_*_M", exclude_pattern=None
-        )
+        results = scanner.find_files(source_dir, match_pattern="YouTube_*_M", exclude_pattern=None)
 
         assert len(results) == 0
 
@@ -250,9 +228,7 @@ class TestFindFiles:
 class TestSourceFileAttrs:
     """Test source_file_attrs method."""
 
-    def test_source_file_attrs_with_regex_groups(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_source_file_attrs_with_regex_groups(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test extracting file attributes with regex groups."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -277,9 +253,7 @@ class TestSourceFileAttrs:
         assert attrs_dict["content_owner"] == "BrandName"
         assert attrs_dict["file_date_key"] == "20230601"
 
-    def test_source_file_attrs_with_replace_override(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_source_file_attrs_with_replace_override(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that replace override changes table_append_or_replace."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -294,20 +268,14 @@ class TestSourceFileAttrs:
         file_source = mock_source_config.file["youtube_data"]
 
         # Without override (should be "append" from config)
-        result_no_override = scanner.source_file_attrs(
-            file_path, file_source, is_replace_override=False
-        )
+        result_no_override = scanner.source_file_attrs(file_path, file_source, is_replace_override=False)
         assert result_no_override.table_append_or_replace == "append"
 
         # With override (should be "replace")
-        result_with_override = scanner.source_file_attrs(
-            file_path, file_source, is_replace_override=True
-        )
+        result_with_override = scanner.source_file_attrs(file_path, file_source, is_replace_override=True)
         assert result_with_override.table_append_or_replace == "replace"
 
-    def test_source_file_attrs_invalid_regex_match(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_source_file_attrs_invalid_regex_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that invalid file name raises ValueError."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -334,8 +302,7 @@ class TestApplyVersionBasedFolderNaming:
 
     def test_apply_version_to_folder_name(self, youtube_file_in_temp_dir: Path) -> None:
         """Test that version is appended to storage folder name."""
-        from datawagon.objects.managed_file_metadata import (
-            ManagedFileInput, ManagedFileMetadata)
+        from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
 
         # Create file with version
         file_input = ManagedFileInput(
@@ -370,8 +337,7 @@ class TestApplyVersionBasedFolderNaming:
 
     def test_no_version_leaves_folder_unchanged(self, temp_dir: Path) -> None:
         """Test that files without version don't get folder name modified."""
-        from datawagon.objects.managed_file_metadata import (
-            ManagedFileInput, ManagedFileMetadata)
+        from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
 
         # Create file without version
         file_path = temp_dir / "simple_file.csv"
@@ -410,9 +376,7 @@ class TestApplyVersionBasedFolderNaming:
 class TestMatchedFile:
     """Test matched_file method (single file matching)."""
 
-    def test_matched_file_finds_by_base_name(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_matched_file_finds_by_base_name(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding a single file by base name."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -435,9 +399,7 @@ class TestMatchedFile:
         assert len(result.files) == 1
         assert result.files[0].file_name == file_path.name
 
-    def test_matched_file_returns_none_for_no_match(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_matched_file_returns_none_for_no_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that non-matching base name returns None."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -457,9 +419,7 @@ class TestMatchedFile:
 
         assert result is None
 
-    def test_matched_file_with_replace_override(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_matched_file_with_replace_override(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test matched_file with replace override."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -485,9 +445,7 @@ class TestMatchedFile:
 class TestMatchedFiles:
     """Test matched_files method (integration test)."""
 
-    def test_matched_files_finds_all_enabled(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_matched_files_finds_all_enabled(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that matched_files finds all files from enabled sources."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -510,9 +468,7 @@ class TestMatchedFiles:
         assert len(results[0].files) == 2  # Two files in the group
         assert results[0].table_name == "youtube_raw"
 
-    def test_matched_files_applies_version_naming(
-        self, temp_dir: Path, mock_source_config: SourceConfig
-    ) -> None:
+    def test_matched_files_applies_version_naming(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that matched_files applies version-based folder naming."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()

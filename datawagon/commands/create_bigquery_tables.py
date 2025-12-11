@@ -9,12 +9,19 @@ import click
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
-from datawagon.console import (confirm, error, info, inline_status_end,
-                               inline_status_start, newline, success, table,
-                               warning)
+from datawagon.console import (
+    confirm,
+    error,
+    info,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    success,
+    table,
+    warning,
+)
 from datawagon.objects.app_config import AppConfig
-from datawagon.objects.bigquery_table_metadata import (BigQueryTableInfo,
-                                                       StorageFolderSummary)
+from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo, StorageFolderSummary
 
 
 @click.command(name="create-bigquery-tables")
@@ -52,21 +59,15 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
         ctx.obj["GCS_MANAGER"] = gcs_manager
 
     # Get existing BigQuery tables
-    existing_tables: List[BigQueryTableInfo] = ctx.invoke(
-        list_bigquery_tables, dataset=dataset_id
-    )
+    existing_tables: List[BigQueryTableInfo] = ctx.invoke(list_bigquery_tables, dataset=dataset_id)
     existing_table_names = {table.table_name for table in existing_tables}
 
     # FIX: Lazy initialization with error handling
     bq_manager = ctx.obj.get("BQ_MANAGER")
     if not bq_manager:
-        bq_manager = BigQueryManager(
-            app_config.gcs_project_id, dataset_id, app_config.gcs_bucket
-        )
+        bq_manager = BigQueryManager(app_config.gcs_project_id, dataset_id, app_config.gcs_bucket)
         if bq_manager.has_error:
-            error(
-                "Failed to connect to BigQuery. Check credentials and project settings."
-            )
+            error("Failed to connect to BigQuery. Check credentials and project settings.")
             ctx.abort()
         ctx.obj["BQ_MANAGER"] = bq_manager
 
@@ -190,9 +191,7 @@ def _scan_gcs_storage_folders(
             # Check if path includes partition (report_date=*)
             if any("report_date=" in part for part in parts):
                 # Take everything before partition directory
-                partition_idx = next(
-                    i for i, p in enumerate(parts) if "report_date=" in p
-                )
+                partition_idx = next(i for i, p in enumerate(parts) if "report_date=" in p)
                 folder_path = "/".join(parts[:partition_idx])
             else:
                 # No partitioning, take everything except filename
@@ -217,9 +216,7 @@ def _scan_gcs_storage_folders(
             table_name = folder_name
 
         # Normalize table name for BigQuery (replace hyphens in version)
-        proposed_bq_table_name = BigQueryManager.normalize_table_name(
-            table_name, file_version
-        )
+        proposed_bq_table_name = BigQueryManager.normalize_table_name(table_name, file_version)
 
         # Check if files use partitioning
         has_partitioning = any("report_date=" in file for file in files)

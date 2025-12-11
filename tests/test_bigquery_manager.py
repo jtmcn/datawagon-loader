@@ -75,9 +75,7 @@ def test_init_with_auth_failure(mock_client_class: Mock) -> None:
     # Setup mock
     mock_client = Mock()
     mock_client_class.return_value = mock_client
-    mock_client.get_dataset.side_effect = google_api_exceptions.Unauthenticated(
-        "Unauthenticated"
-    )
+    mock_client.get_dataset.side_effect = google_api_exceptions.Unauthenticated("Unauthenticated")
 
     # Initialize manager
     manager = BigQueryManager(
@@ -201,9 +199,7 @@ def test_table_exists_true(mock_client_class: Mock) -> None:
 
     # Assertions
     assert exists is True
-    mock_client.get_table.assert_called_once_with(
-        "test-project.test_dataset.claim_raw_v1_1"
-    )
+    mock_client.get_table.assert_called_once_with("test-project.test_dataset.claim_raw_v1_1")
 
 
 @patch("datawagon.bucket.bigquery_manager.bigquery.Client")
@@ -250,9 +246,7 @@ def test_delete_table_success(mock_client_class: Mock) -> None:
 
     # Assertions
     assert success is True
-    mock_client.delete_table.assert_called_once_with(
-        "test-project.test_dataset.claim_raw_v1_1"
-    )
+    mock_client.delete_table.assert_called_once_with("test-project.test_dataset.claim_raw_v1_1")
 
 
 @patch("datawagon.bucket.bigquery_manager.bigquery.Client")
@@ -287,9 +281,7 @@ def test_delete_table_permission_denied(mock_client_class: Mock) -> None:
     mock_dataset = Mock()
     mock_dataset.dataset_id = "test_dataset"
     mock_client.get_dataset.return_value = mock_dataset
-    mock_client.delete_table.side_effect = google_api_exceptions.PermissionDenied(
-        "Permission denied"
-    )
+    mock_client.delete_table.side_effect = google_api_exceptions.PermissionDenied("Permission denied")
 
     # Initialize manager and attempt deletion
     manager = BigQueryManager(

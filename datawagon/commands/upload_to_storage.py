@@ -5,8 +5,7 @@ import click
 
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.compare import compare_local_files_to_bucket
-from datawagon.console import (confirm, error, inline_status_end,
-                               inline_status_start, newline, success)
+from datawagon.console import confirm, error, inline_status_end, inline_status_start, newline, success
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 
@@ -16,9 +15,7 @@ from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 def upload_all_gzip_csv(ctx: click.Context) -> None:
     """Upload all new files to storage bucket."""
 
-    matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(
-        compare_local_files_to_bucket
-    )
+    matched_new_files: List[ManagedFilesToDatabase] = ctx.invoke(compare_local_files_to_bucket)
 
     # FIX: Lazy initialization with error handling
     gcs_manager = ctx.obj.get("GCS_MANAGER")
@@ -32,9 +29,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
             ctx.abort()
         ctx.obj["GCS_MANAGER"] = gcs_manager
 
-    csv_file_infos: List[ManagedFileMetadata] = [
-        file_info for src in matched_new_files for file_info in src.files
-    ]
+    csv_file_infos: List[ManagedFileMetadata] = [file_info for src in matched_new_files for file_info in src.files]
 
     if len(csv_file_infos) != 0:
         newline()
@@ -46,9 +41,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
         has_errors = False
         for csv_info in csv_file_infos:
-            inline_status_start(
-                f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}..."
-            )
+            inline_status_start(f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}...")
 
             str_path = str(csv_info.file_path)
 
@@ -58,11 +51,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
                     + f"report_date={csv_info.report_date_str}/{csv_info.file_name}"
                 )
             else:
-                destination_name = (
-                    (csv_info.storage_folder_name or csv_info.base_name)
-                    + "/"
-                    + csv_info.file_name
-                )
+                destination_name = (csv_info.storage_folder_name or csv_info.base_name) + "/" + csv_info.file_name
 
             is_success = gcs_manager.upload_blob(
                 str_path,

@@ -56,9 +56,7 @@ class FileUtilsTestCase(TestCase):
 class TestCsvGzipped:
     """Test csv_gzipped method."""
 
-    def test_csv_gzipped_creates_gz_file(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_gzipped_creates_gz_file(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that CSV file is gzipped successfully."""
         # Create input CSV file
         input_csv = temp_dir / "test.csv"
@@ -79,9 +77,7 @@ class TestCsvGzipped:
         # Original file should still exist
         assert input_csv.exists()
 
-    def test_csv_gzipped_removes_original(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_gzipped_removes_original(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that original CSV is removed when requested."""
         input_csv = temp_dir / "test.csv"
         input_csv.write_text(sample_csv_content)
@@ -114,9 +110,7 @@ class TestCsvGzipped:
 class TestCsvZipToGzip:
     """Test csv_zip_to_gzip method."""
 
-    def test_csv_zip_to_gzip_converts_successfully(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_zip_to_gzip_converts_successfully(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test converting ZIP containing CSV to GZIP."""
         # Create ZIP file containing CSV
         zip_path = temp_dir / "test.csv.zip"
@@ -143,9 +137,7 @@ class TestCsvZipToGzip:
         # Original ZIP should still exist
         assert zip_path.exists()
 
-    def test_csv_zip_to_gzip_removes_original(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_zip_to_gzip_removes_original(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that original ZIP is removed when requested."""
         zip_path = temp_dir / "test.csv.zip"
         with zipfile.ZipFile(zip_path, "w") as zf:
@@ -165,9 +157,7 @@ class TestCsvZipToGzip:
         # Original ZIP should be removed
         assert not zip_path.exists()
 
-    def test_csv_zip_to_gzip_handles_nested_structure(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_zip_to_gzip_handles_nested_structure(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that nested directory structure in ZIP is flattened."""
         zip_path = temp_dir / "nested.zip"
         with zipfile.ZipFile(zip_path, "w") as zf:
@@ -186,9 +176,7 @@ class TestCsvZipToGzip:
         assert result.name == "data.csv.gz"
         assert result.exists()
 
-    def test_csv_zip_to_gzip_excludes_macosx_files(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_zip_to_gzip_excludes_macosx_files(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that __MACOSX files are excluded."""
         zip_path = temp_dir / "with_macosx.zip"
         with zipfile.ZipFile(zip_path, "w") as zf:
@@ -222,9 +210,7 @@ class TestCsvZipToGzip:
         with pytest.raises(SecurityError):
             file_utils.csv_zip_to_gzip(zip_path)
 
-    def test_csv_zip_to_gzip_only_compresses_csv_files(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_csv_zip_to_gzip_only_compresses_csv_files(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that only .csv files get their content compressed."""
         zip_path = temp_dir / "mixed.zip"
         with zipfile.ZipFile(zip_path, "w") as zf:

@@ -4,8 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
-from datawagon.objects.managed_file_scanner import (ManagedFileScanner,
-                                                    ManagedFilesToDatabase)
+from datawagon.objects.managed_file_scanner import ManagedFileScanner, ManagedFilesToDatabase
 
 
 def test_versioned_file_gets_suffix() -> None:

@@ -5,9 +5,7 @@ import click
 
 class ParameterValidator:
     def __init__(self, dir_name: Path, config_file: Path) -> None:
-        self.are_valid_parameters = self.is_valid_source_dir(
-            dir_name
-        ) and self.is_vaild_config_location(config_file)
+        self.are_valid_parameters = self.is_valid_source_dir(dir_name) and self.is_vaild_config_location(config_file)
 
     def is_valid_source_dir(self, dir_name: Path) -> bool:
         if not dir_name:

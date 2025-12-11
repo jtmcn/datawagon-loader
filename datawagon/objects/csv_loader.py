@@ -29,8 +29,7 @@ class CSVLoader:
             data, header = self._load_csv()
         else:
             raise ValueError(
-                f"Unsupported file extension: {file_extension}."
-                + "Supported extensions are .csv, .csv.gz and .csv.zip"
+                f"Unsupported file extension: {file_extension}." + "Supported extensions are .csv, .csv.gz and .csv.zip"
             )
 
         return self._create_dataframe(data, header)
@@ -48,9 +47,7 @@ class CSVLoader:
         return data, header
 
     def _load_gzipped_csv(self) -> Tuple[List[Any], List[str]]:
-        with gzip.open(
-            self.input_file.file_path, mode="rt", encoding="utf-8"
-        ) as csv_file:
+        with gzip.open(self.input_file.file_path, mode="rt", encoding="utf-8") as csv_file:
             csv_reader = csv.reader(csv_file)
 
             header = next(csv_reader)

@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from datawagon.objects.managed_file_metadata import (ManagedFileInput,
-                                                     ManagedFileMetadata)
+from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
 
 
 @pytest.mark.unit
@@ -134,25 +133,15 @@ class TestHumanReadableSize:
 
     def test_gigabytes(self) -> None:
         """Test size in gigabytes."""
-        assert (
-            ManagedFileMetadata.human_readable_size(3 * 1024 * 1024 * 1024) == "3.00 GB"
-        )
+        assert ManagedFileMetadata.human_readable_size(3 * 1024 * 1024 * 1024) == "3.00 GB"
 
     def test_terabytes(self) -> None:
         """Test size in terabytes."""
-        assert (
-            ManagedFileMetadata.human_readable_size(2 * 1024 * 1024 * 1024 * 1024)
-            == "2.00 TB"
-        )
+        assert ManagedFileMetadata.human_readable_size(2 * 1024 * 1024 * 1024 * 1024) == "2.00 TB"
 
     def test_petabytes(self) -> None:
         """Test size in petabytes."""
-        assert (
-            ManagedFileMetadata.human_readable_size(
-                1 * 1024 * 1024 * 1024 * 1024 * 1024
-            )
-            == "1.00 PB"
-        )
+        assert ManagedFileMetadata.human_readable_size(1 * 1024 * 1024 * 1024 * 1024 * 1024) == "1.00 PB"
 
     def test_zero_bytes(self) -> None:
         """Test zero bytes."""

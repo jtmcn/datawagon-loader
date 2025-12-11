@@ -5,8 +5,7 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from datawagon.objects.source_config import (BigQueryConfig, SourceConfig,
-                                             SourceFromLocalFS)
+from datawagon.objects.source_config import BigQueryConfig, SourceConfig, SourceFromLocalFS
 
 
 @pytest.mark.unit
@@ -240,9 +239,7 @@ class TestSourceConfigWithBigQuery:
     def test_source_config_with_custom_bigquery_prefix(self) -> None:
         """Test SourceConfig with custom BigQuery storage_prefix."""
         config = SourceConfig(
-            bigquery=BigQueryConfig(
-                dataset="analytics_dataset", storage_prefix="my-custom-prefix"
-            ),
+            bigquery=BigQueryConfig(dataset="analytics_dataset", storage_prefix="my-custom-prefix"),
             file={
                 "test": SourceFromLocalFS(
                     is_enabled=True,

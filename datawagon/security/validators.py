@@ -17,9 +17,7 @@ class SecurityError(Exception):
     pass
 
 
-def validate_path_traversal(
-    file_path: Union[str, Path], base_dir: Union[str, Path]
-) -> Path:
+def validate_path_traversal(file_path: Union[str, Path], base_dir: Union[str, Path]) -> Path:
     """Validate that file_path is within base_dir (prevents path traversal).
 
     Args:
@@ -45,9 +43,7 @@ def validate_path_traversal(
 
         return target
     except (ValueError, RuntimeError) as e:
-        raise SecurityError(
-            f"Path traversal detected: {file_path} is outside {base_dir}"
-        ) from e
+        raise SecurityError(f"Path traversal detected: {file_path} is outside {base_dir}") from e
 
 
 def validate_regex_complexity(pattern: str, max_length: int = 500) -> None:
@@ -69,16 +65,12 @@ def validate_regex_complexity(pattern: str, max_length: int = 500) -> None:
     # Check for nested quantifiers (e.g., (a+)+, (a*)+, (a+)*)
     nested_quantifiers = re.findall(r"\([^)]*[+*]\)[+*]", pattern)
     if nested_quantifiers:
-        raise SecurityError(
-            f"Nested quantifiers detected (ReDoS risk): {nested_quantifiers}"
-        )
+        raise SecurityError(f"Nested quantifiers detected (ReDoS risk): {nested_quantifiers}")
 
     # Check for excessive alternation groups
     alternation_groups = pattern.count("|")
     if alternation_groups > 20:
-        raise SecurityError(
-            f"Too many alternation groups: {alternation_groups} (ReDoS risk)"
-        )
+        raise SecurityError(f"Too many alternation groups: {alternation_groups} (ReDoS risk)")
 
 
 def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
@@ -122,9 +114,7 @@ def validate_blob_name(blob_name: str, max_length: int = 1024) -> str:
 MAX_DECOMPRESSED_SIZE = 1024 * 1024 * 1024  # 1GB
 
 
-def check_zip_safety(
-    file_path: Union[str, Path], max_size: int = MAX_DECOMPRESSED_SIZE
-) -> None:
+def check_zip_safety(file_path: Union[str, Path], max_size: int = MAX_DECOMPRESSED_SIZE) -> None:
     """Check if a zip file is safe to extract (prevents zip bombs).
 
     Args:
@@ -143,8 +133,7 @@ def check_zip_safety(
 
             if total_size > max_size:
                 raise SecurityError(
-                    f"Zip file decompressed size ({total_size} bytes) "
-                    f"exceeds limit ({max_size} bytes)"
+                    f"Zip file decompressed size ({total_size} bytes) " f"exceeds limit ({max_size} bytes)"
                 )
 
             # Check compression ratio
@@ -152,8 +141,6 @@ def check_zip_safety(
             if compressed_size > 0:
                 ratio = total_size / compressed_size
                 if ratio > 100:  # More than 100:1 compression is suspicious
-                    logger.warning(
-                        f"High compression ratio: {ratio:.1f}:1 for {file_path}"
-                    )
+                    logger.warning(f"High compression ratio: {ratio:.1f}:1 for {file_path}")
     except zipfile.BadZipFile as e:
         raise SecurityError(f"Invalid zip file: {file_path}") from e

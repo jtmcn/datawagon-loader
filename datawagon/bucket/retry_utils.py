@@ -42,14 +42,11 @@ def retry_with_backoff(
                 except exceptions as e:
                     last_exception = e
                     if attempt == retries:
-                        logger.error(
-                            f"{func.__name__} failed after {retries} retries: {e}"
-                        )
+                        logger.error(f"{func.__name__} failed after {retries} retries: {e}")
                         raise
 
                     logger.warning(
-                        f"{func.__name__} failed (attempt {attempt + 1}/{retries}), "
-                        f"retrying in {delay}s: {e}"
+                        f"{func.__name__} failed (attempt {attempt + 1}/{retries}), " f"retrying in {delay}s: {e}"
                     )
                     time.sleep(delay)
                     delay *= backoff_factor

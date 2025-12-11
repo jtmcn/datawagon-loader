@@ -96,9 +96,7 @@ class SourceFromLocalFS(BaseModel):
         """Validate regex pattern and group names match at config load time."""
         # Both must be set or both None
         if (self.regex_pattern is None) != (self.regex_group_names is None):
-            raise ValueError(
-                "regex_pattern and regex_group_names must both be set or both None"
-            )
+            raise ValueError("regex_pattern and regex_group_names must both be set or both None")
 
         # FIX: Validate group count at config load time to catch errors early
         if self.regex_pattern and self.regex_group_names:

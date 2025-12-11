@@ -2,8 +2,7 @@
 
 from datetime import datetime
 
-from datawagon.objects.bigquery_table_metadata import (BigQueryTableInfo,
-                                                       StorageFolderSummary)
+from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo, StorageFolderSummary
 
 
 def test_bigquery_table_info_creation() -> None:
@@ -63,9 +62,7 @@ def test_storage_folder_summary_creation() -> None:
         proposed_bq_table_name="claim_raw_v1_1",
         file_count=120,
         has_partitioning=True,
-        sample_files=[
-            "caravan-versioned/claim_raw_v1-1/report_date=2023-06-30/file1.csv.gz"
-        ],
+        sample_files=["caravan-versioned/claim_raw_v1-1/report_date=2023-06-30/file1.csv.gz"],
     )
 
     assert folder.storage_folder_name == "caravan-versioned/claim_raw_v1-1"

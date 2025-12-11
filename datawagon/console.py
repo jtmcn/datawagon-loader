@@ -13,8 +13,7 @@ from typing import Any, Iterator, List, Optional, Sequence
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
-                           SpinnerColumn, TextColumn, TimeElapsedColumn)
+from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.rule import Rule
 from rich.table import Table
 
@@ -332,9 +331,7 @@ def inline_status_start(message: str) -> None:
     console.print(message, end=" ")
 
 
-def inline_status_end(
-    success: bool, success_msg: str = "Success", error_msg: str = "Failed"
-) -> None:
+def inline_status_end(success: bool, success_msg: str = "Success", error_msg: str = "Failed") -> None:
     """Complete inline status with success/error indicator.
 
     Args:

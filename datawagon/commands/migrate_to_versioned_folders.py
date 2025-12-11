@@ -5,8 +5,7 @@ from typing import Dict, List
 import click
 
 from datawagon.bucket.gcs_manager import GcsManager
-from datawagon.console import (error, header, info, newline, panel,
-                               progress_bar, success, warning)
+from datawagon.console import error, header, info, newline, panel, progress_bar, success, warning
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig
 
@@ -28,9 +27,7 @@ class MigrationItem:
     skip_reason: str | None = None
 
 
-def build_migration_plan(
-    gcs_manager: GcsManager, source_config: SourceConfig
-) -> List[MigrationItem]:
+def build_migration_plan(gcs_manager: GcsManager, source_config: SourceConfig) -> List[MigrationItem]:
     """Build migration plan by scanning GCS bucket for files needing reorganization.
 
     Scans all files in the GCS bucket and identifies which files need to be
@@ -53,9 +50,7 @@ def build_migration_plan(
             continue
 
         # Config now has "caravan-versioned/claim_raw"
-        storage_folder = (
-            file_source.storage_folder_name or file_source.select_file_name_base
-        )
+        storage_folder = file_source.storage_folder_name or file_source.select_file_name_base
 
         # Convert to source prefix (where files currently are)
         # Replace "caravan-versioned" with "caravan" to find existing files
@@ -197,9 +192,7 @@ def display_migration_plan(migration_items: List[MigrationItem]) -> None:
             info(f"  {reason}: {count} files")
 
 
-def execute_migration(
-    gcs_manager: GcsManager, migration_items: List[MigrationItem], batch_size: int
-) -> None:
+def execute_migration(gcs_manager: GcsManager, migration_items: List[MigrationItem], batch_size: int) -> None:
     """Execute the migration plan by copying files to version-based folders.
 
     Copies files from old location to new version-based folder structure in
@@ -223,9 +216,7 @@ def execute_migration(
     with progress_bar(to_migrate, "Migrating files") as progress:
         task = progress.add_task("Migrating files", total=len(to_migrate))
         for item in to_migrate:
-            success_result = gcs_manager.copy_blob_within_bucket(
-                item.source_path, item.destination_path
-            )
+            success_result = gcs_manager.copy_blob_within_bucket(item.source_path, item.destination_path)
 
             if success_result:
                 success_count += 1
@@ -262,13 +253,9 @@ def execute_migration(
     default=True,
     help="Show plan without executing (default: dry-run)",
 )
-@click.option(
-    "--batch-size", default=100, help="Files to process per batch (default: 100)"
-)
+@click.option("--batch-size", default=100, help="Files to process per batch (default: 100)")
 @click.pass_context
-def migrate_to_versioned_folders(
-    ctx: click.Context, dry_run: bool, batch_size: int
-) -> None:
+def migrate_to_versioned_folders(ctx: click.Context, dry_run: bool, batch_size: int) -> None:
     """Migrate existing GCS files to version-based folder structure."""
 
     # Get GCS manager and config
@@ -290,9 +277,7 @@ def migrate_to_versioned_folders(
 
     # If execute mode, confirm and migrate
     if not dry_run:
-        needs_migration_count = sum(
-            1 for item in migration_plan if item.needs_migration
-        )
+        needs_migration_count = sum(1 for item in migration_plan if item.needs_migration)
         if needs_migration_count > 0:
             click.echo("\n")
             if click.confirm(f"Migrate {needs_migration_count} files?"):

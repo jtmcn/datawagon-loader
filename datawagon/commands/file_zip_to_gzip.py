@@ -21,9 +21,7 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
         ctx: Click context with application configuration
     """
     # get list of all zip files
-    all_matched_files: List[ManagedFilesToDatabase] = ctx.invoke(
-        files_in_local_fs, file_extension="zip"
-    )
+    all_matched_files: List[ManagedFilesToDatabase] = ctx.invoke(files_in_local_fs, file_extension="zip")
 
     zip_files: List[ManagedFileMetadata] = []
     for matched_files in all_matched_files:
@@ -41,15 +39,11 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
     for zip_file in zip_files:
         status(f"Converting {zip_file.file_path} to gzip...")
         try:
-            file_outputs = file_utils.csv_zip_to_gzip(
-                zip_file.file_path, remove_original_zip=True
-            )
+            file_outputs = file_utils.csv_zip_to_gzip(zip_file.file_path, remove_original_zip=True)
             if file_outputs:
                 for output_file in file_outputs:
                     success(f"Created: {output_file}")
-                success(
-                    f"Converted {len(file_outputs)} CSV files from {zip_file.file_name}"
-                )
+                success(f"Converted {len(file_outputs)} CSV files from {zip_file.file_name}")
             else:
                 error("No files created")
         except ValueError as e:

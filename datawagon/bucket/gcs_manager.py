@@ -64,9 +64,7 @@ class GcsManager:
             self.has_error = False
         except google_api_exceptions.Unauthenticated as e:
             logger.error(f"GCS authentication failed: {e}")
-            logger.error(
-                "Authentication required. Run: gcloud auth application-default login"
-            )
+            logger.error("Authentication required. Run: gcloud auth application-default login")
             self.has_error = True
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"GCS permission denied: {e}")
@@ -85,9 +83,7 @@ class GcsManager:
         return [bucket.name for bucket in buckets]
 
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
-    def list_blobs(
-        self, storage_folder_name: str, file_name_base: str, file_extension: str
-    ) -> List[str]:
+    def list_blobs(self, storage_folder_name: str, file_name_base: str, file_extension: str) -> List[str]:
         """List blobs matching pattern with proper error propagation."""
         if self.has_error:
             logger.error("GCS client has errors, cannot list blobs")
@@ -123,9 +119,7 @@ class GcsManager:
             google_api_exceptions.PermissionDenied,
         ) as e:
             # FIX: Auth/permission errors should be fatal, not silent
-            logger.error(
-                f"GCS access error: {e}. Run: gcloud auth application-default login"
-            )
+            logger.error(f"GCS access error: {e}. Run: gcloud auth application-default login")
             self.has_error = True
             raise  # Re-raise to signal caller
 
@@ -159,8 +153,7 @@ class GcsManager:
             file_source = source_confg.file[file_id]
             if file_source.is_enabled:
                 blob_list = self.list_blobs(
-                    file_source.storage_folder_name
-                    or file_source.select_file_name_base,
+                    file_source.storage_folder_name or file_source.select_file_name_base,
                     file_source.select_file_name_base,
                     ".csv.gz",
                 )
@@ -180,9 +173,7 @@ class GcsManager:
         return combined_df
 
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
-    def upload_blob(
-        self, source_file_name: str, destination_blob_name: str, overwrite: bool = False
-    ) -> bool:
+    def upload_blob(self, source_file_name: str, destination_blob_name: str, overwrite: bool = False) -> bool:
         """Upload file to GCS bucket with retry logic and race condition protection.
 
         Validates blob name for security, then uploads file to GCS with automatic
@@ -219,9 +210,7 @@ class GcsManager:
             # if_generation_match=0 means only succeed if blob doesn't exist
             generation_match = None if overwrite else 0
 
-            blob.upload_from_filename(
-                source_file_name, if_generation_match=generation_match
-            )
+            blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
             logger.info(f"Uploaded: {destination_blob_name}")
             return True
         except google_api_exceptions.PreconditionFailed:
@@ -284,9 +273,7 @@ class GcsManager:
         blob.download_to_filename(destination_file_name)
 
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
-    def copy_blob_within_bucket(
-        self, source_blob_name: str, destination_blob_name: str
-    ) -> bool:
+    def copy_blob_within_bucket(self, source_blob_name: str, destination_blob_name: str) -> bool:
         """Copy a blob to a new location within the same bucket with atomic verification."""
         if not self.has_error:
             try:
@@ -298,9 +285,7 @@ class GcsManager:
                     return False
 
                 # Log the copy operation
-                logger.info(
-                    f"Attempting copy: {source_blob_name} -> {destination_blob_name}"
-                )
+                logger.info(f"Attempting copy: {source_blob_name} -> {destination_blob_name}")
 
                 bucket = self.storage_client.bucket(self.source_bucket_name)
                 source_blob = bucket.blob(source_blob_name)
@@ -310,22 +295,17 @@ class GcsManager:
                 logger.debug(f"Source blob size: {source_blob.size} bytes")
 
                 # Copy blob within same bucket - returns new blob with metadata
-                destination_blob = bucket.copy_blob(
-                    source_blob, bucket, destination_blob_name
-                )
+                destination_blob = bucket.copy_blob(source_blob, bucket, destination_blob_name)
 
                 # Reload destination blob to get fresh metadata from GCS
                 destination_blob.reload()
-                logger.debug(
-                    f"Destination blob created with size: {destination_blob.size} bytes"
-                )
+                logger.debug(f"Destination blob created with size: {destination_blob.size} bytes")
 
                 # FIX: Verify immediately using returned object (no TOCTOU gap)
                 # Compare sizes to ensure copy completed successfully
                 if destination_blob.size == source_blob.size:
                     logger.info(
-                        f"Copied: {source_blob_name} -> {destination_blob_name} "
-                        f"({destination_blob.size} bytes)"
+                        f"Copied: {source_blob_name} -> {destination_blob_name} " f"({destination_blob.size} bytes)"
                     )
                     return True
                 else:
@@ -352,9 +332,7 @@ class GcsManager:
         """List all blobs in bucket with given prefix."""
         if not self.has_error:
             try:
-                blobs = self.storage_client.list_blobs(
-                    self.source_bucket_name, prefix=prefix
-                )
+                blobs = self.storage_client.list_blobs(self.source_bucket_name, prefix=prefix)
                 return [blob.name for blob in blobs]
             except google_api_exceptions.NotFound as e:
                 logger.error(f"Bucket not found: {e}")

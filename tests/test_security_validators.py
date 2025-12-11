@@ -5,10 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from datawagon.security import (MAX_DECOMPRESSED_SIZE, SecurityError,
-                                check_zip_safety, validate_blob_name,
-                                validate_path_traversal,
-                                validate_regex_complexity)
+from datawagon.security import (
+    MAX_DECOMPRESSED_SIZE,
+    SecurityError,
+    check_zip_safety,
+    validate_blob_name,
+    validate_path_traversal,
+    validate_regex_complexity,
+)
 
 
 @pytest.mark.security
@@ -191,9 +195,7 @@ class TestZipBombDetection:
         # Should not raise
         check_zip_safety(zip_path)
 
-    def test_valid_zip_with_path_object(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_valid_zip_with_path_object(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test that Path objects are accepted (not just strings)."""
         zip_path = temp_dir / "test.zip"
 
@@ -203,9 +205,7 @@ class TestZipBombDetection:
         # Should accept Path object
         check_zip_safety(zip_path)
 
-    def test_valid_zip_multiple_files(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_valid_zip_multiple_files(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test zip with multiple small files."""
         zip_path = temp_dir / "test.zip"
 
@@ -235,9 +235,7 @@ class TestZipBombDetection:
         assert "decompressed size" in str(exc_info.value)
         assert "exceeds limit" in str(exc_info.value)
 
-    def test_zip_with_custom_size_limit(
-        self, temp_dir: Path, sample_csv_content: str
-    ) -> None:
+    def test_zip_with_custom_size_limit(self, temp_dir: Path, sample_csv_content: str) -> None:
         """Test zip safety with custom size limit."""
         zip_path = temp_dir / "test.zip"
 
@@ -265,9 +263,7 @@ class TestZipBombDetection:
         """Test that MAX_DECOMPRESSED_SIZE constant is set correctly."""
         assert MAX_DECOMPRESSED_SIZE == 1024 * 1024 * 1024  # 1GB
 
-    def test_high_compression_ratio_warning(
-        self, temp_dir: Path, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    def test_high_compression_ratio_warning(self, temp_dir: Path, caplog: pytest.LogCaptureFixture) -> None:
         """Test that high compression ratios generate warnings."""
         zip_path = temp_dir / "highly_compressed.zip"
 

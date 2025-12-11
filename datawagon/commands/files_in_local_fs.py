@@ -7,8 +7,7 @@ from datawagon.console import error, info, newline, status
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
-from datawagon.objects.managed_file_scanner import (ManagedFileScanner,
-                                                    ManagedFilesToDatabase)
+from datawagon.objects.managed_file_scanner import ManagedFileScanner, ManagedFilesToDatabase
 
 
 @click.command()
@@ -21,9 +20,7 @@ from datawagon.objects.managed_file_scanner import (ManagedFileScanner,
     help="Only select files with this extension",
 )
 @click.pass_context
-def files_in_local_fs(
-    ctx: click.Context, file_extension: str
-) -> List[ManagedFilesToDatabase]:
+def files_in_local_fs(ctx: click.Context, file_extension: str) -> List[ManagedFilesToDatabase]:
     """Scan a directory for .csv.gz files and display the number of files grouped by table_name."""
 
     source_dir: str = ctx.obj["CONFIG"].csv_source_dir
@@ -34,22 +31,18 @@ def files_in_local_fs(
 
     status(f"Scanning for .csv files in {source_path}...")
 
-    matched_files = ManagedFileScanner(
-        app_config.csv_source_config, app_config.csv_source_dir
-    ).matched_files(file_extension)
+    matched_files = ManagedFileScanner(app_config.csv_source_config, app_config.csv_source_dir).matched_files(
+        file_extension
+    )
 
     if len(matched_files) == 0:
         error(f"No .csv files found in source directory: {source_dir}")
         ctx.abort()
 
     for files_by_table in matched_files:
-        info(
-            f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector_base_name}"
-        )
+        info(f"Matched {len(files_by_table.files)} files with name: {files_by_table.file_selector_base_name}")
 
-    csv_file_infos: List[ManagedFileMetadata] = [
-        file_info for src in matched_files for file_info in src.files
-    ]
+    csv_file_infos: List[ManagedFileMetadata] = [file_info for src in matched_files for file_info in src.files]
 
     duplicates = file_utils.check_for_duplicate_files(csv_file_infos)
 

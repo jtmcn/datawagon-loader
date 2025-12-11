@@ -69,15 +69,11 @@ class BigQueryManager:
             logger.info(f"Found BigQuery dataset: {dataset.dataset_id}")
         except google_api_exceptions.Unauthenticated as e:
             logger.error(f"BigQuery authentication failed: {e}")
-            logger.error(
-                "Authentication required. Run: gcloud auth application-default login"
-            )
+            logger.error("Authentication required. Run: gcloud auth application-default login")
             self.has_error = True
         except google_api_exceptions.NotFound:
             logger.error(f"BigQuery dataset not found: {dataset_id}")
-            logger.error(
-                f"Create dataset with: bq mk --dataset {project_id}:{dataset_id}"
-            )
+            logger.error(f"Create dataset with: bq mk --dataset {project_id}:{dataset_id}")
             self.has_error = True
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"BigQuery permission denied: {e}")
@@ -146,14 +142,10 @@ class BigQueryManager:
                         is_partitioned = True
                         # Extract partition columns from source URI pattern
                         if ext_config.source_uris:
-                            partition_columns = self._extract_partition_columns(
-                                ext_config.source_uris[0]
-                            )
+                            partition_columns = self._extract_partition_columns(ext_config.source_uris[0])
 
                     # Construct source URI pattern
-                    source_uri_pattern = (
-                        ext_config.source_uris[0] if ext_config.source_uris else ""
-                    )
+                    source_uri_pattern = ext_config.source_uris[0] if ext_config.source_uris else ""
 
                     table_info = BigQueryTableInfo(
                         table_name=table.table_id,
@@ -167,9 +159,7 @@ class BigQueryManager:
                     )
                     external_tables.append(table_info)
 
-            logger.info(
-                f"Found {len(external_tables)} external tables in {self.dataset_id}"
-            )
+            logger.info(f"Found {len(external_tables)} external tables in {self.dataset_id}")
             return external_tables
 
         except google_api_exceptions.NotFound as e:
@@ -239,9 +229,7 @@ class BigQueryManager:
                 # The source_uri_prefix tells BigQuery where Hive partitioning starts
                 source_uris = [f"{source_uri_prefix}/*"]
             else:
-                source_uris = [
-                    f"gs://{self.bucket_name}/{storage_folder_name}/*.csv.gz"
-                ]
+                source_uris = [f"gs://{self.bucket_name}/{storage_folder_name}/*.csv.gz"]
 
             # Create external configuration for CSV
             external_config = bigquery.ExternalConfig("CSV")

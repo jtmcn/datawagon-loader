@@ -19,9 +19,7 @@ from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
     help="BigQuery dataset name (defaults to DW_BQ_DATASET env var)",
 )
 @click.pass_context
-def list_bigquery_tables(
-    ctx: click.Context, dataset: str | None
-) -> List[BigQueryTableInfo]:
+def list_bigquery_tables(ctx: click.Context, dataset: str | None) -> List[BigQueryTableInfo]:
     """List existing external tables in BigQuery dataset.
 
     Displays:
@@ -64,11 +62,7 @@ def list_bigquery_tables(
     table_data = []
     for table in tables:
         partitioned = "Yes" if table.is_partitioned else "No"
-        created_str = (
-            table.created_time.strftime("%Y-%m-%d %H:%M")
-            if table.created_time
-            else "Unknown"
-        )
+        created_str = table.created_time.strftime("%Y-%m-%d %H:%M") if table.created_time else "Unknown"
 
         table_data.append(
             [

@@ -15,9 +15,7 @@ def test_scan_folders_with_prefix() -> None:
     ]
 
     # Scan with prefix - should only find versioned folders
-    folders = _scan_gcs_storage_folders(
-        mock_gcs, "test-bucket", storage_prefix="caravan-versioned"
-    )
+    folders = _scan_gcs_storage_folders(mock_gcs, "test-bucket", storage_prefix="caravan-versioned")
 
     # Should find 2 folders under caravan-versioned
     assert len(folders) == 2
@@ -26,9 +24,7 @@ def test_scan_folders_with_prefix() -> None:
     assert "caravan-versioned/asset_raw_v1-1" in folder_names
 
     # Verify prefix was used in the call
-    mock_gcs.list_all_blobs_with_prefix.assert_called_once_with(
-        prefix="caravan-versioned"
-    )
+    mock_gcs.list_all_blobs_with_prefix.assert_called_once_with(prefix="caravan-versioned")
 
 
 def test_scan_folders_without_prefix() -> None:
@@ -60,17 +56,13 @@ def test_scan_folders_with_nonexistent_prefix() -> None:
     mock_gcs.list_all_blobs_with_prefix.return_value = []
 
     # Scan with non-existent prefix
-    folders = _scan_gcs_storage_folders(
-        mock_gcs, "test-bucket", storage_prefix="nonexistent-prefix"
-    )
+    folders = _scan_gcs_storage_folders(mock_gcs, "test-bucket", storage_prefix="nonexistent-prefix")
 
     # Should return empty list
     assert len(folders) == 0
 
     # Verify prefix was used in the call
-    mock_gcs.list_all_blobs_with_prefix.assert_called_once_with(
-        prefix="nonexistent-prefix"
-    )
+    mock_gcs.list_all_blobs_with_prefix.assert_called_once_with(prefix="nonexistent-prefix")
 
 
 def test_scan_folders_extracts_version() -> None:
@@ -80,9 +72,7 @@ def test_scan_folders_extracts_version() -> None:
         "caravan-versioned/claim_raw_v1-1/report_date=2023-06-30/file.csv.gz",
     ]
 
-    folders = _scan_gcs_storage_folders(
-        mock_gcs, "test-bucket", storage_prefix="caravan-versioned"
-    )
+    folders = _scan_gcs_storage_folders(mock_gcs, "test-bucket", storage_prefix="caravan-versioned")
 
     assert len(folders) == 1
     folder = folders[0]
@@ -98,9 +88,7 @@ def test_scan_folders_detects_partitioning() -> None:
         "caravan-versioned/claim_raw_v1-1/report_date=2023-06-30/file.csv.gz",
     ]
 
-    folders = _scan_gcs_storage_folders(
-        mock_gcs, "test-bucket", storage_prefix="caravan-versioned"
-    )
+    folders = _scan_gcs_storage_folders(mock_gcs, "test-bucket", storage_prefix="caravan-versioned")
 
     assert len(folders) == 1
     assert folders[0].has_partitioning is True
@@ -113,9 +101,7 @@ def test_scan_folders_without_partitioning() -> None:
         "caravan-versioned/simple_table/file.csv.gz",
     ]
 
-    folders = _scan_gcs_storage_folders(
-        mock_gcs, "test-bucket", storage_prefix="caravan-versioned"
-    )
+    folders = _scan_gcs_storage_folders(mock_gcs, "test-bucket", storage_prefix="caravan-versioned")
 
     assert len(folders) == 1
     assert folders[0].has_partitioning is False

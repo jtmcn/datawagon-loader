@@ -15,8 +15,7 @@ import toml
 from pydantic import BaseModel, Field, ValidationError
 
 from datawagon.logging_config import get_logger
-from datawagon.objects.managed_file_metadata import (ManagedFileInput,
-                                                     ManagedFileMetadata)
+from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
 from datawagon.security import SecurityError, validate_path_traversal
 
@@ -104,9 +103,7 @@ class ManagedFileScanner:
         Returns:
             List of Path objects for matched files
         """
-        all_csv_files = self.find_files(
-            source_path, glob_pat, exclude_pattern, file_extension
-        )
+        all_csv_files = self.find_files(source_path, glob_pat, exclude_pattern, file_extension)
 
         file_names = [str(file) for file in all_csv_files]
 
@@ -146,19 +143,14 @@ class ManagedFileScanner:
             match_pattern = f"*{match_pattern.lower()}*"
 
         # FIX: Only process exclude_pattern if not None
-        exclude_pattern_lower = (
-            exclude_pattern.lower() if exclude_pattern is not None else None
-        )
+        exclude_pattern_lower = exclude_pattern.lower() if exclude_pattern is not None else None
 
         for root, dirnames, filenames in os.walk(base_path):
             for filename in filenames:
                 if fnmatch.fnmatch(filename.lower(), match_pattern):
                     # FIX: Check None before pattern matching
-                    should_exclude = (
-                        exclude_pattern_lower is not None
-                        and fnmatch.fnmatch(
-                            filename.lower(), f"*{exclude_pattern_lower}*"
-                        )
+                    should_exclude = exclude_pattern_lower is not None and fnmatch.fnmatch(
+                        filename.lower(), f"*{exclude_pattern_lower}*"
                     )
 
                     if not should_exclude and not filename.startswith(".~lock"):
@@ -173,9 +165,7 @@ class ManagedFileScanner:
 
         return [Path(match) for match in matches]
 
-    def _apply_version_based_folder_naming(
-        self, all_files: List[ManagedFilesToDatabase]
-    ) -> None:
+    def _apply_version_based_folder_naming(self, all_files: List[ManagedFilesToDatabase]) -> None:
         """
         Modify storage_folder_name to include version suffix for versioned files.
 
@@ -198,8 +188,7 @@ class ManagedFileScanner:
                 # Only append version if file has one
                 if file_metadata.file_version:
                     file_metadata.storage_folder_name = (
-                        f"{file_metadata.storage_folder_name}_"
-                        f"{file_metadata.file_version}"
+                        f"{file_metadata.storage_folder_name}_" f"{file_metadata.file_version}"
                     )
 
     def source_file_attrs(
@@ -231,9 +220,7 @@ class ManagedFileScanner:
             >>> attrs.content_owner
             'Brand'
         """
-        table_append_or_replace = (
-            "replace" if is_replace_override else file_source.table_append_or_replace
-        )
+        table_append_or_replace = "replace" if is_replace_override else file_source.table_append_or_replace
 
         file_dict = {
             "file_name": file_path.name,
@@ -261,9 +248,7 @@ class ManagedFileScanner:
 
         return ManagedFileInput(**file_dict)
 
-    def matched_files(
-        self, file_extension: str | None = None
-    ) -> List[ManagedFilesToDatabase]:
+    def matched_files(self, file_extension: str | None = None) -> List[ManagedFilesToDatabase]:
         """Scan for all files matching enabled configurations.
 
         Processes all enabled file sources in configuration, scans for matching
@@ -299,8 +284,7 @@ class ManagedFileScanner:
                 )
 
                 table_mapper = ManagedFilesToDatabase(
-                    table_name=file_source.table_name
-                    or file_source.select_file_name_base,
+                    table_name=file_source.table_name or file_source.select_file_name_base,
                     table_append_or_replace=file_source.table_append_or_replace,
                     file_selector_base_name=file_source.select_file_name_base,
                 )
@@ -350,13 +334,10 @@ class ManagedFileScanner:
         for file_id in valid_config.file:
             file_source = valid_config.file[file_id]
             if file_source.select_file_name_base == input_file_base_name:
-                file_attrs = self.source_file_attrs(
-                    source_file_path, file_source, is_replace_override
-                )
+                file_attrs = self.source_file_attrs(source_file_path, file_source, is_replace_override)
 
                 table_mapper = ManagedFilesToDatabase(
-                    table_name=file_source.table_name
-                    or file_source.select_file_name_base,
+                    table_name=file_source.table_name or file_source.select_file_name_base,
                     table_append_or_replace=file_source.table_append_or_replace,
                     file_selector_base_name=file_source.select_file_name_base,
                     files=[ManagedFileMetadata.build_data_item(file_attrs)],
