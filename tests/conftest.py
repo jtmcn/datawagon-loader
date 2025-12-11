@@ -8,7 +8,7 @@ from typing import Generator
 from unittest.mock import Mock
 
 import pytest
-from google.cloud import storage
+from google.cloud import storage  # type: ignore[attr-defined]
 
 from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
 

@@ -10,7 +10,7 @@ from datawagon.objects.managed_file_scanner import (
 )
 
 
-def test_versioned_file_gets_suffix():
+def test_versioned_file_gets_suffix() -> None:
     """Versioned file - always gets version suffix."""
     file1 = ManagedFileMetadata(
         file_name="test_v1-1.csv.gz",
@@ -43,7 +43,7 @@ def test_versioned_file_gets_suffix():
     assert file1.storage_folder_name == "caravan/test_v1-1"
 
 
-def test_non_versioned_file_no_suffix():
+def test_non_versioned_file_no_suffix() -> None:
     """Non-versioned file - no suffix (backward compatible)."""
     file1 = ManagedFileMetadata(
         file_name="test.csv.gz",
@@ -76,7 +76,7 @@ def test_non_versioned_file_no_suffix():
     assert file1.storage_folder_name == "caravan/test"
 
 
-def test_multiple_versions_with_suffix():
+def test_multiple_versions_with_suffix() -> None:
     """Multiple versions - suffix added to all."""
     file1 = ManagedFileMetadata(
         file_name="test_v1-0.csv.gz",

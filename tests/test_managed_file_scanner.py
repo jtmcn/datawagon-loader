@@ -105,7 +105,7 @@ class TestManagedFileScannerInit:
 class TestFindFiles:
     """Test find_files method."""
 
-    def test_find_files_with_match(self, temp_dir: Path, mock_source_config) -> None:
+    def test_find_files_with_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test finding files that match pattern."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
@@ -131,7 +131,7 @@ class TestFindFiles:
         assert all("YouTube" in str(f) for f in results)
 
     def test_find_files_with_extension_filter(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test finding files with specific extension."""
         source_dir = temp_dir / "source"
@@ -157,7 +157,7 @@ class TestFindFiles:
         assert results[0].suffix == ".gz"
 
     def test_find_files_with_exclude_pattern(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test finding files while excluding specific patterns."""
         source_dir = temp_dir / "source"
@@ -183,7 +183,7 @@ class TestFindFiles:
         assert not any("backup" in str(f) for f in results)
 
     def test_find_files_excludes_lock_files(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that .~lock files are excluded."""
         source_dir = temp_dir / "source"
@@ -206,7 +206,7 @@ class TestFindFiles:
         assert not any(".~lock" in str(f) for f in results)
 
     def test_find_files_in_nested_directories(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test finding files in nested directory structure."""
         source_dir = temp_dir / "source"
@@ -229,7 +229,7 @@ class TestFindFiles:
         assert len(results) == 2
 
     def test_find_files_empty_directory(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test finding files in empty directory."""
         source_dir = temp_dir / "source"
@@ -251,7 +251,7 @@ class TestSourceFileAttrs:
     """Test source_file_attrs method."""
 
     def test_source_file_attrs_with_regex_groups(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test extracting file attributes with regex groups."""
         source_dir = temp_dir / "source"
@@ -278,7 +278,7 @@ class TestSourceFileAttrs:
         assert attrs_dict["file_date_key"] == "20230601"
 
     def test_source_file_attrs_with_replace_override(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that replace override changes table_append_or_replace."""
         source_dir = temp_dir / "source"
@@ -306,7 +306,7 @@ class TestSourceFileAttrs:
         assert result_with_override.table_append_or_replace == "replace"
 
     def test_source_file_attrs_invalid_regex_match(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that invalid file name raises ValueError."""
         source_dir = temp_dir / "source"
@@ -415,7 +415,7 @@ class TestMatchedFile:
     """Test matched_file method (single file matching)."""
 
     def test_matched_file_finds_by_base_name(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test finding a single file by base name."""
         source_dir = temp_dir / "source"
@@ -440,7 +440,7 @@ class TestMatchedFile:
         assert result.files[0].file_name == file_path.name
 
     def test_matched_file_returns_none_for_no_match(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that non-matching base name returns None."""
         source_dir = temp_dir / "source"
@@ -462,7 +462,7 @@ class TestMatchedFile:
         assert result is None
 
     def test_matched_file_with_replace_override(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test matched_file with replace override."""
         source_dir = temp_dir / "source"
@@ -490,7 +490,7 @@ class TestMatchedFiles:
     """Test matched_files method (integration test)."""
 
     def test_matched_files_finds_all_enabled(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that matched_files finds all files from enabled sources."""
         source_dir = temp_dir / "source"
@@ -515,7 +515,7 @@ class TestMatchedFiles:
         assert results[0].table_name == "youtube_raw"
 
     def test_matched_files_applies_version_naming(
-        self, temp_dir: Path, mock_source_config
+        self, temp_dir: Path, mock_source_config: SourceConfig
     ) -> None:
         """Test that matched_files applies version-based folder naming."""
         source_dir = temp_dir / "source"

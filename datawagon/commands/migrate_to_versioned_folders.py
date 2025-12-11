@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
 
 import click
 
@@ -144,7 +144,7 @@ def build_migration_plan(
     return migration_items
 
 
-def display_migration_plan(migration_items: List[MigrationItem]):
+def display_migration_plan(migration_items: List[MigrationItem]) -> None:
     """Display migration plan in a readable format with counts and examples.
 
     Presents migration plan to user showing files to be migrated,
@@ -172,7 +172,7 @@ def display_migration_plan(migration_items: List[MigrationItem]):
         header(f"FILES TO MIGRATE ({len(needs_migration)})", style="green")
 
         # Group by base_name
-        by_base_name = {}
+        by_base_name: Dict[str, List[MigrationItem]] = {}
         for item in needs_migration:
             if item.base_name not in by_base_name:
                 by_base_name[item.base_name] = []
@@ -196,7 +196,7 @@ def display_migration_plan(migration_items: List[MigrationItem]):
         newline()
         header(f"SKIPPED ({len(skipped)})", style="yellow")
 
-        skip_reasons = {}
+        skip_reasons: Dict[str, int] = {}
         for item in skipped:
             reason = item.skip_reason or "Unknown"
             skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
@@ -207,7 +207,7 @@ def display_migration_plan(migration_items: List[MigrationItem]):
 
 def execute_migration(
     gcs_manager: GcsManager, migration_items: List[MigrationItem], batch_size: int
-):
+) -> None:
     """Execute the migration plan by copying files to version-based folders.
 
     Copies files from old location to new version-based folder structure in
@@ -274,7 +274,7 @@ def execute_migration(
     "--batch-size", default=100, help="Files to process per batch (default: 100)"
 )
 @click.pass_context
-def migrate_to_versioned_folders(ctx: click.Context, dry_run: bool, batch_size: int):
+def migrate_to_versioned_folders(ctx: click.Context, dry_run: bool, batch_size: int) -> None:
     """Migrate existing GCS files to version-based folder structure."""
 
     # Get GCS manager and config
