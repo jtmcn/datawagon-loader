@@ -218,7 +218,9 @@ class GcsManager:
             # if_generation_match=0 means only succeed if blob doesn't exist
             generation_match = None if overwrite else 0
 
-            blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
+            blob.upload_from_filename(
+                source_file_name, if_generation_match=generation_match
+            )
             logger.info(f"Uploaded: {destination_blob_name}")
             return True
         except google_api_exceptions.PreconditionFailed:

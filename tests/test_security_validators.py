@@ -4,10 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from datawagon.security import (MAX_DECOMPRESSED_SIZE, SecurityError,
-                                check_zip_safety, validate_blob_name,
-                                validate_path_traversal,
-                                validate_regex_complexity)
+from datawagon.security import (
+    MAX_DECOMPRESSED_SIZE,
+    SecurityError,
+    check_zip_safety,
+    validate_blob_name,
+    validate_path_traversal,
+    validate_regex_complexity,
+)
 
 
 @pytest.mark.security

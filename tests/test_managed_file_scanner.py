@@ -4,9 +4,11 @@ from pathlib import Path
 import pytest
 import toml
 
-from datawagon.objects.managed_file_scanner import (ManagedFiles,
-                                                    ManagedFileScanner,
-                                                    ManagedFilesToDatabase)
+from datawagon.objects.managed_file_scanner import (
+    ManagedFiles,
+    ManagedFileScanner,
+    ManagedFilesToDatabase,
+)
 from datawagon.objects.source_config import SourceConfig
 
 
@@ -332,7 +334,9 @@ class TestApplyVersionBasedFolderNaming:
     def test_apply_version_to_folder_name(self, youtube_file_in_temp_dir: Path) -> None:
         """Test that version is appended to storage folder name."""
         from datawagon.objects.managed_file_metadata import (
-            ManagedFileInput, ManagedFileMetadata)
+            ManagedFileInput,
+            ManagedFileMetadata,
+        )
 
         # Create file with version
         file_input = ManagedFileInput(
@@ -368,7 +372,9 @@ class TestApplyVersionBasedFolderNaming:
     def test_no_version_leaves_folder_unchanged(self, temp_dir: Path) -> None:
         """Test that files without version don't get folder name modified."""
         from datawagon.objects.managed_file_metadata import (
-            ManagedFileInput, ManagedFileMetadata)
+            ManagedFileInput,
+            ManagedFileMetadata,
+        )
 
         # Create file without version
         file_path = temp_dir / "simple_file.csv"

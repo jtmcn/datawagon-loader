@@ -22,8 +22,7 @@ from datawagon.commands.file_zip_to_gzip import file_zip_to_gzip
 from datawagon.commands.files_in_local_fs import files_in_local_fs
 from datawagon.commands.files_in_storage import files_in_storage
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
-from datawagon.commands.migrate_to_versioned_folders import \
-    migrate_to_versioned_folders
+from datawagon.commands.migrate_to_versioned_folders import migrate_to_versioned_folders
 from datawagon.commands.upload_to_storage import upload_all_gzip_csv
 from datawagon.console import brand, info, newline
 from datawagon.logging_config import setup_logging

@@ -47,7 +47,9 @@ def file_zip_to_gzip(ctx: click.Context) -> None:
             if file_outputs:
                 for output_file in file_outputs:
                     success(f"Created: {output_file}")
-                success(f"Converted {len(file_outputs)} CSV files from {zip_file.file_name}")
+                success(
+                    f"Converted {len(file_outputs)} CSV files from {zip_file.file_name}"
+                )
             else:
                 error("No files created")
         except ValueError as e:

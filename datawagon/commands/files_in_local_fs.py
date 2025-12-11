@@ -7,8 +7,10 @@ from datawagon.console import error, info, newline, status
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.file_utils import FileUtils
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
-from datawagon.objects.managed_file_scanner import (ManagedFileScanner,
-                                                    ManagedFilesToDatabase)
+from datawagon.objects.managed_file_scanner import (
+    ManagedFileScanner,
+    ManagedFilesToDatabase,
+)
 
 
 @click.command()

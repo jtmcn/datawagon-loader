@@ -5,9 +5,18 @@ import click
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 from datawagon.commands.list_bigquery_tables import list_bigquery_tables
-from datawagon.console import (confirm, error, info, inline_status_end,
-                               inline_status_start, newline, panel, success,
-                               table, warning)
+from datawagon.console import (
+    confirm,
+    error,
+    info,
+    inline_status_end,
+    inline_status_start,
+    newline,
+    panel,
+    success,
+    table,
+    warning,
+)
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
 
@@ -81,7 +90,9 @@ def drop_bigquery_tables(
             app_config.gcs_project_id, dataset_id, app_config.gcs_bucket
         )
         if bq_manager.has_error:
-            error("Failed to connect to BigQuery. Check credentials and project settings.")
+            error(
+                "Failed to connect to BigQuery. Check credentials and project settings."
+            )
             ctx.abort()
         ctx.obj["BQ_MANAGER"] = bq_manager
 
@@ -174,6 +185,8 @@ def drop_bigquery_tables(
     # Summary
     newline()
     if error_count > 0:
-        warning(f"Dropped {success_count} table(s), {error_count} error(s). Check logs.")
+        warning(
+            f"Dropped {success_count} table(s), {error_count} error(s). Check logs."
+        )
     else:
         success(f"Successfully dropped {success_count} table(s)!")
