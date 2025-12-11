@@ -3,6 +3,7 @@
 This module defines Pydantic models for tracking BigQuery external table
 metadata, including source URIs, partitioning configuration, and creation info.
 """
+
 from datetime import datetime
 from typing import Optional
 

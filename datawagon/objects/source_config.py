@@ -4,6 +4,7 @@ This module defines Pydantic models for configuring file sources, including
 pattern matching, regex extraction, and destination settings. Includes security
 validation for regex patterns to prevent ReDoS attacks.
 """
+
 import re
 from typing import Any, List, Literal, Optional
 

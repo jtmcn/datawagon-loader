@@ -1,4 +1,5 @@
 """Security validation utilities for DataWagon."""
+
 import logging
 import os
 import re

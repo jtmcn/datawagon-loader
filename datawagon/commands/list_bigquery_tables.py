@@ -1,4 +1,5 @@
 """List BigQuery external tables command."""
+
 from typing import List
 
 import click
@@ -74,9 +75,11 @@ def list_bigquery_tables(
                 table.table_name,
                 created_str,
                 partitioned,
-                table.source_uri_pattern[:60] + "..."
-                if len(table.source_uri_pattern) > 60
-                else table.source_uri_pattern,
+                (
+                    table.source_uri_pattern[:60] + "..."
+                    if len(table.source_uri_pattern) > 60
+                    else table.source_uri_pattern
+                ),
             ]
         )
 

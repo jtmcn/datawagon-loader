@@ -1,4 +1,5 @@
 """Drop BigQuery external tables command."""
+
 from typing import List
 
 import click
@@ -125,9 +126,11 @@ def drop_bigquery_tables(
                 tbl.table_name,
                 created_str,
                 partitioned,
-                tbl.source_uri_pattern[:50] + "..."
-                if len(tbl.source_uri_pattern) > 50
-                else tbl.source_uri_pattern,
+                (
+                    tbl.source_uri_pattern[:50] + "..."
+                    if len(tbl.source_uri_pattern) > 50
+                    else tbl.source_uri_pattern
+                ),
             ]
         )
 

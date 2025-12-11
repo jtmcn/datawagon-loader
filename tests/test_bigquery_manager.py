@@ -1,4 +1,5 @@
 """Tests for BigQueryManager."""
+
 from unittest.mock import Mock, patch
 
 from google.api_core import exceptions as google_api_exceptions

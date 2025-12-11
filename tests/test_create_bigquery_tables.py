@@ -1,4 +1,5 @@
 """Tests for create_bigquery_tables command."""
+
 from unittest.mock import Mock
 
 from datawagon.commands.create_bigquery_tables import _scan_gcs_storage_folders

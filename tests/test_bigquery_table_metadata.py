@@ -1,4 +1,5 @@
 """Tests for BigQuery table metadata models."""
+
 from datetime import datetime
 
 from datawagon.objects.bigquery_table_metadata import (

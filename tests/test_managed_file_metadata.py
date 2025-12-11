@@ -1,4 +1,5 @@
 """Tests for ManagedFileMetadata."""
+
 from datetime import date
 from pathlib import Path
 

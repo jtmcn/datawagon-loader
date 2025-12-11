@@ -3,6 +3,7 @@
 This module defines the runtime configuration for DataWagon, storing paths and
 GCS credentials needed for CSV file processing and uploads.
 """
+
 from pathlib import Path
 
 from pydantic import BaseModel

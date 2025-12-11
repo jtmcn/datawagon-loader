@@ -1,4 +1,5 @@
 """Centralized logging configuration for DataWagon."""
+
 import logging
 import sys
 from typing import Optional

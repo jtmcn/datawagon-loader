@@ -4,6 +4,7 @@ This module provides the ManagedFileScanner class for scanning directories,
 matching files against patterns, extracting metadata, and organizing files
 for upload to GCS with version-based folder naming.
 """
+
 import fnmatch
 import os
 import re
