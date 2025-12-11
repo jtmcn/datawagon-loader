@@ -2,7 +2,7 @@
 # Generated from poetry.lock using 'make requirements'
 # Includes: runtime + dev + test dependencies
 #
-# Generated: 2025-12-11 08:15:38 UTC
+# Generated: 2025-12-11 08:20:40 UTC
 
 altgraph==0.17.5 ; python_version >= "3.9" and python_version < "3.13"
 annotated-types==0.6.0 ; python_version >= "3.9" and python_version < "3.13"
@@ -17,7 +17,7 @@ cfgv==3.4.0 ; python_version >= "3.9" and python_version < "3.13"
 charset-normalizer==3.3.2 ; python_version >= "3.9" and python_version < "3.13"
 cleo==2.1.0 ; python_version >= "3.9" and python_version < "3.13"
 click==8.1.7 ; python_version >= "3.9" and python_version < "3.13"
-colorama==0.4.6 ; python_version >= "3.9" and python_version < "3.13" and (platform_system == "Windows" or sys_platform == "win32" or os_name == "nt")
+colorama==0.4.6 ; python_version >= "3.9" and python_version < "3.13" and (sys_platform == "win32" or platform_system == "Windows" or os_name == "nt")
 coverage==7.4.1 ; python_version >= "3.9" and python_version < "3.13"
 crashtest==0.4.1 ; python_version >= "3.9" and python_version < "3.13"
 cryptography==42.0.2 ; python_version >= "3.9" and python_version < "3.13" and sys_platform == "linux"

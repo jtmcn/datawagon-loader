@@ -125,9 +125,38 @@ update: ## Update dependencies and regenerate lock file
 # Code Quality Checks
 # ============================================================================
 
-pre-commit: check type isort format lint shellcheck test requirements requirements-check ## Run all pre-commit checks
+pre-commit: check format-fix lint-check type shellcheck test requirements requirements-check ## Run all pre-commit checks
 
 pre-commit-fast: type lint shellcheck test ## Run faster pre-commit checks (skip format/isort)
+
+format-fix: isort format ## Auto-fix formatting and imports
+
+lint-check: lint ## Run linting checks
+
+pre-commit-hooks: ## Run pre-commit hooks (same as git pre-commit)
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		pre-commit run --all-files; \
+	else \
+		echo "⚠ pre-commit not installed - run 'poetry install' or 'pip install pre-commit'"; \
+		exit 1; \
+	fi
+
+pre-commit-install: ## Install pre-commit hooks
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		pre-commit install; \
+		echo "✓ Pre-commit hooks installed"; \
+	else \
+		echo "⚠ pre-commit not installed - run 'poetry install' or 'pip install pre-commit'"; \
+		exit 1; \
+	fi
+
+pre-commit-uninstall: ## Uninstall pre-commit hooks
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		pre-commit uninstall; \
+		echo "✓ Pre-commit hooks uninstalled"; \
+	else \
+		echo "⚠ pre-commit not installed"; \
+	fi
 
 check:
 	@echo "Checking poetry..."

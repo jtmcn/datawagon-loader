@@ -80,21 +80,61 @@ make test  # Note: make requires Unix; Windows users should use Poetry for tests
 
 ### Code Quality (Pre-commit Checks)
 
-The Makefile automatically detects whether you're using Poetry or a standard venv:
+DataWagon uses [pre-commit](https://pre-commit.com) for automated code quality checks.
 
+**Pre-commit Hooks (Automatic):**
 ```bash
-make pre-commit          # Run all checks (type, isort, format, lint, test, requirements-check)
-make pre-commit-fast     # Run faster checks (type, lint, test only)
-make type                # Type check with mypy
-make isort               # Sort imports
-make format              # Format code with black
-make lint                # Lint with flake8
-make vulture             # Detect dead code (optional)
-make test                # Run tests with pytest
-make requirements-check  # Verify requirements.txt is in sync with poetry.lock
+# Install hooks (run once after cloning)
+make pre-commit-install        # OR: pre-commit install
+
+# Hooks run automatically on git commit
+git commit -m "message"        # Auto-runs: black, isort, flake8, mypy, shellcheck, pytest
+
+# Manual execution
+make pre-commit-hooks          # Run all hooks on staged files
+pre-commit run --all-files     # Run all hooks on all files
 ```
 
-**Note:** If using Poetry, these run via `poetry run`. Otherwise, they use your active virtual environment.
+**Makefile Targets (Manual):**
+```bash
+make pre-commit          # Run all checks (format, lint, type, test, requirements-check)
+make format-fix          # Auto-fix formatting (black + isort)
+make lint-check          # Run linting checks (flake8)
+make type                # Type check with mypy
+make test                # Run tests with pytest
+make requirements-check  # Verify requirements.txt is in sync with poetry.lock
+make vulture             # Detect dead code (optional)
+```
+
+**Tool Configurations:**
+- All tools configured in `pyproject.toml` for consistency
+- Line length: 120 characters (black, isort, flake8)
+- isort profile: `black` (prevents formatting conflicts)
+
+**Note:** Makefile commands run via `poetry run` for Poetry users, or use your active virtual environment for non-Poetry users. Pre-commit hooks work with both installation methods.
+
+**Auto-fix hooks** (modify files):
+- `black`: Code formatting
+- `isort`: Import sorting
+
+**Check-only hooks** (fail on issues):
+- `flake8`: Linting
+- `mypy`: Type checking
+- `shellcheck`: Shell script linting
+- `pytest`: Test execution (requires project dependencies)
+- `poetry-check`: Validates pyproject.toml (Poetry users only)
+- `requirements-sync`: Checks requirements.txt sync (Poetry users only)
+
+**Troubleshooting:**
+```bash
+# Bypass hooks when necessary
+git commit --no-verify -m "message"    # Skip all hooks
+SKIP=pytest git commit -m "message"    # Skip specific hook
+
+# Update hooks to latest versions
+pre-commit autoupdate
+pre-commit run --all-files
+```
 
 ### Testing
 ```bash

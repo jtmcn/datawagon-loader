@@ -1,24 +1,76 @@
+# See https://pre-commit.com for more information
 repos:
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        name: Format code with black
+        language_version: python3.9
+
+  # Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        name: Sort imports with isort
+
+  # Linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        name: Lint with flake8
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.19.0
+    hooks:
+      - id: mypy
+        name: Type check with mypy
+        args: [
+          "--namespace-packages",
+          "--explicit-package-bases",
+          "--config-file=pyproject.toml"
+        ]
+        additional_dependencies:
+          - pydantic>=2.3
+          - types-toml
+          - types-click
+          - pandas-stubs
+        files: '^(datawagon|tests)/.*\.py$'
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        name: Lint shell scripts
+        files: '\.sh$'
+
+  # Project-specific local hooks
   - repo: local
     hooks:
-      - id: make-check
-        name: Run pre-commit checks
-        entry: make pre-commit
+      - id: pytest
+        name: Run tests with pytest
+        entry: bash -c 'if command -v poetry >/dev/null 2>&1; then poetry run pytest tests/ --quiet; else .venv/bin/pytest tests/ --quiet 2>/dev/null || python -m pytest tests/ --quiet; fi'
         language: system
         pass_filenames: false
+        types: [python]
         stages: [commit]
-        # To skip during development: git commit --no-verify
+
+      - id: poetry-check
+        name: Check pyproject.toml validity
+        entry: bash -c 'if command -v poetry >/dev/null 2>&1; then poetry check --no-interaction; else echo "ℹ Skipping poetry check (Poetry not installed)"; fi'
+        language: system
+        pass_filenames: false
+        files: 'pyproject.toml'
+        stages: [commit]
+
       - id: requirements-sync
         name: Check requirements.txt sync
-        entry: bash -c 'if command -v poetry >/dev/null 2>&1; then make requirements-check; else echo "ℹ Skipping requirements sync check (Poetry not installed - non-Poetry users don'\''t need this check)"; fi'
+        entry: bash -c 'if command -v poetry >/dev/null 2>&1; then make requirements-check; else echo "ℹ Skipping requirements sync check (Poetry not installed)"; fi'
         language: system
         pass_filenames: false
         files: 'poetry.lock|pyproject.toml'
         stages: [commit]
-      - id: shellcheck
-        name: Shell script linting
-        entry: bash -c 'if command -v shellcheck >/dev/null 2>&1; then shellcheck setup-venv.sh update-venv.sh update.sh; else echo "ℹ Skipping shellcheck (not installed)"; fi'
-        language: system
-        pass_filenames: false
-        files: '\.sh$'
-        stages: [commit] 
