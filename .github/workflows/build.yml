@@ -21,10 +21,45 @@ jobs:
       - name: Run shellcheck
         run: shellcheck setup-venv.sh update-venv.sh update.sh
 
+  batch-syntax-check:
+    name: Batch script syntax validation
+    runs-on: 'windows-latest'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate batch syntax
+        run: |
+          # Basic batch syntax checks
+          $errors = 0
+          Get-ChildItem -Filter *.bat | ForEach-Object {
+              Write-Host "Checking $_..."
+              # Check for common syntax errors
+              $content = Get-Content $_.FullName -Raw
+
+              # Check for unmatched parentheses
+              $openParen = ([regex]::Matches($content, '\(')).Count
+              $closeParen = ([regex]::Matches($content, '\)')).Count
+              if ($openParen -ne $closeParen) {
+                  Write-Host "ERROR: Unmatched parentheses in $($_.Name)"
+                  $errors++
+              }
+
+              # Check for CRLF line endings (required for batch)
+              if ($content -notmatch "`r`n") {
+                  Write-Host "WARNING: $($_.Name) may not have Windows line endings"
+              }
+          }
+
+          if ($errors -gt 0) {
+              Write-Host "Found $errors batch syntax error(s)"
+              exit 1
+          }
+          Write-Host "All batch files passed syntax checks"
+        shell: pwsh
+
   black-formatting-check:
     name: Check formatting
     runs-on: 'ubuntu-latest'
-    needs: shellcheck-linting
+    needs: [shellcheck-linting, batch-syntax-check]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -232,3 +267,38 @@ jobs:
             exit 1
           fi
           echo "✓ Runtime-only installation verified"
+
+      - name: Test path with spaces (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir "test dir"
+          cd "test dir"
+          copy ..\.env.example .env
+          copy ..\setup-venv.bat .
+          copy ..\setup.py .
+          copy ..\pyproject.toml .
+          copy ..\README.md .
+          xcopy ..\datawagon datawagon\ /E /I /Q
+          setup-venv.bat
+          if errorlevel 1 exit /b 1
+          .venv\Scripts\datawagon.exe --help
+          if errorlevel 1 exit /b 1
+          echo ✓ Path with spaces test passed
+        shell: cmd
+
+      - name: Test path with spaces (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir "test dir"
+          cd "test dir"
+          cp ../.env.example .env
+          cp ../setup-venv.sh .
+          cp ../setup.py .
+          cp ../pyproject.toml .
+          cp ../README.md .
+          cp -r ../datawagon .
+          chmod +x setup-venv.sh
+          ./setup-venv.sh
+          source .venv/bin/activate
+          datawagon --help
+          echo "✓ Path with spaces test passed"

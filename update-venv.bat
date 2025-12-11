@@ -1,15 +1,29 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM ============================================================================
 REM DataWagon Update Script - Runtime Updates (Non-Poetry)
+REM ============================================================================
 REM Updates DataWagon and runtime dependencies only.
+REM
+REM Requirements:
+REM   - Python 3.9 or higher
+REM   - Git (for repository updates)
+REM   - Internet connection for pip downloads
+REM
+REM For development with full tooling, use Poetry: make setup-poetry
+REM
+REM Platform notes:
+REM   - Windows uses [OK]/[ERROR] prefixes vs Unix ✓/✗ symbols
+REM   - This is intentional for CMD compatibility (no ANSI colors)
+REM ============================================================================
 
 REM Variables
 set BRANCH=main
 set VENV=.venv
 set ENV_FILE=.env
 set ENV_EXAMPLE=.env.example
-set GIT_UPDATED=0
+set HAS_UPDATES=0
 
 REM Main execution
 call :main
@@ -33,17 +47,20 @@ call :check_env_file
 if errorlevel 1 exit /b 1
 
 call :update_git
+REM update_git returns 0 if updates found, 1 if no updates, 2+ if error
+if errorlevel 2 (
+    echo [ERROR] Git update failed
+    exit /b 1
+)
 if errorlevel 1 (
-    REM No updates found (errorlevel 1 from update_git means no updates)
-    set GIT_UPDATED=0
+    set HAS_UPDATES=0
 ) else (
-    REM Updates were found and pulled
-    set GIT_UPDATED=1
+    set HAS_UPDATES=1
 )
 
 echo.
 
-if !GIT_UPDATED! equ 1 (
+if !HAS_UPDATES! equ 1 (
     call :update_deps
     if errorlevel 1 exit /b 1
 ) else (
@@ -77,16 +94,29 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check Python version using Python itself (portable and reliable)
-python -c "import sys; exit(0 if sys.version_info >= (3, 9) else 1)" 2>nul
+REM Single Python call for version check and display (optimized)
+python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>nul
 if errorlevel 1 (
-    echo [ERROR] Python 3.9+ required
-    python -c "import sys; print(f'[ERROR] Found: Python {sys.version_info.major}.{sys.version_info.minor}')" 2>nul
+    echo [ERROR] Failed to check Python version
+    del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
 )
 
-REM Display version
-python -c "import sys; print(f'[OK] Python found: Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"
+set /p PY_STATUS=<"%TEMP%\dw_pyver.txt"
+if not "%PY_STATUS%"=="OK" (
+    for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
+        echo [ERROR] Python 3.9+ required (found: Python %%V)
+    )
+    del "%TEMP%\dw_pyver.txt" 2>nul
+    exit /b 1
+)
+
+for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
+    echo [OK] Python found: Python %%V
+    del "%TEMP%\dw_pyver.txt" 2>nul
+    goto :eof
+)
+del "%TEMP%\dw_pyver.txt" 2>nul
 goto :eof
 
 REM ============================================================================
@@ -94,6 +124,15 @@ REM Update git repository
 REM ============================================================================
 :update_git
 echo [INFO] Checking for git updates on %BRANCH%...
+
+REM Verify git is installed
+where git >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Git not found in PATH
+    echo [INFO] Install from: https://git-scm.com/download/win
+    echo [INFO] Alternatively, update manually with: %VENV%\Scripts\pip.exe install -e . --upgrade
+    exit /b 2
+)
 
 REM Switch to main branch
 git switch --quiet %BRANCH% 2>nul
@@ -114,26 +153,28 @@ if errorlevel 1 (
     echo [INFO] Updates found, pulling changes...
 
     REM Check for uncommitted changes
-    set UNCOMMITTED=0
+    set HAS_UNCOMMITTED=0
     git diff --quiet 2>nul
-    if errorlevel 1 set UNCOMMITTED=1
+    if errorlevel 1 set HAS_UNCOMMITTED=1
     git diff --cached --quiet 2>nul
-    if errorlevel 1 set UNCOMMITTED=1
+    if errorlevel 1 set HAS_UNCOMMITTED=1
 
-    if !UNCOMMITTED! equ 1 (
+    if !HAS_UNCOMMITTED! equ 1 (
         echo [WARNING] You have uncommitted changes
         echo [INFO] Git will temporarily stash them during update
         set /p CONTINUE="Continue? (y/N): "
+        REM Handle empty input (user just pressed Enter)
+        if not defined CONTINUE set CONTINUE=N
         if /i not "!CONTINUE!"=="y" (
             echo [INFO] Update cancelled
-            exit /b 0
+            exit /b 1
         )
     )
 
     git pull --quiet -r --autostash origin %BRANCH%
     if errorlevel 1 (
         echo [ERROR] Failed to pull from origin
-        exit /b 1
+        exit /b 2
     )
     echo [OK] Git repository updated
     exit /b 0
@@ -165,8 +206,12 @@ echo [OK] Dependencies updated
 
 call :verify_installation
 if errorlevel 1 (
-    echo [WARNING] Update completed but verification failed
-    echo [INFO] May need reinstall: rmdir /s /q .venv ^&^& setup-venv.bat
+    echo [ERROR] Update completed but verification failed
+    echo.
+    echo [INFO] To fix: Remove virtual environment and re-run setup
+    echo [INFO]   Step 1: rmdir /s /q .venv
+    echo [INFO]   Step 2: setup-venv.bat
+    exit /b 1
 )
 goto :eof
 
@@ -194,14 +239,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check required packages
+REM Check required packages - use explicit success flag to avoid loop issues
+set PKG_CHECK_FAILED=0
 for %%p in (click pandas pydantic google-cloud-storage) do (
     "%VENV%\Scripts\pip.exe" show %%p >nul 2>&1
     if errorlevel 1 (
         echo [ERROR] Required package '%%p' not found
-        exit /b 1
+        set PKG_CHECK_FAILED=1
     )
 )
+if %PKG_CHECK_FAILED% equ 1 exit /b 1
 
 echo [OK] Installation verified successfully
 goto :eof

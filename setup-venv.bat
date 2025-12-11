@@ -1,10 +1,22 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM ============================================================================
 REM DataWagon Setup Script - Runtime Installation (Non-Poetry)
+REM ============================================================================
 REM This script creates a standard Python virtual environment and installs
 REM DataWagon with runtime dependencies ONLY (no development tools).
+REM
+REM Requirements:
+REM   - Python 3.9 or higher
+REM   - Internet connection for pip downloads
+REM
 REM For development with full tooling, use Poetry: make setup-poetry
+REM
+REM Platform notes:
+REM   - Windows uses [OK]/[ERROR] prefixes vs Unix ✓/✗ symbols
+REM   - This is intentional for CMD compatibility (no ANSI colors)
+REM ============================================================================
 
 REM Variables
 set VENV=.venv
@@ -38,7 +50,10 @@ if errorlevel 1 exit /b 1
 call :verify_installation
 if errorlevel 1 (
     echo [ERROR] Installation verification failed
-    echo [INFO] Try: rmdir /s /q .venv ^&^& setup-venv.bat
+    echo.
+    echo [INFO] To fix: Remove virtual environment and re-run setup
+    echo [INFO]   Step 1: rmdir /s /q .venv
+    echo [INFO]   Step 2: setup-venv.bat
     exit /b 1
 )
 
@@ -66,16 +81,29 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check Python version using Python itself (portable and reliable)
-python -c "import sys; exit(0 if sys.version_info >= (3, 9) else 1)" 2>nul
+REM Single Python call for version check and display (optimized)
+python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>nul
 if errorlevel 1 (
-    echo [ERROR] Python 3.9+ required
-    python -c "import sys; print(f'[ERROR] Found: Python {sys.version_info.major}.{sys.version_info.minor}')" 2>nul
+    echo [ERROR] Failed to check Python version
+    del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
 )
 
-REM Display version
-python -c "import sys; print(f'[OK] Python found: Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')"
+set /p PY_STATUS=<"%TEMP%\dw_pyver.txt"
+if not "%PY_STATUS%"=="OK" (
+    for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
+        echo [ERROR] Python 3.9+ required (found: Python %%V)
+    )
+    del "%TEMP%\dw_pyver.txt" 2>nul
+    exit /b 1
+)
+
+for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
+    echo [OK] Python found: Python %%V
+    del "%TEMP%\dw_pyver.txt" 2>nul
+    goto :eof
+)
+del "%TEMP%\dw_pyver.txt" 2>nul
 goto :eof
 
 REM ============================================================================
@@ -111,12 +139,18 @@ REM ============================================================================
 if exist "%VENV%" (
     echo [WARNING] Virtual environment already exists at %VENV%
     set /p RECREATE="Remove and recreate? (y/N): "
-    if /i "!RECREATE!"=="y" (
-        echo [INFO] Removing existing virtual environment...
-        rmdir /s /q "%VENV%"
-    ) else (
+    REM Handle empty input (user just pressed Enter)
+    if not defined RECREATE set RECREATE=N
+    if /i not "!RECREATE!"=="y" (
         echo [INFO] Using existing virtual environment
         goto :eof
+    )
+    echo [INFO] Removing existing virtual environment...
+    rmdir /s /q "%VENV%"
+    if errorlevel 1 (
+        echo [ERROR] Failed to remove existing virtual environment
+        echo [INFO] Check file permissions or if files are in use
+        exit /b 1
     )
 )
 
@@ -174,14 +208,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check required packages
+REM Check required packages - use explicit success flag to avoid loop issues
+set PKG_CHECK_FAILED=0
 for %%p in (click pandas pydantic google-cloud-storage) do (
     "%VENV%\Scripts\pip.exe" show %%p >nul 2>&1
     if errorlevel 1 (
         echo [ERROR] Required package '%%p' not found
-        exit /b 1
+        set PKG_CHECK_FAILED=1
     )
 )
+if %PKG_CHECK_FAILED% equ 1 exit /b 1
 
 echo [OK] Installation verified successfully
 goto :eof

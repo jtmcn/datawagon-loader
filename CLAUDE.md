@@ -343,3 +343,12 @@ make requirements         # Generates requirements.txt and requirements-dev.txt
 ```
 
 Pre-commit hooks automatically check that requirements files are in sync (Poetry users only). Non-Poetry users will see a skip message, which is expected and normal.
+
+## Platform-Specific Messaging
+
+The installation scripts use different status symbols based on platform:
+
+- **Unix (macOS/Linux):** `✓` `✗` `!` `→` (colored with ANSI codes)
+- **Windows:** `[OK]` `[ERROR]` `[WARNING]` `[INFO]` (plain text)
+
+This is intentional - Windows CMD doesn't support ANSI colors by default, so batch scripts use bracketed prefixes for better readability and compatibility.
