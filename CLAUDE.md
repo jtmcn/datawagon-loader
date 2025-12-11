@@ -49,27 +49,33 @@ make requirements
 
 **First-time setup:**
 ```bash
-./setup-venv.sh          # Automated setup script
-# OR manually:
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
+# Unix (macOS/Linux)
+./setup-venv.sh
+
+# Windows
+setup-venv.bat
 ```
 
 **Updating environment:**
 ```bash
-./update-venv.sh         # Automated update script
-# OR manually:
-git pull
-source .venv/bin/activate
-pip install -e . --upgrade
+# Unix (macOS/Linux)
+./update-venv.sh
+
+# Windows
+update-venv.bat
 ```
 
 **Verifying Installation (Both Methods):**
 ```bash
+# Unix
 source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate.bat
+
+# Then run (works on all platforms after activation)
 datawagon --help
-make test
+make test  # Note: make requires Unix; Windows users should use Poetry for tests
 ```
 
 ### Code Quality (Pre-commit Checks)

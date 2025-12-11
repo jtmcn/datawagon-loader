@@ -47,7 +47,21 @@ This project was built to replace an existing process which used a bash script t
 
 ### Option 1: Quick Setup (Without Poetry)
 
-For users who want to use DataWagon without Poetry:
+For users who want to use DataWagon without Poetry, choose your operating system:
+
+#### Windows
+
+```batch
+git clone https://github.com/jtmcn/datawagon.git
+cd datawagon
+setup-venv.bat
+.venv\Scripts\activate.bat
+datawagon --help
+```
+
+This creates a standard Python virtual environment and installs DataWagon from source.
+
+#### macOS / Linux
 
 ```bash
 git clone https://github.com/jtmcn/datawagon.git
@@ -104,6 +118,7 @@ This will:
 
 | Feature | Poetry (Development) | Standard venv (Runtime) |
 |---------|---------------------|------------------------|
+| Platforms | Windows, macOS, Linux | **Windows, macOS, Linux** |
 | Install DataWagon | ✓ | ✓ |
 | Run commands | ✓ | ✓ |
 | Modify application code | ✓ | ✓ |
@@ -168,6 +183,24 @@ To pull latest changes and update dependencies:
 ```
 
 ### Without Poetry (Standard venv)
+
+#### Windows
+
+To pull latest changes and update dependencies:
+
+```batch
+update-venv.bat
+```
+
+Or manually:
+
+```batch
+git pull
+.venv\Scripts\activate.bat
+pip install -e . --upgrade
+```
+
+#### macOS / Linux
 
 To pull latest changes and update dependencies:
 
@@ -972,6 +1005,78 @@ bq ls --project_id=your-project-id
 Required IAM roles:
 - `roles/bigquery.dataEditor` - Create and manage tables
 - `roles/storage.objectViewer` - Read CSV files from GCS
+
+### Windows: Batch script fails with "Python is not recognized"
+
+**Symptom**: `setup-venv.bat` fails with "'python' is not recognized as an internal or external command".
+
+**Solution**: Python is not in your PATH.
+
+```batch
+REM Check if Python is installed
+python --version
+
+REM If command not found, add Python to PATH:
+REM 1. Find Python installation (usually C:\Python39 or C:\Users\<user>\AppData\Local\Programs\Python\Python39)
+REM 2. Add to PATH via System Properties > Environment Variables
+REM 3. Or use Python Launcher (py command):
+
+py --version
+py -3.9 -m venv .venv
+```
+
+**Common causes**:
+- Python installed but not added to PATH during installation
+- Using wrong Python launcher (python vs py)
+- Multiple Python versions conflicting
+
+### Windows: Activate.bat fails with "not recognized"
+
+**Symptom**: After setup, `.venv\Scripts\activate.bat` command not found.
+
+**Solution**:
+
+```batch
+REM Check if .venv was created
+dir .venv\Scripts
+
+REM Activate using full path
+.venv\Scripts\activate.bat
+
+REM Or navigate first
+cd .venv\Scripts
+activate.bat
+cd ..\..
+```
+
+### Windows: PowerShell execution policy error
+
+**Symptom**: Using PowerShell instead of cmd.exe, get "cannot be loaded because running scripts is disabled".
+
+**Solution**: Our scripts are .bat files (cmd.exe), not .ps1 (PowerShell).
+
+```batch
+REM Use cmd.exe (Command Prompt), not PowerShell
+REM Or in PowerShell, run cmd first:
+cmd
+setup-venv.bat
+```
+
+If you need PowerShell support, request it via GitHub issue.
+
+### Windows: Git not found in batch script
+
+**Symptom**: `update-venv.bat` fails with "'git' is not recognized".
+
+**Solution**: Install Git for Windows or use GitHub Desktop.
+
+```batch
+REM Install Git: https://git-scm.com/download/win
+REM Verify installation:
+git --version
+
+REM Or use GitHub Desktop GUI instead of update script
+```
 
 ---
 
