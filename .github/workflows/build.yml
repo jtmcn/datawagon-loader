@@ -117,7 +117,7 @@ jobs:
       - name: Run pip-audit
         run: |
           poetry run pip install pip-audit
-          poetry run pip-audit --disable-pip
+          poetry run pip-audit --requirement requirements.txt
 
   vulture-dead-code-check:
     name: Dead code detection

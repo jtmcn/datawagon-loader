@@ -20,6 +20,7 @@ toml = "^0.10.2"
 pydantic = "^2.3"
 google-cloud-storage = "^2.10.0"
 google-cloud-bigquery = "^3.38.0"
+platformdirs = "^3.0.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"
