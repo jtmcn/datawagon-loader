@@ -1,4 +1,5 @@
 """Tests for ManagedFileScanner."""
+
 from pathlib import Path
 
 import pytest

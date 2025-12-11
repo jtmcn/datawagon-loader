@@ -1,4 +1,5 @@
 """Pytest fixtures and configuration."""
+
 import gzip
 import tempfile
 import zipfile

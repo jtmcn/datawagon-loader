@@ -3,6 +3,7 @@
 This module defines Pydantic models for representing the current state of
 data in destination tables/buckets, including file counts and source files.
 """
+
 from typing import List
 
 from pydantic import BaseModel

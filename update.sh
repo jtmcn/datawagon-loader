@@ -8,10 +8,10 @@ ENV_FILE=".env"
 ENV_EXAMPLE=".env.example"
 
 # Utility functions for colored output
-print_success() { echo -e "\033[0;32m✓\033[0m $1"; }
-print_error() { echo -e "\033[0;31m✗\033[0m $1"; }
-print_warning() { echo -e "\033[1;33m!\033[0m $1"; }
-print_info() { echo -e "→ $1"; }
+print_success() { printf '\033[0;32m✓\033[0m %s\n' "$1"; }
+print_error() { printf '\033[0;31m✗\033[0m %s\n' "$1"; }
+print_warning() { printf '\033[1;33m!\033[0m %s\n' "$1"; }
+print_info() { printf '→ %s\n' "$1"; }
 
 # Check if Poetry is installed
 check_poetry() {
@@ -38,19 +38,22 @@ check_poetry_export_plugin() {
 
 # Check and create .env file if needed
 check_env_file() {
+    # Verify .env.example exists (critical repo file)
+    if [ ! -f "$ENV_EXAMPLE" ]; then
+        print_error ".env.example not found in repository"
+        print_error "Repository may be corrupted or incomplete"
+        print_info "Try: git fetch origin && git reset --hard origin/main"
+        exit 1
+    fi
+
     if [ ! -f "$ENV_FILE" ]; then
-        if [ -f "$ENV_EXAMPLE" ]; then
-            print_warning ".env file not found"
-            print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
-            cp "$ENV_EXAMPLE" "$ENV_FILE"
-            print_warning "Please edit .env and configure your settings:"
-            print_info "  - DW_CSV_SOURCE_DIR"
-            print_info "  - DW_GCS_PROJECT_ID"
-            print_info "  - DW_GCS_BUCKET"
-        else
-            print_error ".env file not found and no .env.example to copy from"
+        print_warning ".env file not found"
+        print_info "Copying $ENV_EXAMPLE to $ENV_FILE"
+        cp "$ENV_EXAMPLE" "$ENV_FILE" || {
+            print_error "Failed to copy .env.example to .env"
             exit 1
-        fi
+        }
+        print_warning "Please edit .env and configure: DW_CSV_SOURCE_DIR, DW_GCS_PROJECT_ID, DW_GCS_BUCKET"
     else
         print_success ".env file exists"
     fi
@@ -75,6 +78,19 @@ update_git() {
     # Check if there are any changes
     if ! git diff --quiet origin/"$BRANCH" "$BRANCH" 2>/dev/null; then
         print_info "Updates found, pulling changes..."
+
+        # Check for uncommitted changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            print_warning "You have uncommitted changes"
+            print_info "Git will temporarily stash them during the update"
+            read -p "Continue? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Update cancelled"
+                exit 0
+            fi
+        fi
+
         git pull --quiet -r --autostash origin "$BRANCH" || {
             print_error "Failed to pull from origin"
             exit 1
@@ -124,11 +140,20 @@ setup_python_env() {
 # Update requirements.txt from poetry.lock
 update_requirements() {
     print_info "Generating requirements.txt from poetry.lock..."
-    poetry export --without-hashes -f requirements.txt -o requirements.txt || {
+
+    # shellcheck disable=SC2094
+    {
+        echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"
+        echo "# Generated from poetry.lock using 'make requirements'"
+        echo "# Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo ""
+        poetry export --without-hashes -f requirements.txt
+    } > requirements.txt || {
         print_error "Failed to generate requirements.txt"
         print_warning "Make sure poetry-plugin-export is installed"
         return 1
     }
+
     print_success "requirements.txt updated"
 }
 

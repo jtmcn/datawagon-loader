@@ -4,6 +4,7 @@ This module defines Pydantic models for managing file metadata throughout the
 processing pipeline. Includes utilities for file version extraction, date conversion,
 and human-readable file size formatting.
 """
+
 import calendar
 import re
 from datetime import date

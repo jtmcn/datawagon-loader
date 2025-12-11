@@ -1,5 +1,12 @@
 .ONESHELL:
-CMD:=poetry run
+# Auto-detect if Poetry is available (simple check, no expensive calls)
+HAS_POETRY := $(shell command -v poetry 2> /dev/null)
+ifdef HAS_POETRY
+    CMD := poetry run
+else
+    CMD :=
+endif
+
 PYMODULE:=datawagon
 ENTRYPOINT:=main.py
 TESTS:=tests
@@ -12,13 +19,35 @@ help: ## Show this help.
 # Setup and Installation
 # ============================================================================
 
-setup: check-poetry install-poetry-plugins check-env install-deps ## First-time setup (run this for new installations)
-	@echo "✓ Setup complete!"
+setup: ## Auto-detect and run appropriate setup
+	@if command -v poetry >/dev/null 2>&1; then \
+		$(MAKE) setup-poetry; \
+	else \
+		$(MAKE) setup-venv; \
+	fi
+
+setup-poetry: check-poetry install-poetry-plugins check-env install-deps-poetry ## Poetry-based setup
+	@echo "✓ Poetry setup complete!"
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Edit .env with your configuration"
 	@echo "  2. Activate virtualenv: source .venv/bin/activate"
 	@echo "  3. Run application: datawagon --help"
+
+setup-venv: check-python check-env install-deps-venv verify-install ## Non-Poetry setup
+	@echo "✓ Virtual environment setup complete!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Edit .env with your configuration"
+	@echo "  2. Activate virtualenv: source .venv/bin/activate"
+	@echo "  3. Run application: datawagon --help"
+
+check-python: ## Check if Python 3.9+ is available
+	@python3 --version | grep -qE "Python 3\.(9|1[0-2])" || { \
+		echo "⚠ Python 3.9+ required"; \
+		exit 1; \
+	}
+	@echo "✓ Python found: $$(python3 --version)"
 
 check-poetry: ## Check if Poetry is installed
 	@command -v poetry >/dev/null 2>&1 || { \
@@ -48,11 +77,43 @@ check-env: ## Check if .env file exists, create from .env.example if not
 		echo "✓ .env file exists"; \
 	fi
 
-install-deps: ## Install dependencies with Poetry
+install-deps-poetry: ## Install dependencies with Poetry
 	@echo "Installing dependencies..."
 	@poetry config virtualenvs.in-project true
 	@poetry install
 	@echo "✓ Dependencies installed"
+
+install-deps-venv: ## Install dependencies with pip (non-Poetry)
+	@echo "Creating virtual environment..."
+	@python3 -m venv .venv
+	@echo "Installing datawagon and dependencies..."
+	@.venv/bin/pip install --upgrade pip --quiet
+	@.venv/bin/pip install -e . --quiet
+	@echo "✓ Runtime dependencies installed (dev tools not included)"
+	@echo "  For development, use Poetry: make setup-poetry"
+
+verify-install: ## Verify DataWagon installation
+	@echo "→ Verifying DataWagon installation..."
+	@if [ ! -d ".venv" ]; then \
+		echo "✗ Virtual environment not found"; \
+		echo "→ Run './setup-venv.sh' or 'make setup' first"; \
+		exit 1; \
+	fi
+	@.venv/bin/python -c "import datawagon" 2>/dev/null || { \
+		echo "✗ Failed to import datawagon"; \
+		exit 1; \
+	}
+	@.venv/bin/datawagon --help >/dev/null 2>&1 || { \
+		echo "✗ datawagon command failed"; \
+		exit 1; \
+	}
+	@echo "✓ Installation verified"
+	@echo ""
+	@if command -v poetry >/dev/null 2>&1 && [ -f "poetry.lock" ]; then \
+		echo "Type: Poetry-managed"; \
+	else \
+		echo "Type: Standard venv (runtime-only)"; \
+	fi
 
 update: ## Update dependencies and regenerate lock file
 	@echo "Updating dependencies..."
@@ -64,9 +125,9 @@ update: ## Update dependencies and regenerate lock file
 # Code Quality Checks
 # ============================================================================
 
-pre-commit: check type isort format lint test requirements requirements-check ## Run all pre-commit checks
+pre-commit: check type isort format lint shellcheck test requirements requirements-check ## Run all pre-commit checks
 
-pre-commit-fast: type lint test ## Run faster pre-commit checks (skip format/isort)
+pre-commit-fast: type lint shellcheck test ## Run faster pre-commit checks (skip format/isort)
 
 check:
 	@echo "Checking poetry..."
@@ -96,19 +157,84 @@ test: ## Run tests
 	@echo "Running tests with pytest..."
 	$(CMD) pytest $(TESTS) --quiet
 
-requirements: ## Generate requirements.txt from poetry.lock
-	@echo "Generating requirements.txt..."
-	@poetry export --without-hashes -f requirements.txt -o requirements.txt
-	@echo "✓ requirements.txt generated"
-
-requirements-check: ## Verify requirements.txt is in sync with poetry.lock
-	@echo "Checking if requirements.txt is in sync..."
-	@poetry export --without-hashes -f requirements.txt | diff -q - requirements.txt > /dev/null || { \
-		echo "⚠ requirements.txt is out of sync with poetry.lock"; \
-		echo "Run 'make requirements' to update"; \
+shellcheck: ## Lint shell scripts with shellcheck
+	@echo "Linting shell scripts with shellcheck..."
+	@if ! command -v shellcheck >/dev/null 2>&1; then \
+		echo "⚠ shellcheck not found - install from: https://www.shellcheck.net/"; \
+		exit 1; \
+	fi
+	@shellcheck setup-venv.sh update-venv.sh update.sh || { \
+		echo "⚠ Shell script linting failed"; \
 		exit 1; \
 	}
-	@echo "✓ requirements.txt is in sync"
+	@echo "✓ Shell scripts passed linting"
+
+requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.lock
+	@echo "Generating requirements.txt..."
+	@( \
+		echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"; \
+		echo "# Generated from poetry.lock using 'make requirements'"; \
+		echo "# To update: modify pyproject.toml, run 'poetry lock', then 'make requirements'"; \
+		echo "#"; \
+		echo "# Generated: $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"; \
+		echo ""; \
+		poetry export --without-hashes -f requirements.txt; \
+	) > requirements.txt
+	@echo "Generating requirements-dev.txt..."
+	@( \
+		echo "# AUTO-GENERATED FILE - DO NOT EDIT MANUALLY"; \
+		echo "# Generated from poetry.lock using 'make requirements'"; \
+		echo "# Includes: runtime + dev + test dependencies"; \
+		echo "#"; \
+		echo "# Generated: $$(date -u '+%Y-%m-%d %H:%M:%S UTC')"; \
+		echo ""; \
+		poetry export --with dev --with test --without-hashes -f requirements.txt; \
+	) > requirements-dev.txt
+	@echo "✓ requirements files generated"
+
+requirements-check: ## Verify requirements files in sync with poetry.lock
+	@if ! command -v poetry >/dev/null 2>&1; then \
+		echo "ℹ Skipping requirements sync check"; \
+		echo "  (Poetry not installed - check only needed for Poetry users)"; \
+		exit 0; \
+	fi
+	@echo "Checking requirements.txt sync..."
+	@TMP1=$$(mktemp); TMP2=$$(mktemp); \
+	grep -v '^#' requirements.txt | grep -v '^$$' > "$$TMP1"; \
+	poetry export --without-hashes -f requirements.txt > "$$TMP2"; \
+	DIFF_OUT=$$(diff -u "$$TMP1" "$$TMP2" 2>&1); \
+	rm -f "$$TMP1" "$$TMP2"; \
+	if [ -n "$$DIFF_OUT" ]; then \
+		echo "⚠ requirements.txt out of sync with poetry.lock"; \
+		echo ""; \
+		echo "Differences found:"; \
+		echo "$$DIFF_OUT" | head -20; \
+		if [ $$(echo "$$DIFF_OUT" | wc -l) -gt 20 ]; then \
+			echo "... (output truncated, showing first 20 lines)"; \
+		fi; \
+		echo ""; \
+		echo "To fix: make requirements"; \
+		exit 1; \
+	fi
+	@echo "Checking requirements-dev.txt sync..."
+	@TMP1=$$(mktemp); TMP2=$$(mktemp); \
+	grep -v '^#' requirements-dev.txt | grep -v '^$$' > "$$TMP1"; \
+	poetry export --with dev --with test --without-hashes -f requirements.txt > "$$TMP2"; \
+	DIFF_OUT=$$(diff -u "$$TMP1" "$$TMP2" 2>&1); \
+	rm -f "$$TMP1" "$$TMP2"; \
+	if [ -n "$$DIFF_OUT" ]; then \
+		echo "⚠ requirements-dev.txt out of sync with poetry.lock"; \
+		echo ""; \
+		echo "Differences found:"; \
+		echo "$$DIFF_OUT" | head -20; \
+		if [ $$(echo "$$DIFF_OUT" | wc -l) -gt 20 ]; then \
+			echo "... (output truncated, showing first 20 lines)"; \
+		fi; \
+		echo ""; \
+		echo "To fix: make requirements"; \
+		exit 1; \
+	fi
+	@echo "✓ Requirements files in sync"
 
 # ============================================================================
 # Application Commands (not used for automation)

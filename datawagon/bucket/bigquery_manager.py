@@ -4,6 +4,7 @@ This module provides the BigQueryManager class for managing BigQuery external
 tables that reference CSV files in GCS. Includes table creation with Hive
 partitioning, listing tables, and schema auto-detection.
 """
+
 import re
 from typing import List
 

@@ -10,22 +10,78 @@ DataWagon automates loading YouTube Analytics CSV files into Google Cloud Storag
 
 ### Environment Setup
 
-#### First-Time Setup
+DataWagon supports two installation methods:
+
+#### Method 1: Poetry (Recommended for Development)
+
+**Use this if you:**
+- Want to contribute to DataWagon
+- Need to modify dependencies
+- Want full development tooling (mypy, black, flake8, pytest)
+- Plan to run tests and code quality checks
+
+**First-time setup:**
 ```bash
-make setup               # Complete setup (Poetry, plugins, .env, deps)
+make setup               # Detects Poetry and runs full setup
+# OR explicitly:
+make setup-poetry        # Poetry-specific setup
 source .venv/bin/activate
 ```
 
-#### Updating Environment
+**Updating environment:**
 ```bash
-./update.sh              # Pull changes and update
+./update.sh              # Pull changes and update with Poetry
 # OR manually:
 git pull
 poetry install
 make requirements
 ```
 
+#### Method 2: Standard Python Virtual Environment (Runtime Only)
+
+**Use this if you:**
+- Just want to run DataWagon
+- Don't need development tools
+- Want faster, lighter installation
+- Don't plan to modify dependencies
+
+**Important:** This installs runtime dependencies only (no mypy, black, flake8, pytest).
+
+**First-time setup:**
+```bash
+# Unix (macOS/Linux)
+./setup-venv.sh
+
+# Windows
+setup-venv.bat
+```
+
+**Updating environment:**
+```bash
+# Unix (macOS/Linux)
+./update-venv.sh
+
+# Windows
+update-venv.bat
+```
+
+**Verifying Installation (Both Methods):**
+```bash
+# Unix
+source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate.bat
+
+# Then run (works on all platforms after activation)
+datawagon --help
+make test  # Note: make requires Unix; Windows users should use Poetry for tests
+```
+
 ### Code Quality (Pre-commit Checks)
+
+The Makefile automatically detects whether you're using Poetry or a standard venv:
+
 ```bash
 make pre-commit          # Run all checks (type, isort, format, lint, test, requirements-check)
 make pre-commit-fast     # Run faster checks (type, lint, test only)
@@ -37,6 +93,8 @@ make vulture             # Detect dead code (optional)
 make test                # Run tests with pytest
 make requirements-check  # Verify requirements.txt is in sync with poetry.lock
 ```
+
+**Note:** If using Poetry, these run via `poetry run`. Otherwise, they use your active virtual environment.
 
 ### Testing
 ```bash
@@ -196,3 +254,101 @@ Vulture reports findings with confidence levels (0-100%):
 - Functions exported via `__all__`
 
 If you encounter frequent false positives for specific patterns, create a `vulture_whitelist.py` file to suppress them.
+
+## Migration Guide: Switching Installation Methods
+
+### From Poetry to Standard venv
+
+If you only need to run DataWagon (not develop):
+
+```bash
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+make verify-install
+```
+
+**Trade-offs:**
+- Lose: Dev tools, dependency modification
+- Gain: 60% faster install, 60% less disk space
+
+### From Standard venv to Poetry
+
+For development/contributions:
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+rm -rf .venv
+make setup-poetry
+make test
+```
+
+**What you gain:**
+- Full development tooling
+- Dependency management
+- Pre-commit hooks
+
+### Clean Migration Checklist
+
+1. Deactivate: `deactivate`
+2. Remove: `rm -rf .venv`
+3. Setup: `./setup-venv.sh` or `make setup-poetry`
+4. Activate: `source .venv/bin/activate`
+5. Verify: `make verify-install`
+6. Check: `.env` still configured
+7. Test: Run typical commands
+
+## Dependency Management
+
+DataWagon supports both Poetry and pip-based dependency management:
+
+### For Poetry Users (Development)
+
+```bash
+poetry add pandas              # Add runtime
+poetry add --group dev mypy    # Add dev
+poetry lock                    # Update lock
+make requirements              # Export
+```
+
+### For Non-Poetry Users (Runtime Only)
+
+```bash
+pip install -e . --upgrade     # Update DataWagon
+```
+
+**Cannot modify dependencies.** To request changes:
+1. Open GitHub issue with justification
+2. Poetry user updates pyproject.toml
+3. Pull changes: `./update-venv.sh`
+
+**Why:** Ensures dependency consistency and maintains poetry.lock as single source of truth.
+
+### Requirements File Structure
+
+- **requirements.txt** (41 packages): Runtime only
+  - click, pandas, pydantic, google-cloud-storage
+  - Used by: Standard venv, Docker, CI/CD
+
+- **requirements-dev.txt** (106 packages): Runtime + Dev
+  - All runtime + mypy, black, flake8, pytest
+  - Used by: Poetry install, contributors
+
+**Both auto-generated - do not edit manually.**
+
+### Keeping Requirements in Sync (Poetry Users Only)
+
+```bash
+make requirements         # Generates requirements.txt and requirements-dev.txt
+```
+
+Pre-commit hooks automatically check that requirements files are in sync (Poetry users only). Non-Poetry users will see a skip message, which is expected and normal.
+
+## Platform-Specific Messaging
+
+The installation scripts use different status symbols based on platform:
+
+- **Unix (macOS/Linux):** `✓` `✗` `!` `→` (colored with ANSI codes)
+- **Windows:** `[OK]` `[ERROR]` `[WARNING]` `[INFO]` (plain text)
+
+This is intentional - Windows CMD doesn't support ANSI colors by default, so batch scripts use bracketed prefixes for better readability and compatibility.

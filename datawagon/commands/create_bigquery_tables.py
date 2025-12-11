@@ -1,4 +1,5 @@
 """Create BigQuery external tables command."""
+
 import re
 from collections import defaultdict
 from typing import List

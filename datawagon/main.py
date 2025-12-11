@@ -7,6 +7,7 @@ configuration loading, validation, logging setup, and command orchestration.
 The CLI supports command chaining, allowing multiple operations to be executed in
 sequence (e.g., `datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs`).
 """
+
 import importlib.metadata
 from pathlib import Path
 

@@ -1,4 +1,5 @@
 """Tests for SourceConfig."""
+
 import re
 
 import pytest

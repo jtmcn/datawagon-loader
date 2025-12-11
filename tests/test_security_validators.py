@@ -1,4 +1,5 @@
 """Security validator tests."""
+
 import zipfile
 from pathlib import Path
 

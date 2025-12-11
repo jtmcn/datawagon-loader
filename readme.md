@@ -35,22 +35,56 @@ This project was built to replace an existing process which used a bash script t
 ## Prerequisites
 
 - Python 3.9 or higher (3.12 recommended)
-- [Poetry](https://python-poetry.org/) 2.0 or higher
 - Google Cloud Platform account with Storage and BigQuery access
 - Google Cloud credentials configured locally
+
+**Optional:**
+- [Poetry](https://python-poetry.org/) 2.0 or higher (for dependency management)
 
 ---
 
 ## First-Time Setup
 
-### 1. Clone Repository
+### Option 1: Quick Setup (Without Poetry)
+
+For users who want to use DataWagon without Poetry, choose your operating system:
+
+#### Windows
+
+```batch
+git clone https://github.com/jtmcn/datawagon.git
+cd datawagon
+setup-venv.bat
+.venv\Scripts\activate.bat
+datawagon --help
+```
+
+This creates a standard Python virtual environment and installs DataWagon from source.
+
+#### macOS / Linux
+
+```bash
+git clone https://github.com/jtmcn/datawagon.git
+cd datawagon
+./setup-venv.sh
+source .venv/bin/activate
+datawagon --help
+```
+
+This creates a standard Python virtual environment and installs DataWagon from source.
+
+### Option 2: Development Setup (With Poetry)
+
+Poetry is recommended if you plan to modify dependencies or contribute to development.
+
+#### 1. Clone Repository
 
 ```bash
 git clone https://github.com/jtmcn/datawagon.git
 cd datawagon
 ```
 
-### 2. Install Poetry
+#### 2. Install Poetry
 
 If you don't have Poetry installed:
 
@@ -67,10 +101,10 @@ Verify installation:
 poetry --version
 ```
 
-### 3. Run Setup
+#### 3. Run Setup
 
 ```bash
-make setup
+make setup-poetry
 ```
 
 This will:
@@ -80,7 +114,26 @@ This will:
 - Install all dependencies
 - Create virtual environment in `.venv/`
 
-### 4. Configure Environment
+### Installation Methods Compared
+
+| Feature | Poetry (Development) | Standard venv (Runtime) |
+|---------|---------------------|------------------------|
+| Platforms | Windows, macOS, Linux | **Windows, macOS, Linux** |
+| Install DataWagon | ✓ | ✓ |
+| Run commands | ✓ | ✓ |
+| Modify application code | ✓ | ✓ |
+| Development tools (mypy, black, flake8, pytest) | ✓ | ✗ |
+| Add/modify dependencies | ✓ | Request via issue |
+| Lock dependencies | ✓ | Use requirements.txt |
+| Installation time | ~2 min | ~30 sec |
+| Disk space | ~500MB | ~200MB |
+| Use case | Development, contributions | Running the app only |
+
+**Recommendation:**
+- Use **standard venv** if you just want to use DataWagon (simpler, faster, smaller)
+- Use **Poetry** if you're developing, contributing, or managing dependencies
+
+### Configuration (Both Options)
 
 Edit `.env` with your settings:
 
@@ -121,18 +174,84 @@ datawagon --help
 
 ## Updating Existing Installation
 
+### With Poetry
+
 To pull latest changes and update dependencies:
 
 ```bash
 ./update.sh
 ```
 
+### Without Poetry (Standard venv)
+
+#### Windows
+
+To pull latest changes and update dependencies:
+
+```batch
+update-venv.bat
+```
+
+Or manually:
+
+```batch
+git pull
+.venv\Scripts\activate.bat
+pip install -e . --upgrade
+```
+
+#### macOS / Linux
+
+To pull latest changes and update dependencies:
+
+```bash
+./update-venv.sh
+```
+
 Or manually:
 
 ```bash
 git pull
-poetry install
-make requirements
+source .venv/bin/activate
+pip install -e . --upgrade
+```
+
+### Switching Installation Methods
+
+#### From Poetry to Standard venv
+
+```bash
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+datawagon --help
+```
+
+**What changes:**
+- Smaller: ~200MB vs ~500MB
+- No dev tools (mypy, black, flake8, pytest)
+- Faster setup: ~30 sec vs ~2 min
+- Cannot modify dependencies
+
+#### From Standard venv to Poetry
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+rm -rf .venv
+make setup-poetry
+source .venv/bin/activate
+make test
+```
+
+**What you gain:**
+- Full development tooling
+- Ability to modify dependencies
+- Run pre-commit checks locally
+
+#### Verifying Installation Type
+
+```bash
+make verify-install  # Shows installation type
 ```
 
 ---
@@ -605,6 +724,244 @@ Regenerate from poetry.lock:
 make requirements
 ```
 
+### Command not found after setup
+
+If `datawagon` command is not found after running setup:
+
+```bash
+# Verify virtual environment activation
+which python  # Should show /path/to/datawagon/.venv/bin/python
+
+# If not in venv, activate it
+source .venv/bin/activate
+
+# Verify installation
+datawagon --help
+```
+
+If still not working:
+```bash
+# Reinstall from scratch
+rm -rf .venv
+./setup-venv.sh
+source .venv/bin/activate
+```
+
+### Why don't I have pytest/mypy/black?
+
+These are development tools, not included in standard venv installation (runtime-only).
+
+**If you need development tools**, use Poetry:
+```bash
+rm -rf .venv
+make setup-poetry
+```
+
+**If you just want to run tests occasionally**, install manually:
+```bash
+source .venv/bin/activate
+pip install pytest mypy black flake8
+```
+
+### Can I develop without Poetry?
+
+Yes, but it's not recommended:
+- **Code changes**: Edit files normally in either installation
+- **Run application**: Works the same in both
+- **Run tests**: Manually install dev dependencies (see above)
+- **Modify dependencies**: Not possible - must request via GitHub issue
+
+For serious development or contributions, Poetry is strongly recommended.
+
+### How do I know which installation I have?
+
+```bash
+make verify-install
+```
+
+This will show:
+- Installation type (Poetry vs Standard venv)
+- Virtual environment location
+- Whether installation is healthy
+
+### Python version mismatch
+
+**Symptom**: `setup-venv.sh` fails with "Python 3.9+ required".
+
+**Solution**:
+```bash
+# Check your Python version
+python3 --version
+
+# If Python 3.8 or earlier, upgrade Python first
+# On macOS with Homebrew:
+brew install python@3.11
+
+# On Ubuntu/Debian:
+sudo apt update
+sudo apt install python3.11
+
+# Verify new version
+python3.11 --version
+
+# Create venv with specific Python version
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+**Common causes**:
+- System Python is outdated
+- Multiple Python versions installed (using wrong one)
+- Virtual environment created with old Python
+
+### pip installation fails with "externally-managed-environment"
+
+**Symptom**: `pip install` fails with:
+```
+error: externally-managed-environment
+```
+
+**Solution**: This is expected on some modern Linux distros (Debian 12+, Ubuntu 23.04+). The virtual environment approach handles this:
+
+```bash
+# Virtual environment bypasses external management
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .  # Now works inside venv
+```
+
+**Don't**: Never use `pip --break-system-packages` - this is dangerous.
+
+### Shell script fails with "command not found: poetry"
+
+**Symptom**: `update.sh` fails because Poetry not found.
+
+**This is expected**:
+- `update.sh` is for Poetry users only
+- For non-Poetry users, use `update-venv.sh` instead
+
+**Solution**:
+```bash
+# Non-Poetry users:
+./update-venv.sh
+
+# Poetry users - install Poetry first:
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+### Installation succeeds but datawagon command not found
+
+**Symptom**: After `./setup-venv.sh` completes, `datawagon` command not found.
+
+**Cause**: Virtual environment not activated.
+
+**Solution**:
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Verify activation (should show .venv path)
+which python
+
+# Now datawagon should work
+datawagon --help
+```
+
+**To avoid**: Add activation to your shell profile:
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias dw='cd /path/to/datawagon && source .venv/bin/activate'
+```
+
+### setup-venv.sh hangs on "Installing dependencies"
+
+**Symptom**: Script appears frozen during `pip install -e .`.
+
+**This is usually normal**: First installation downloads ~100MB of packages. Can take 2-5 minutes on slow connections.
+
+**To monitor progress**:
+```bash
+# Run with verbose output
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e . -v  # Verbose mode shows progress
+```
+
+**If truly stuck** (>10 minutes):
+```bash
+# Ctrl+C to cancel
+# Check disk space
+df -h .
+
+# Check network
+curl -I https://pypi.org/simple/
+
+# Try with timeout
+pip install -e . --timeout 60
+```
+
+### Requirements file has merge conflict
+
+**Symptom**: After git merge, `requirements.txt` has conflict markers:
+```
+<<<<<<< HEAD
+package==1.0.0
+=======
+package==2.0.0
+>>>>>>> branch
+```
+
+**Solution**: Never manually edit requirements files. Regenerate from poetry.lock:
+
+```bash
+# Don't manually resolve conflict
+# Instead, resolve poetry.lock conflict first
+
+git checkout --theirs poetry.lock  # Or --ours, depending on which you want
+
+# Then regenerate requirements
+make requirements
+
+# Stage the regenerated files
+git add requirements.txt requirements-dev.txt poetry.lock
+```
+
+### Tests pass locally but fail in CI
+
+**Symptom**: `make test` passes locally, but GitHub Actions fails.
+
+**Common causes**:
+1. **Missing dependency in poetry.lock**: CI installs from lock file only
+   ```bash
+   # Add missing dependency
+   poetry add missing-package
+   poetry lock
+   make requirements
+   git add pyproject.toml poetry.lock requirements*.txt
+   git commit
+   ```
+
+2. **Local vs CI Python version**: CI tests on 3.9, 3.10, 3.11
+   ```bash
+   # Test with specific Python version locally (requires pyenv)
+   pyenv install 3.9.18
+   pyenv local 3.9.18
+   rm -rf .venv
+   make setup
+   make test
+   ```
+
+3. **Environment variable differences**: CI doesn't have your local `.env`
+   ```bash
+   # Check which env vars your code uses
+   grep -r "os.environ" datawagon/
+
+   # Ensure tests mock external dependencies
+   # (GCS, BigQuery, etc.)
+   ```
+
 ### Google Cloud authentication errors
 
 Ensure credentials are configured:
@@ -648,6 +1005,78 @@ bq ls --project_id=your-project-id
 Required IAM roles:
 - `roles/bigquery.dataEditor` - Create and manage tables
 - `roles/storage.objectViewer` - Read CSV files from GCS
+
+### Windows: Batch script fails with "Python is not recognized"
+
+**Symptom**: `setup-venv.bat` fails with "'python' is not recognized as an internal or external command".
+
+**Solution**: Python is not in your PATH.
+
+```batch
+REM Check if Python is installed
+python --version
+
+REM If command not found, add Python to PATH:
+REM 1. Find Python installation (usually C:\Python39 or C:\Users\<user>\AppData\Local\Programs\Python\Python39)
+REM 2. Add to PATH via System Properties > Environment Variables
+REM 3. Or use Python Launcher (py command):
+
+py --version
+py -3.9 -m venv .venv
+```
+
+**Common causes**:
+- Python installed but not added to PATH during installation
+- Using wrong Python launcher (python vs py)
+- Multiple Python versions conflicting
+
+### Windows: Activate.bat fails with "not recognized"
+
+**Symptom**: After setup, `.venv\Scripts\activate.bat` command not found.
+
+**Solution**:
+
+```batch
+REM Check if .venv was created
+dir .venv\Scripts
+
+REM Activate using full path
+.venv\Scripts\activate.bat
+
+REM Or navigate first
+cd .venv\Scripts
+activate.bat
+cd ..\..
+```
+
+### Windows: PowerShell execution policy error
+
+**Symptom**: Using PowerShell instead of cmd.exe, get "cannot be loaded because running scripts is disabled".
+
+**Solution**: Our scripts are .bat files (cmd.exe), not .ps1 (PowerShell).
+
+```batch
+REM Use cmd.exe (Command Prompt), not PowerShell
+REM Or in PowerShell, run cmd first:
+cmd
+setup-venv.bat
+```
+
+If you need PowerShell support, request it via GitHub issue.
+
+### Windows: Git not found in batch script
+
+**Symptom**: `update-venv.bat` fails with "'git' is not recognized".
+
+**Solution**: Install Git for Windows or use GitHub Desktop.
+
+```batch
+REM Install Git: https://git-scm.com/download/win
+REM Verify installation:
+git --version
+
+REM Or use GitHub Desktop GUI instead of update script
+```
 
 ---
 
