@@ -1,4 +1,5 @@
 """Security utilities for DataWagon."""
+
 from datawagon.security.validators import (
     MAX_DECOMPRESSED_SIZE,
     SecurityError,
