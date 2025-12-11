@@ -1,6 +1,11 @@
 
 title = "CSV Source Files Configuration"
 
+# BigQuery configuration
+[bigquery]
+dataset = "youtube_analytics"
+storage_prefix = "caravan-versioned"
+
 [file.claim_raw]
 # example file: YouTube_SomeBrandName_M_20230601_claim_raw_v1-1.csv.tar.gz
 is_enabled = true

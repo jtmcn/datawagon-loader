@@ -13,6 +13,26 @@ from pydantic import BaseModel, field_validator, model_validator
 from datawagon.security import SecurityError, validate_regex_complexity
 
 
+class BigQueryConfig(BaseModel):
+    """BigQuery configuration.
+
+    Defines BigQuery dataset and storage settings for external table creation.
+
+    Attributes:
+        dataset: BigQuery dataset name for external tables
+        storage_prefix: GCS folder prefix for BigQuery table creation
+            (default: "caravan-versioned")
+
+    Example:
+        >>> config = BigQueryConfig(dataset="youtube_analytics")
+        >>> config.storage_prefix
+        'caravan-versioned'
+    """
+
+    dataset: str
+    storage_prefix: str = "caravan-versioned"
+
+
 class SourceFromLocalFS(BaseModel):
     """Configuration for processing files from local filesystem.
 
@@ -103,12 +123,17 @@ class SourceConfig(BaseModel):
 
     Attributes:
         file: Dictionary mapping source names to SourceFromLocalFS configurations
+        bigquery: Optional BigQuery configuration (dataset, storage_prefix)
 
     Example:
-        >>> config = SourceConfig(file={
-        ...     "youtube": SourceFromLocalFS(...),
-        ...     "tiktok": SourceFromLocalFS(...)
-        ... })
+        >>> config = SourceConfig(
+        ...     file={
+        ...         "youtube": SourceFromLocalFS(...),
+        ...         "tiktok": SourceFromLocalFS(...)
+        ...     },
+        ...     bigquery=BigQueryConfig(dataset="youtube_analytics")
+        ... )
     """
 
     file: dict[str, SourceFromLocalFS]
+    bigquery: Optional[BigQueryConfig] = None

@@ -5,7 +5,7 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from datawagon.objects.source_config import SourceConfig, SourceFromLocalFS
+from datawagon.objects.source_config import BigQueryConfig, SourceConfig, SourceFromLocalFS
 
 
 @pytest.mark.unit
@@ -165,3 +165,101 @@ class TestSourceConfig:
         assert len(config.file) == 2
         assert config.file["youtube"].is_enabled is True
         assert config.file["tiktok"].is_enabled is False
+
+
+@pytest.mark.unit
+class TestBigQueryConfig:
+    """Test BigQueryConfig model."""
+
+    def test_bigquery_config_with_defaults(self) -> None:
+        """Test BigQueryConfig with default storage_prefix."""
+        config = BigQueryConfig(dataset="my_dataset")
+
+        assert config.dataset == "my_dataset"
+        assert config.storage_prefix == "caravan-versioned"
+
+    def test_bigquery_config_with_custom_prefix(self) -> None:
+        """Test BigQueryConfig with custom storage_prefix."""
+        config = BigQueryConfig(
+            dataset="my_dataset",
+            storage_prefix="custom-prefix"
+        )
+
+        assert config.dataset == "my_dataset"
+        assert config.storage_prefix == "custom-prefix"
+
+    def test_bigquery_config_requires_dataset(self) -> None:
+        """Test that dataset field is required."""
+        with pytest.raises(ValidationError):
+            BigQueryConfig()  # type: ignore[call-arg]  # Missing required dataset field
+
+
+@pytest.mark.unit
+class TestSourceConfigWithBigQuery:
+    """Test SourceConfig with BigQuery configuration."""
+
+    def test_source_config_with_bigquery_section(self) -> None:
+        """Test SourceConfig with optional bigquery section."""
+        config = SourceConfig(
+            bigquery=BigQueryConfig(dataset="test_dataset"),
+            file={
+                "test": SourceFromLocalFS(
+                    is_enabled=True,
+                    select_file_name_base="test_*",
+                    exclude_file_name_base="",
+                    regex_pattern=None,
+                    regex_group_names=None,
+                    storage_folder_name="test",
+                    table_name="test_table",
+                    table_append_or_replace="append",
+                )
+            }
+        )
+
+        assert config.bigquery is not None
+        assert config.bigquery.dataset == "test_dataset"
+        assert config.bigquery.storage_prefix == "caravan-versioned"
+
+    def test_source_config_without_bigquery_backwards_compat(self) -> None:
+        """Test SourceConfig without bigquery (backward compatibility)."""
+        config = SourceConfig(
+            file={
+                "test": SourceFromLocalFS(
+                    is_enabled=True,
+                    select_file_name_base="test_*",
+                    exclude_file_name_base="",
+                    regex_pattern=None,
+                    regex_group_names=None,
+                    storage_folder_name="test",
+                    table_name="test_table",
+                    table_append_or_replace="append",
+                )
+            }
+        )
+
+        assert config.bigquery is None
+
+    def test_source_config_with_custom_bigquery_prefix(self) -> None:
+        """Test SourceConfig with custom BigQuery storage_prefix."""
+        config = SourceConfig(
+            bigquery=BigQueryConfig(
+                dataset="analytics_dataset",
+                storage_prefix="my-custom-prefix"
+            ),
+            file={
+                "test": SourceFromLocalFS(
+                    is_enabled=True,
+                    select_file_name_base="test_*",
+                    exclude_file_name_base="",
+                    regex_pattern=None,
+                    regex_group_names=None,
+                    storage_folder_name="test",
+                    table_name="test_table",
+                    table_append_or_replace="append",
+                )
+            }
+        )
+
+        assert config.bigquery is not None
+        assert config.bigquery.dataset == "analytics_dataset"
+        assert config.bigquery.storage_prefix == "my-custom-prefix"

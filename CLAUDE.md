@@ -129,7 +129,13 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 
 ### Configuration System
 
-**Source Configuration (`datawagon-config.toml`)**: Defines file types to process. Each `[file.{name}]` section specifies:
+**Source Configuration (`datawagon-config.toml`)**: Defines file types to process and BigQuery settings.
+
+**BigQuery Section (`[bigquery]`)**: Optional section for BigQuery configuration:
+- `dataset`: BigQuery dataset name for external tables
+- `storage_prefix`: GCS folder prefix for BigQuery table creation (default: "caravan-versioned")
+
+**File Sections (`[file.{name}]`)**: Each section specifies:
 - `select_file_name_base`: Pattern to match files
 - `exclude_file_name_base`: Pattern to exclude files
 - `regex_pattern`: Regex to extract metadata from filenames
@@ -138,11 +144,15 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `table_name`: Destination table name
 - `table_append_or_replace`: Upload strategy
 
-**Runtime Configuration**: Via environment variables or CLI flags:
+**Runtime Configuration**: Via environment variables or CLI flags (takes precedence over TOML):
 - `DW_CSV_SOURCE_DIR`: Source directory for CSV files
 - `DW_CSV_SOURCE_TOML`: Path to source config TOML
 - `DW_GCS_PROJECT_ID`: GCS project ID
 - `DW_GCS_BUCKET`: GCS bucket name
+- `DW_BQ_DATASET`: BigQuery dataset (can also be set in TOML `[bigquery]` section)
+- `DW_BQ_STORAGE_PREFIX`: BigQuery storage prefix (can also be set in TOML `[bigquery]` section)
+
+**Configuration Precedence** (for BigQuery settings): CLI flag > Environment variable > TOML config
 
 ### Core Components
 
@@ -202,11 +212,12 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 ### Pydantic Models
 
 **Configuration Models** (`datawagon/objects/source_config.py`):
-- `SourceConfig`: Root config with `file: dict[str, SourceFromLocalFS]`
+- `SourceConfig`: Root config with `file: dict[str, SourceFromLocalFS]` and optional `bigquery: BigQueryConfig`
 - `SourceFromLocalFS`: Per-file-type settings
+- `BigQueryConfig`: BigQuery dataset and storage prefix settings
 
 **Data Models**:
-- `AppConfig`: Runtime config (paths, GCS project/bucket)
+- `AppConfig`: Runtime config (paths, GCS project/bucket, BigQuery dataset)
 - `ManagedFileInput`: Raw file attributes before validation
 - `ManagedFileMetadata`: Validated file metadata with computed fields
 - `ManagedFiles`: Base class grouping files by selector

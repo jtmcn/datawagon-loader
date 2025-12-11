@@ -148,10 +148,22 @@ DW_CSV_SOURCE_TOML=./datawagon-config.toml
 DW_GCS_PROJECT_ID=your-gcp-project-id
 DW_GCS_BUCKET=your-bucket-name
 
-# BigQuery settings
+# BigQuery settings (can also be set in datawagon-config.toml [bigquery] section)
+# Environment variables take precedence over TOML configuration
 DW_BQ_DATASET=your_dataset_name
-DW_BQ_STORAGE_PREFIX=caravan-versioned  # Optional: filter which folders to scan (default: caravan-versioned)
+# DW_BQ_STORAGE_PREFIX=caravan-versioned  # Optional: defaults to "caravan-versioned"
 ```
+
+Alternatively, you can configure BigQuery settings in `datawagon-config.toml`:
+
+```toml
+# BigQuery configuration
+[bigquery]
+dataset = "your_dataset_name"
+storage_prefix = "caravan-versioned"  # Optional: defaults to "caravan-versioned"
+```
+
+**Configuration precedence** for BigQuery settings: CLI flag > Environment variable > TOML config
 
 ### 5. Configure Google Cloud Credentials
 

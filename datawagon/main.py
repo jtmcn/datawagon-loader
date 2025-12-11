@@ -132,9 +132,6 @@ def cli(
         raise click.UsageError("GCS_PROJECT_ID must be set")
     if not gcs_bucket:
         raise click.UsageError("GCS_BUCKET must be set")
-    if not bq_dataset:
-        raise click.UsageError("BQ_DATASET must be set")
-
     logger.info(f"csv_source_config: {csv_source_config}")
 
     try:
@@ -149,13 +146,33 @@ def cli(
 
     ctx.obj["FILE_CONFIG"] = valid_config
 
+    # Extract BigQuery config from TOML if present
+    toml_bq_dataset = None
+    toml_bq_storage_prefix = "caravan-versioned"
+
+    if valid_config.bigquery:
+        toml_bq_dataset = valid_config.bigquery.dataset
+        toml_bq_storage_prefix = valid_config.bigquery.storage_prefix
+
+    # Merge configuration: CLI/env takes precedence over TOML
+    final_bq_dataset = bq_dataset or toml_bq_dataset
+    final_bq_storage_prefix = bq_storage_prefix or toml_bq_storage_prefix
+
+    # Validate that bq_dataset is set from at least one source
+    if not final_bq_dataset:
+        raise click.UsageError(
+            "BQ_DATASET must be set via --bq-dataset flag, "
+            "DW_BQ_DATASET environment variable, or "
+            "[bigquery] dataset in datawagon-config.toml"
+        )
+
     app_config = AppConfig(
         csv_source_dir=csv_source_dir,
         csv_source_config=csv_source_config,
         gcs_project_id=gcs_project_id,
         gcs_bucket=gcs_bucket,
-        bq_dataset=bq_dataset,
-        bq_storage_prefix=bq_storage_prefix,
+        bq_dataset=final_bq_dataset,
+        bq_storage_prefix=final_bq_storage_prefix,
     )
 
     ctx.obj["CONFIG"] = app_config
