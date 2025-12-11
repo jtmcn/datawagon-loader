@@ -274,7 +274,9 @@ def execute_migration(
     "--batch-size", default=100, help="Files to process per batch (default: 100)"
 )
 @click.pass_context
-def migrate_to_versioned_folders(ctx: click.Context, dry_run: bool, batch_size: int) -> None:
+def migrate_to_versioned_folders(
+    ctx: click.Context, dry_run: bool, batch_size: int
+) -> None:
     """Migrate existing GCS files to version-based folder structure."""
 
     # Get GCS manager and config

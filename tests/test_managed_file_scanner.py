@@ -105,7 +105,9 @@ class TestManagedFileScannerInit:
 class TestFindFiles:
     """Test find_files method."""
 
-    def test_find_files_with_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
+    def test_find_files_with_match(
+        self, temp_dir: Path, mock_source_config: SourceConfig
+    ) -> None:
         """Test finding files that match pattern."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()

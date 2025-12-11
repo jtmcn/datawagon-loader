@@ -5,7 +5,11 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from datawagon.objects.source_config import BigQueryConfig, SourceConfig, SourceFromLocalFS
+from datawagon.objects.source_config import (
+    BigQueryConfig,
+    SourceConfig,
+    SourceFromLocalFS,
+)
 
 
 @pytest.mark.unit
@@ -180,10 +184,7 @@ class TestBigQueryConfig:
 
     def test_bigquery_config_with_custom_prefix(self) -> None:
         """Test BigQueryConfig with custom storage_prefix."""
-        config = BigQueryConfig(
-            dataset="my_dataset",
-            storage_prefix="custom-prefix"
-        )
+        config = BigQueryConfig(dataset="my_dataset", storage_prefix="custom-prefix")
 
         assert config.dataset == "my_dataset"
         assert config.storage_prefix == "custom-prefix"
@@ -213,7 +214,7 @@ class TestSourceConfigWithBigQuery:
                     table_name="test_table",
                     table_append_or_replace="append",
                 )
-            }
+            },
         )
 
         assert config.bigquery is not None
@@ -243,8 +244,7 @@ class TestSourceConfigWithBigQuery:
         """Test SourceConfig with custom BigQuery storage_prefix."""
         config = SourceConfig(
             bigquery=BigQueryConfig(
-                dataset="analytics_dataset",
-                storage_prefix="my-custom-prefix"
+                dataset="analytics_dataset", storage_prefix="my-custom-prefix"
             ),
             file={
                 "test": SourceFromLocalFS(
@@ -257,7 +257,7 @@ class TestSourceConfigWithBigQuery:
                     table_name="test_table",
                     table_append_or_replace="append",
                 )
-            }
+            },
         )
 
         assert config.bigquery is not None
