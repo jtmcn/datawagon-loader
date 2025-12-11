@@ -5,14 +5,8 @@ import click
 
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.compare import compare_local_files_to_bucket
-from datawagon.console import (
-    confirm,
-    error,
-    inline_status_end,
-    inline_status_start,
-    newline,
-    success,
-)
+from datawagon.console import (confirm, error, inline_status_end,
+                               inline_status_start, newline, success)
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
 

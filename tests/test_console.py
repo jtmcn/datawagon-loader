@@ -6,16 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from datawagon.console import (
-    confirm,
-    error,
-    file_list,
-    get_console,
-    info,
-    success,
-    table,
-    warning,
-)
+from datawagon.console import (confirm, error, file_list, get_console, info,
+                               success, table, warning)
 
 
 @pytest.fixture(autouse=True)

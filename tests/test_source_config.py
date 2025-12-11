@@ -5,11 +5,8 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from datawagon.objects.source_config import (
-    BigQueryConfig,
-    SourceConfig,
-    SourceFromLocalFS,
-)
+from datawagon.objects.source_config import (BigQueryConfig, SourceConfig,
+                                             SourceFromLocalFS)
 
 
 @pytest.mark.unit

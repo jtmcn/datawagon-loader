@@ -2,10 +2,8 @@
 
 from datetime import datetime
 
-from datawagon.objects.bigquery_table_metadata import (
-    BigQueryTableInfo,
-    StorageFolderSummary,
-)
+from datawagon.objects.bigquery_table_metadata import (BigQueryTableInfo,
+                                                       StorageFolderSummary)
 
 
 def test_bigquery_table_info_creation() -> None:
