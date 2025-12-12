@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2025-12-12
+
+### Fixed
+- Moved `pytest-cov` from dev to test dependency group to resolve CI build failures
+  - CI workflow (`poetry install --with test --without dev`) was excluding pytest-cov
+  - This caused "unrecognized arguments: --cov" errors during coverage tests
+- Consolidated `markdown-it-py` to v3.0.0 (from dual 3.0.0/4.0.0 versions) to maintain Python 3.9 compatibility
+  - markdown-it-py v4.0.0 requires Python 3.10+, but DataWagon supports Python 3.9-3.12
+
 ## [1.0.0] - 2025-12-06
 
 This major release represents a comprehensive improvement initiative across 8 phases, transforming the project from a working prototype into a production-ready, well-tested, and thoroughly documented application.
@@ -145,7 +154,8 @@ Initial working version with core functionality:
 - Basic configuration via TOML files
 - Click-based CLI with command chaining
 
-[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/joeltkeller/datawagon/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/joeltkeller/datawagon/releases/tag/v1.0.0
 [0.2.0]: https://github.com/joeltkeller/datawagon/releases/tag/v0.2.0
 [0.1.0]: https://github.com/joeltkeller/datawagon/releases/tag/v0.1.0
