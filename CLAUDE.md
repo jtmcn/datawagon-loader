@@ -78,6 +78,42 @@ datawagon --help
 make test  # Note: make requires Unix; Windows users should use Poetry for tests
 ```
 
+**Troubleshooting Windows Installation:**
+
+If `setup-venv.bat` fails silently or exits without creating `.venv`:
+
+1. **Enable debug mode to see what's happening:**
+   ```cmd
+   set DEBUG=1
+   setup-venv.bat
+   ```
+
+2. **Verify Python is installed correctly:**
+   ```cmd
+   python --version
+   python -c "import sys; print(sys.version_info)"
+   ```
+
+3. **Check temp folder access:**
+   ```cmd
+   echo test > %TEMP%\test.txt
+   type %TEMP%\test.txt
+   del %TEMP%\test.txt
+   ```
+
+4. **Clean up old virtual environments:**
+   ```cmd
+   rmdir /s /q venv
+   rmdir /s /q .venv
+   setup-venv.bat
+   ```
+
+5. **Common issues:**
+   - **Python not in PATH:** Reinstall Python with "Add to PATH" option checked
+   - **Temp folder permissions:** Run command prompt as administrator
+   - **Antivirus blocking:** Temporarily disable or whitelist the project folder
+   - **Old Python version:** Ensure Python 3.9 or higher is installed
+
 ### Code Quality (Pre-commit Checks)
 
 DataWagon uses [pre-commit](https://pre-commit.com) for automated code quality checks.

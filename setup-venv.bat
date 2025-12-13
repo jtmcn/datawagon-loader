@@ -22,6 +22,7 @@ REM Variables
 set VENV=.venv
 set ENV_FILE=.env
 set ENV_EXAMPLE=.env.example
+set DEBUG=0
 
 REM Main execution
 call :main
@@ -81,28 +82,71 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Single Python call for version check and display (optimized)
-python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>nul
+REM Run Python check and capture both status and version
+REM Changed 2>nul to 2>&1 to capture stderr for debugging
+python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>&1
 if errorlevel 1 (
     echo [ERROR] Failed to check Python version
+    echo [ERROR] Python may not be installed correctly
+    echo [INFO] Install from: https://www.python.org/downloads/
     del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
 )
 
+REM Verify temp file was created and has content
+if not exist "%TEMP%\dw_pyver.txt" (
+    echo [ERROR] Failed to create temp file for version check
+    echo [ERROR] Check permissions for: %TEMP%
+    exit /b 1
+)
+
+REM Debug mode - show temp file contents if DEBUG=1
+if "%DEBUG%"=="1" (
+    echo [DEBUG] Temp file contents:
+    type "%TEMP%\dw_pyver.txt"
+    echo.
+)
+
+REM Read first line (OK/FAIL status)
 set /p PY_STATUS=<"%TEMP%\dw_pyver.txt"
-if not "%PY_STATUS%"=="OK" (
-    for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
-        echo [ERROR] Python 3.9+ required (found: Python %%V)
-    )
+if not defined PY_STATUS (
+    echo [ERROR] Failed to read Python version output
+    echo [ERROR] Check permissions for: %TEMP%
     del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
 )
 
+REM Debug mode - show status variable
+if "%DEBUG%"=="1" (
+    echo [DEBUG] PY_STATUS=%PY_STATUS%
+    echo.
+)
+
+REM Check if version is acceptable
+if not "%PY_STATUS%"=="OK" (
+    echo [ERROR] Python 3.9+ required
+    REM Try to read version from line 2, but fallback to generic error
+    set VERSION_FOUND=unknown
+    for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt" 2^>nul') do (
+        set VERSION_FOUND=%%V
+        goto :version_read
+    )
+    :version_read
+    echo [ERROR] Found: Python !VERSION_FOUND!
+    echo [INFO] Install Python 3.9+ from: https://www.python.org/downloads/
+    del "%TEMP%\dw_pyver.txt" 2>nul
+    exit /b 1
+)
+
+REM Success - read and display version
 for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
     echo [OK] Python found: Python %%V
     del "%TEMP%\dw_pyver.txt" 2>nul
     goto :eof
 )
+
+REM Fallback if version read failed (shouldn't reach here if PY_STATUS was OK)
+echo [OK] Python version check passed
 del "%TEMP%\dw_pyver.txt" 2>nul
 goto :eof
 
