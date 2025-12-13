@@ -212,14 +212,16 @@ REM Install dependencies
 REM ============================================================================
 :install_deps
 echo [INFO] Upgrading pip...
-"%VENV%\Scripts\pip.exe" install --upgrade pip --quiet
+REM Use python -m pip to avoid Windows file lock issues when upgrading pip
+"%VENV%\Scripts\python.exe" -m pip install --upgrade pip --quiet
 if errorlevel 1 (
     echo [ERROR] Failed to upgrade pip
     exit /b 1
 )
 
 echo [INFO] Installing DataWagon and runtime dependencies...
-"%VENV%\Scripts\pip.exe" install -e . --quiet
+REM Use python -m pip for consistency and to avoid potential file lock issues
+"%VENV%\Scripts\python.exe" -m pip install -e . --quiet
 if errorlevel 1 (
     echo [ERROR] Failed to install DataWagon
     exit /b 1
@@ -234,7 +236,7 @@ REM ============================================================================
 :verify_installation
 echo [INFO] Verifying installation...
 
-"%VENV%\Scripts\pip.exe" show datawagon >nul 2>&1
+"%VENV%\Scripts\python.exe" -m pip show datawagon >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] DataWagon package not found in virtual environment
     exit /b 1
@@ -255,7 +257,7 @@ if errorlevel 1 (
 REM Check required packages - use explicit success flag to avoid loop issues
 set PKG_CHECK_FAILED=0
 for %%p in (click pandas pydantic google-cloud-storage) do (
-    "%VENV%\Scripts\pip.exe" show %%p >nul 2>&1
+    "%VENV%\Scripts\python.exe" -m pip show %%p >nul 2>&1
     if errorlevel 1 (
         echo [ERROR] Required package '%%p' not found
         set PKG_CHECK_FAILED=1
