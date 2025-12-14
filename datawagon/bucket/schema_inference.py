@@ -7,6 +7,7 @@ with column name normalization to lowercase and special character handling.
 import csv
 import gzip
 import re
+import time
 from io import BytesIO
 from typing import List, Optional, Tuple
 
@@ -473,11 +474,15 @@ class SchemaInferenceManager:
                 ...
             ]
         """
+        # Start timing
+        start_time = time.perf_counter()
+
         # Read CSV header and sample rows for type inference
         result = self.read_csv_header_and_sample(storage_folder_name, sample_size=self.DEFAULT_SAMPLE_SIZE)
 
         if not result:
-            logger.error(f"Cannot infer schema: no data found in {storage_folder_name}")
+            duration = time.perf_counter() - start_time
+            logger.error(f"Cannot infer schema after {duration:.2f}s: no data found in {storage_folder_name}")
             return None
 
         header, sample_rows = result
@@ -486,13 +491,16 @@ class SchemaInferenceManager:
         normalized_columns = self.normalize_column_names(header)
 
         if not normalized_columns:
-            logger.error("Cannot infer schema: no columns after normalization")
+            duration = time.perf_counter() - start_time
+            logger.error(f"Cannot infer schema after {duration:.2f}s: no columns after normalization")
             return None
 
         # If no sample rows, fall back to all-STRING schema
         if not sample_rows:
+            duration = time.perf_counter() - start_time
             logger.warning(
-                f"No sample rows available, creating all-STRING schema for {len(normalized_columns)} columns"
+                f"No sample rows available, creating all-STRING schema for {len(normalized_columns)} columns "
+                f"in {duration:.2f}s"
             )
             schema = [bigquery.SchemaField(col_name, "STRING", mode="NULLABLE") for col_name in normalized_columns]
             return schema
@@ -513,9 +521,13 @@ class SchemaInferenceManager:
             schema.append(bigquery.SchemaField(col_name, inferred_type, mode="NULLABLE"))
             type_distribution[inferred_type] += 1
 
-        # Log summary
+        # Calculate duration
+        duration = time.perf_counter() - start_time
+
+        # Log summary with metrics
         logger.info(
-            f"Inferred schema with {len(schema)} columns from {len(sample_rows)} sample rows: "
+            f"Schema inference completed in {duration:.2f}s: "
+            f"{len(schema)} columns from {len(sample_rows)} samples - "
             f"BOOL={type_distribution['BOOL']}, "
             f"INT64={type_distribution['INT64']}, "
             f"NUMERIC={type_distribution['NUMERIC']}, "
