@@ -350,15 +350,15 @@ class SchemaInferenceManager:
         Type detection order (most specific to least):
         1. INT64 - Whole numbers without decimals (checked before BOOL so "1"/"0" are numbers)
         2. BOOL - true/false/yes/no (excludes numeric "1"/"0")
-        3. NUMERIC - Numbers with decimals or scientific notation (exact precision)
+        3. BIGNUMERIC - Numbers with decimals or scientific notation (exact precision, up to 38 decimal places)
         4. TIMESTAMP - YYYY-MM-DD HH:MM:SS format
         5. DATE - YYYY-MM-DD format
         6. STRING - Everything else (fallback)
 
         Special handling:
-        - Columns containing "revenue" in name always prefer NUMERIC over INT64
-        - NUMERIC accepts both integers and decimals (100, 100.50)
-        - No FLOAT64 support (replaced with NUMERIC for exact precision)
+        - Columns containing "revenue" in name always prefer BIGNUMERIC over INT64
+        - BIGNUMERIC accepts both integers and decimals (100, 100.50)
+        - No FLOAT64 support (replaced with BIGNUMERIC for exact precision)
 
         Args:
             column_name: Column name (for logging)
@@ -368,11 +368,11 @@ class SchemaInferenceManager:
             min_non_null_samples: Minimum non-null values required (default: 10)
 
         Returns:
-            BigQuery type: "BOOL", "INT64", "NUMERIC", "DATE", "TIMESTAMP", "STRING"
+            BigQuery type: "BOOL", "INT64", "BIGNUMERIC", "DATE", "TIMESTAMP", "STRING"
 
         Example:
             >>> manager.infer_column_type("partner_revenue", 1, sample_rows)
-            'NUMERIC'
+            'BIGNUMERIC'
         """
         # Extract non-null values for this column
         sample_values = []
@@ -398,7 +398,7 @@ class SchemaInferenceManager:
         type_counts = {
             "BOOL": 0,
             "INT64": 0,
-            "NUMERIC": 0,
+            "BIGNUMERIC": 0,
             "DATE": 0,
             "TIMESTAMP": 0,
             "STRING": len(sample_values),  # Everything can be STRING
@@ -412,7 +412,7 @@ class SchemaInferenceManager:
             elif self._try_parse_bool(value):
                 type_counts["BOOL"] += 1
             elif self._try_parse_numeric(value):
-                type_counts["NUMERIC"] += 1
+                type_counts["BIGNUMERIC"] += 1
             else:
                 date_type = self._try_parse_date(value)
                 if date_type == "TIMESTAMP":
@@ -427,17 +427,17 @@ class SchemaInferenceManager:
         is_revenue_column = "revenue" in column_name.lower()
 
         if is_revenue_column:
-            # Revenue columns: combine INT64 + NUMERIC counts
-            numeric_confidence = (type_counts["INT64"] + type_counts["NUMERIC"]) / total_samples
+            # Revenue columns: combine INT64 + BIGNUMERIC counts
+            numeric_confidence = (type_counts["INT64"] + type_counts["BIGNUMERIC"]) / total_samples
             if numeric_confidence >= confidence_threshold:
                 logger.info(
-                    f"Column '{column_name}': Inferred NUMERIC (revenue column) "
-                    f"({type_counts['INT64']}+{type_counts['NUMERIC']}/{total_samples} = {numeric_confidence:.1%})"
+                    f"Column '{column_name}': Inferred BIGNUMERIC (revenue column) "
+                    f"({type_counts['INT64']}+{type_counts['BIGNUMERIC']}/{total_samples} = {numeric_confidence:.1%})"
                 )
-                return "NUMERIC"
+                return "BIGNUMERIC"
 
         # Check types in priority order (matches detection order above)
-        type_priority = ["INT64", "BOOL", "NUMERIC", "TIMESTAMP", "DATE"]
+        type_priority = ["INT64", "BOOL", "BIGNUMERIC", "TIMESTAMP", "DATE"]
 
         for bq_type in type_priority:
             confidence = type_counts[bq_type] / total_samples
@@ -468,7 +468,7 @@ class SchemaInferenceManager:
             >>> manager.infer_schema("caravan-versioned/claim_raw_v1-1")
             [
                 SchemaField('asset_id', 'STRING', mode='NULLABLE'),
-                SchemaField('partner_revenue', 'NUMERIC', mode='NULLABLE'),
+                SchemaField('partner_revenue', 'BIGNUMERIC', mode='NULLABLE'),
                 SchemaField('views', 'INT64', mode='NULLABLE'),
                 SchemaField('report_date', 'DATE', mode='NULLABLE'),
                 ...
@@ -507,7 +507,7 @@ class SchemaInferenceManager:
 
         # Infer type for each column from sample data
         schema = []
-        type_distribution = {"BOOL": 0, "INT64": 0, "NUMERIC": 0, "DATE": 0, "TIMESTAMP": 0, "STRING": 0}
+        type_distribution = {"BOOL": 0, "INT64": 0, "BIGNUMERIC": 0, "DATE": 0, "TIMESTAMP": 0, "STRING": 0}
 
         for i, col_name in enumerate(normalized_columns):
             inferred_type = self.infer_column_type(
@@ -530,7 +530,7 @@ class SchemaInferenceManager:
             f"{len(schema)} columns from {len(sample_rows)} samples - "
             f"BOOL={type_distribution['BOOL']}, "
             f"INT64={type_distribution['INT64']}, "
-            f"NUMERIC={type_distribution['NUMERIC']}, "
+            f"BIGNUMERIC={type_distribution['BIGNUMERIC']}, "
             f"DATE={type_distribution['DATE']}, "
             f"TIMESTAMP={type_distribution['TIMESTAMP']}, "
             f"STRING={type_distribution['STRING']}"

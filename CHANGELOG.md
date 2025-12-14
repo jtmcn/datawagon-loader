@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-12-13
+
+### Changed
+- **Schema inference now uses BIGNUMERIC instead of NUMERIC for decimal values**
+  - Replaced NUMERIC type detection with BIGNUMERIC to support values with >9 decimal places
+  - BIGNUMERIC supports up to 38 decimal places (vs NUMERIC's 9 decimal place limit)
+  - Fixes BigQuery errors: "Invalid NUMERIC value" for high-precision revenue data
+  - Revenue columns with values like "0.000021676471" (12 decimal places) now load correctly
+  - Maintains exact decimal precision for financial and scientific data
+- Updated all tests to expect BIGNUMERIC instead of NUMERIC
+- Updated documentation to reflect BIGNUMERIC type usage in CLAUDE.md
+
+### Fixed
+- Fixed BigQuery load failures for tables with high-precision decimal values
+  - Previously: Values with >9 decimal places caused "Invalid NUMERIC value" errors
+  - Now: BIGNUMERIC handles up to 38 decimal places without errors
+  - Example: `partner_revenue` column with value "0.000021676471" loads successfully
+
+### Breaking Changes
+- **Existing BigQuery external tables will need to be recreated**
+- Run `datawagon recreate-bigquery-tables --force` to update table schemas
+- No data loss: external tables reference existing GCS data, only metadata changes
+- BIGNUMERIC is backward compatible with NUMERIC values (all existing queries work)
+- Query performance impact is minimal (BIGNUMERIC uses 16 bytes vs NUMERIC's 8 bytes)
+
+### Migration Guide
+
+After updating to v1.2.0:
+
+```bash
+# Recreate all BigQuery external tables with new BIGNUMERIC schema
+datawagon recreate-bigquery-tables --force
+
+# Or recreate specific tables only
+datawagon recreate-bigquery-tables --force --tables table_one table_two
+```
+
+**Why this is safe:**
+- External tables are metadata-only (no data stored in BigQuery)
+- Points to same GCS files
+- All existing SQL queries continue to work
+- BIGNUMERIC is superset of NUMERIC (backward compatible)
+
 ## [1.1.0] - 2025-12-13
 
 This release focuses on technical debt cleanup, observability improvements, and architectural enhancements to support future multi-cloud deployments. All changes are backward compatible with zero breaking changes.

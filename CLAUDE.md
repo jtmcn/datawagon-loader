@@ -332,9 +332,11 @@ The schema inference system samples 100 rows from CSV files and analyzes actual 
    - Accepts: true, false, yes, no, TRUE, FALSE, YES, NO
    - Excludes numeric "1"/"0" (already detected as INT64)
 
-3. **FLOAT64** - Numbers with decimals or scientific notation
+3. **BIGNUMERIC** - Numbers with decimals or scientific notation
    - Examples: "123.45", "1e10", "1.0", ".5"
    - Excludes values that qualify as INT64
+   - Supports up to 38 decimal places (vs NUMERIC's 9 decimal place limit)
+   - Provides exact precision for financial and scientific data
 
 4. **TIMESTAMP** - Date and time values
    - Format: "YYYY-MM-DD HH:MM:SS" or "YYYY/MM/DD HH:MM:SS"
@@ -370,7 +372,7 @@ Schema inference produces:
 [
     SchemaField('asset_id', 'INT64', mode='NULLABLE'),
     SchemaField('views', 'INT64', mode='NULLABLE'),
-    SchemaField('revenue', 'FLOAT64', mode='NULLABLE'),
+    SchemaField('revenue', 'BIGNUMERIC', mode='NULLABLE'),
     SchemaField('is_partner', 'BOOL', mode='NULLABLE'),
     SchemaField('report_date', 'DATE', mode='NULLABLE'),
 ]

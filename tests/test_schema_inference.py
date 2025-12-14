@@ -225,9 +225,9 @@ def test_try_parse_int_invalid() -> None:
         assert SchemaInferenceManager._try_parse_int(value) is False, f"Failed for: {value}"
 
 
-def test_try_parse_numeric_valid() -> None:
-    """Test numeric parsing with valid values."""
-    valid_numerics = [
+def test_try_parse_bignumeric_valid() -> None:
+    """Test bignumeric parsing with valid values."""
+    valid_bignumerics = [
         "123.45",
         "-456.78",
         "1e10",
@@ -239,14 +239,14 @@ def test_try_parse_numeric_valid() -> None:
         "-456",
         "0",  # Also accepts integers
     ]
-    for value in valid_numerics:
+    for value in valid_bignumerics:
         assert SchemaInferenceManager._try_parse_numeric(value) is True, f"Failed for: {value}"
 
 
-def test_try_parse_numeric_invalid() -> None:
-    """Test numeric parsing with invalid values."""
-    invalid_numerics = ["", "abc", "123abc", "null"]
-    for value in invalid_numerics:
+def test_try_parse_bignumeric_invalid() -> None:
+    """Test bignumeric parsing with invalid values."""
+    invalid_bignumerics = ["", "abc", "123abc", "null"]
+    for value in invalid_bignumerics:
         assert SchemaInferenceManager._try_parse_numeric(value) is False, f"Failed for: {value}"
 
 
@@ -306,13 +306,13 @@ def test_infer_column_type_all_int() -> None:
     assert result == "INT64"
 
 
-def test_infer_column_type_all_numeric() -> None:
-    """Test column type inference with all numeric decimal values."""
+def test_infer_column_type_all_bignumeric() -> None:
+    """Test column type inference with all bignumeric decimal values."""
     sample_rows = [[f"{i}.5", "other"] for i in range(1, 101)]
     manager = SchemaInferenceManager(Mock(), "test-bucket")
 
     result = manager.infer_column_type("test_col", 0, sample_rows)
-    assert result == "NUMERIC"
+    assert result == "BIGNUMERIC"
 
 
 def test_infer_column_type_all_bool() -> None:
@@ -456,7 +456,7 @@ def test_infer_schema_with_mixed_types(mock_storage_client: Any) -> None:
         assert schema[2].name == "count"  # type: ignore[index]
         assert schema[2].field_type == "INT64"  # type: ignore[index]
         assert schema[3].name == "price"  # type: ignore[index]
-        assert schema[3].field_type == "NUMERIC"  # type: ignore[index]
+        assert schema[3].field_type == "BIGNUMERIC"  # type: ignore[index]
         assert schema[4].name == "active"  # type: ignore[index]
         assert schema[4].field_type == "BOOL"  # type: ignore[index]
         assert schema[5].name == "created_date"  # type: ignore[index]
@@ -470,29 +470,29 @@ def test_infer_column_type_mixed_int_and_decimal() -> None:
     manager = SchemaInferenceManager(Mock(), "test-bucket")
 
     result = manager.infer_column_type("test_col", 0, sample_rows)
-    # Without revenue handling: INT64 (50%) + NUMERIC (50%) → STRING
+    # Without revenue handling: INT64 (50%) + BIGNUMERIC (50%) → STRING
     assert result == "STRING"
 
 
 def test_infer_column_type_revenue_mixed_int_and_decimal() -> None:
-    """Test that revenue columns with mixed integers and decimals infer as NUMERIC."""
+    """Test that revenue columns with mixed integers and decimals infer as BIGNUMERIC."""
     # 50 integers + 50 decimals
     sample_rows = [[str(i), "other"] for i in range(1, 51)] + [[f"{i}.5", "other"] for i in range(51, 101)]
     manager = SchemaInferenceManager(Mock(), "test-bucket")
 
     result = manager.infer_column_type("partner_revenue", 0, sample_rows)
-    # Revenue column: INT64 (50) + NUMERIC (50) = 100/100 = 100% → NUMERIC
-    assert result == "NUMERIC"
+    # Revenue column: INT64 (50) + BIGNUMERIC (50) = 100/100 = 100% → BIGNUMERIC
+    assert result == "BIGNUMERIC"
 
 
 def test_infer_column_type_revenue_all_integers() -> None:
-    """Test that revenue columns with all integers still infer as NUMERIC."""
+    """Test that revenue columns with all integers still infer as BIGNUMERIC."""
     sample_rows = [[str(i), "other"] for i in range(1, 101)]
     manager = SchemaInferenceManager(Mock(), "test-bucket")
 
     result = manager.infer_column_type("total_revenue", 0, sample_rows)
-    # Revenue column: INT64 (100) + NUMERIC (0) = 100/100 = 100% → NUMERIC
-    assert result == "NUMERIC"
+    # Revenue column: INT64 (100) + BIGNUMERIC (0) = 100/100 = 100% → BIGNUMERIC
+    assert result == "BIGNUMERIC"
 
 
 def test_infer_column_type_non_revenue_integers_stay_int64() -> None:
