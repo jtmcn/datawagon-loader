@@ -165,7 +165,6 @@ def recreate_bigquery_tables(
             table_name=tbl.table_name,
             storage_folder_name=storage_folder,
             use_hive_partitioning=tbl.is_partitioned,
-            partition_column="report_date",
         )
 
         inline_status_end(recreate_success)

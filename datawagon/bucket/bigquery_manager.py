@@ -191,7 +191,6 @@ class BigQueryManager:
         table_name: str,
         storage_folder_name: str,
         use_hive_partitioning: bool = True,
-        partition_column: str = "report_date",
         schema: Optional[List[bigquery.SchemaField]] = None,
         use_autodetect_fallback: bool = True,
     ) -> bool:
@@ -206,7 +205,6 @@ class BigQueryManager:
             table_name: BigQuery table name (e.g., "claim_raw_v1_1")
             storage_folder_name: GCS folder path (e.g., "caravan-versioned/claim_raw_v1-1")
             use_hive_partitioning: Enable Hive partitioning (default: True)
-            partition_column: Partition column name (default: "report_date")
             schema: Optional explicit schema. If None, will attempt to infer from CSV.
             use_autodetect_fallback: If schema inference fails, fall back to autodetect
 

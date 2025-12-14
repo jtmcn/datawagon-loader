@@ -138,7 +138,6 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
             table_name=folder.proposed_bq_table_name,
             storage_folder_name=folder.storage_folder_name,
             use_hive_partitioning=folder.has_partitioning,
-            partition_column="report_date",
         )
 
         inline_status_end(success_result)

@@ -8,12 +8,10 @@ Handles NO_COLOR environment variable and CI/CD compatibility.
 from __future__ import annotations
 
 import os
-from contextlib import contextmanager
-from typing import Any, Iterator, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import BarColumn, MofNCompleteColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.rule import Rule
 from rich.table import Table
 
@@ -251,69 +249,6 @@ def file_list(
     if total > display_count:
         remaining = total - display_count
         console.print(f"  [dim]...and {remaining} more[/dim]")
-
-
-# ============================================================================
-# PROGRESS INDICATORS
-# ============================================================================
-
-
-@contextmanager
-def progress_bar(
-    items: Sequence[Any],
-    description: str = "Processing",
-) -> Iterator[Progress]:
-    """Context manager for progress bar during iteration.
-
-    Args:
-        items: Sequence to iterate over
-        description: Description text for progress bar
-
-    Yields:
-        Progress instance for tracking
-
-    Example:
-        with progress_bar(files, "Uploading") as progress:
-            task = progress.add_task(description, total=len(files))
-            for file in files:
-                # do work
-                progress.advance(task)
-    """
-    console = get_console()
-
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn("[bold blue]{task.description}"),
-        BarColumn(),
-        MofNCompleteColumn(),
-        TextColumn("•"),
-        TimeElapsedColumn(),
-        console=console,
-    )
-
-    with progress:
-        yield progress
-
-
-@contextmanager
-def spinner(message: str) -> Iterator[Any]:
-    """Context manager for spinner during long operations.
-
-    Args:
-        message: Status message to display
-
-    Yields:
-        Status instance
-
-    Example:
-        with spinner("Connecting to GCS...") as status:
-            # do work
-            status.update("Still working...")
-    """
-    console = get_console()
-
-    with console.status(message, spinner="dots") as status:
-        yield status
 
 
 # ============================================================================
