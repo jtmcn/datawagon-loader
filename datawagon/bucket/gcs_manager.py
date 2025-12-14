@@ -7,6 +7,7 @@ metadata. Includes retry logic for transient failures and security validation.
 
 import os
 import time
+from io import BytesIO
 from pathlib import Path
 from typing import List
 
@@ -15,6 +16,7 @@ from google.api_core import exceptions as google_api_exceptions
 from google.cloud import storage  # type: ignore[attr-defined]
 
 from datawagon.bucket.retry_utils import retry_with_backoff
+from datawagon.bucket.storage_provider import StorageProvider
 from datawagon.logging_config import get_logger
 from datawagon.objects.source_config import SourceConfig
 from datawagon.security import SecurityError, validate_blob_name
@@ -30,8 +32,8 @@ TRANSIENT_EXCEPTIONS = (
 )
 
 
-class GcsManager:
-    """Manager for Google Cloud Storage bucket operations.
+class GcsManager(StorageProvider):
+    """Google Cloud Storage implementation of StorageProvider.
 
     Provides high-level interface for GCS operations including file uploads,
     blob listing, and blob copying. Includes automatic retry logic for transient
@@ -59,21 +61,21 @@ class GcsManager:
         """
         self.storage_client = storage.Client(project=gcs_project)
         self.source_bucket_name = source_bucket_name
+        self._has_error = False
         try:
             existing_buckets = self.storage_client.list_buckets()
             for bucket in existing_buckets:
                 logger.info(f"Found GCS bucket: {bucket.name}")
-            self.has_error = False
         except google_api_exceptions.Unauthenticated as e:
             logger.error(f"GCS authentication failed: {e}")
             logger.error("Authentication required. Run: gcloud auth application-default login")
-            self.has_error = True
+            self._has_error = True
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"GCS permission denied: {e}")
-            self.has_error = True
+            self._has_error = True
         except Exception as e:
             logger.error(f"Error connecting to GCS: {e}", exc_info=True)
-            self.has_error = True
+            self._has_error = True
 
     def list_buckets(self) -> List[str]:
         """List all accessible GCS buckets in the project.
@@ -87,7 +89,7 @@ class GcsManager:
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_blobs(self, storage_folder_name: str, file_name_base: str, file_extension: str) -> List[str]:
         """List blobs matching pattern with proper error propagation."""
-        if self.has_error:
+        if self._has_error:
             logger.error("GCS client has errors, cannot list blobs")
             return []
 
@@ -122,7 +124,7 @@ class GcsManager:
         ) as e:
             # FIX: Auth/permission errors should be fatal, not silent
             logger.error(f"GCS access error: {e}. Run: gcloud auth application-default login")
-            self.has_error = True
+            self._has_error = True
             raise  # Re-raise to signal caller
 
         except Exception as e:
@@ -297,7 +299,7 @@ class GcsManager:
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def copy_blob_within_bucket(self, source_blob_name: str, destination_blob_name: str) -> bool:
         """Copy a blob to a new location within the same bucket with atomic verification."""
-        if not self.has_error:
+        if not self._has_error:
             try:
                 # Validate destination path before attempting copy
                 try:
@@ -352,7 +354,7 @@ class GcsManager:
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_all_blobs_with_prefix(self, prefix: str = "") -> List[str]:
         """List all blobs in bucket with given prefix."""
-        if not self.has_error:
+        if not self._has_error:
             try:
                 blobs = self.storage_client.list_blobs(self.source_bucket_name, prefix=prefix)
                 return [blob.name for blob in blobs]
@@ -366,3 +368,58 @@ class GcsManager:
                 logger.error(f"Error listing blobs: {e}", exc_info=True)
                 return []
         return []
+
+    def read_blob_to_memory(self, blob_name: str) -> BytesIO:
+        """Read blob contents into memory.
+
+        Args:
+            blob_name: Name of blob to read
+
+        Returns:
+            BytesIO object containing blob data
+
+        Example:
+            >>> blob_bytes = manager.read_blob_to_memory("data/file.csv.gz")
+            >>> blob_bytes.seek(0)
+            >>> content = blob_bytes.read()
+        """
+        blob = self.get_blob(blob_name)
+        blob_bytes = BytesIO()
+        blob.download_to_file(blob_bytes)
+        blob_bytes.seek(0)
+        return blob_bytes
+
+    @property
+    def has_error(self) -> bool:
+        """Check if manager has encountered errors.
+
+        Returns:
+            True if manager is in error state, False otherwise
+
+        Example:
+            >>> if manager.has_error:
+            ...     print("Cannot proceed - manager has errors")
+        """
+        return self._has_error
+
+    @has_error.setter
+    def has_error(self, value: bool) -> None:
+        """Set the error state of the manager.
+
+        Args:
+            value: True to mark manager as in error state, False otherwise
+        """
+        self._has_error = value
+
+    @property
+    def bucket_name(self) -> str:
+        """Get the GCS bucket name.
+
+        Returns:
+            Name of the GCS bucket
+
+        Example:
+            >>> manager.bucket_name
+            'my-data-bucket'
+        """
+        return self.source_bucket_name

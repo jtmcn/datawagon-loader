@@ -11,6 +11,7 @@ from typing import List, Optional
 from google.api_core import exceptions as google_api_exceptions
 from google.cloud import bigquery, storage
 
+from datawagon.bucket.analytics_provider import AnalyticsProvider
 from datawagon.bucket.retry_utils import retry_with_backoff
 from datawagon.logging_config import get_logger
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
@@ -26,8 +27,8 @@ TRANSIENT_EXCEPTIONS = (
 )
 
 
-class BigQueryManager:
-    """Manager for BigQuery external table operations.
+class BigQueryManager(AnalyticsProvider):
+    """Google BigQuery implementation of AnalyticsProvider.
 
     Provides high-level interface for creating and managing BigQuery external
     tables that reference CSV files in GCS. Includes automatic retry logic for
@@ -36,9 +37,9 @@ class BigQueryManager:
     Attributes:
         bq_client: BigQuery client
         project_id: GCP project ID
-        dataset_id: BigQuery dataset name
+        _dataset_id: BigQuery dataset name (private, accessed via property)
         bucket_name: GCS bucket name for source URIs
-        has_error: Flag indicating if initialization encountered errors
+        _has_error: Flag indicating if initialization encountered errors (private)
     """
 
     def __init__(self, project_id: str, dataset_id: str, bucket_name: str) -> None:
@@ -59,9 +60,9 @@ class BigQueryManager:
         self.bq_client = bigquery.Client(project=project_id)
         self.storage_client = storage.Client(project=project_id)
         self.project_id = project_id
-        self.dataset_id = dataset_id
+        self._dataset_id = dataset_id
         self.bucket_name = bucket_name
-        self.has_error = False
+        self._has_error = False
 
         try:
             # Verify dataset exists and is accessible
@@ -71,17 +72,17 @@ class BigQueryManager:
         except google_api_exceptions.Unauthenticated as e:
             logger.error(f"BigQuery authentication failed: {e}")
             logger.error("Authentication required. Run: gcloud auth application-default login")
-            self.has_error = True
+            self._has_error = True
         except google_api_exceptions.NotFound:
             logger.error(f"BigQuery dataset not found: {dataset_id}")
             logger.error(f"Create dataset with: bq mk --dataset {project_id}:{dataset_id}")
-            self.has_error = True
+            self._has_error = True
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"BigQuery permission denied: {e}")
-            self.has_error = True
+            self._has_error = True
         except Exception as e:
             logger.error(f"Error connecting to BigQuery: {e}", exc_info=True)
-            self.has_error = True
+            self._has_error = True
 
     @staticmethod
     def normalize_table_name(table_name: str, file_version: str) -> str:
@@ -120,11 +121,11 @@ class BigQueryManager:
             >>> manager.list_external_tables()
             [BigQueryTableInfo(table_name='claim_raw_v1_1', ...)]
         """
-        if self.has_error:
+        if self._has_error:
             return []
 
         try:
-            dataset_ref = f"{self.project_id}.{self.dataset_id}"
+            dataset_ref = f"{self.project_id}.{self._dataset_id}"
             tables = self.bq_client.list_tables(dataset_ref)
 
             external_tables = []
@@ -150,7 +151,7 @@ class BigQueryManager:
 
                     table_info = BigQueryTableInfo(
                         table_name=table.table_id,
-                        dataset_id=self.dataset_id,
+                        dataset_id=self._dataset_id,
                         project_id=self.project_id,
                         source_uri_pattern=source_uri_pattern,
                         is_partitioned=is_partitioned,
@@ -160,7 +161,7 @@ class BigQueryManager:
                     )
                     external_tables.append(table_info)
 
-            logger.info(f"Found {len(external_tables)} external tables in {self.dataset_id}")
+            logger.info(f"Found {len(external_tables)} external tables in {self._dataset_id}")
             return external_tables
 
         except google_api_exceptions.NotFound as e:
@@ -218,12 +219,12 @@ class BigQueryManager:
             ... )
             True
         """
-        if self.has_error:
+        if self._has_error:
             return False
 
         try:
             # Construct table reference
-            table_ref = f"{self.project_id}.{self.dataset_id}.{table_name}"
+            table_ref = f"{self.project_id}.{self._dataset_id}.{table_name}"
 
             # Build source URIs
             if use_hive_partitioning:
@@ -301,7 +302,7 @@ class BigQueryManager:
             True if table exists, False otherwise
         """
         try:
-            table_ref = f"{self.project_id}.{self.dataset_id}.{table_name}"
+            table_ref = f"{self.project_id}.{self._dataset_id}.{table_name}"
             self.bq_client.get_table(table_ref)
             return True
         except google_api_exceptions.NotFound:
@@ -324,11 +325,11 @@ class BigQueryManager:
             Only deletes table metadata (external tables don't contain data in BigQuery).
             The underlying CSV files in GCS remain untouched.
         """
-        if self.has_error:
+        if self._has_error:
             return False
 
         try:
-            table_ref = f"{self.project_id}.{self.dataset_id}.{table_name}"
+            table_ref = f"{self.project_id}.{self._dataset_id}.{table_name}"
             self.bq_client.delete_table(table_ref)
             logger.info(f"Deleted external table: {table_ref}")
             return True
@@ -342,3 +343,38 @@ class BigQueryManager:
         except Exception as e:
             logger.error(f"Error deleting table: {e}", exc_info=True)
             return False
+
+    @property
+    def has_error(self) -> bool:
+        """Check if manager has encountered errors.
+
+        Returns:
+            True if manager is in error state, False otherwise
+
+        Example:
+            >>> if manager.has_error:
+            ...     print("Cannot proceed - manager has errors")
+        """
+        return self._has_error
+
+    @has_error.setter
+    def has_error(self, value: bool) -> None:
+        """Set the error state of the manager.
+
+        Args:
+            value: True to mark manager as in error state, False otherwise
+        """
+        self._has_error = value
+
+    @property
+    def dataset_id(self) -> str:
+        """Get the BigQuery dataset name.
+
+        Returns:
+            Name of the BigQuery dataset
+
+        Example:
+            >>> manager.dataset_id
+            'youtube_analytics'
+        """
+        return self._dataset_id
