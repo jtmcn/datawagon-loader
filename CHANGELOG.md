@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2025-12-13
+
+### Removed
+- Removed one-time migration command `migrate-to-versioned-folders`
+  - Deleted `datawagon/commands/migrate_to_versioned_folders.py` (287 lines)
+  - Removed CLI registration from `main.py`
+  - Cleaned up migration documentation from README (56 lines)
+  - This was a one-time use command for reorganizing existing GCS files into versioned folders
+  - No breaking changes for users as this was a standalone utility command
+
+### Changed
+- Updated documentation to focus on core file management and BigQuery features
+- Simplified README by removing one-time migration workflow documentation
+
 ## [1.0.1] - 2025-12-12
 
 ### Fixed
@@ -154,7 +168,8 @@ Initial working version with core functionality:
 - Basic configuration via TOML files
 - Click-based CLI with command chaining
 
-[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/joeltkeller/datawagon/compare/v1.0.1...v1.0.5
 [1.0.1]: https://github.com/joeltkeller/datawagon/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/joeltkeller/datawagon/releases/tag/v1.0.0
 [0.2.0]: https://github.com/joeltkeller/datawagon/releases/tag/v0.2.0

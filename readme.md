@@ -24,11 +24,10 @@ This project was built to replace an existing process which used a bash script t
 4. GCS bucket integration with automatic partitioning
 5. Metadata extraction from filenames using regex
 6. Version-based folder organization for BigQuery external table mapping
-7. Migration tools for reorganizing existing files into versioned folders
-8. **BigQuery external table management** - create and list tables that reference GCS files
-9. Automatic schema detection from CSV headers
-10. Hive partitioning support for efficient date-based queries
-11. Comprehensive validation and user feedback
+7. **BigQuery external table management** - create and list tables that reference GCS files
+8. Automatic schema detection from CSV headers
+9. Hive partitioning support for efficient date-based queries
+10. Comprehensive validation and user feedback
 
 ---
 
@@ -300,9 +299,6 @@ datawagon upload-to-gcs
 
 # Convert .zip files to .gzip format
 datawagon file-zip-to-gzip
-
-# Migrate existing files to versioned folder structure
-datawagon migrate-to-versioned-folders
 ```
 
 **BigQuery External Tables:**
@@ -319,63 +315,6 @@ datawagon drop-bigquery-tables
 # Actually execute deletion (requires confirmation)
 datawagon drop-bigquery-tables --execute
 ```
-
-### Migrating to Versioned Folders
-
-If you have existing files in GCS that need to be reorganized into version-specific folders (e.g., moving files from `caravan/claim_raw/` to `caravan/claim_raw_v1-1/`), use the migration command.
-
-**When to use this:**
-- You have versioned files (containing `_v1-0`, `_v1-1`, etc. in filenames) in non-versioned folders
-- You want to organize different file versions into separate folders for BigQuery external table mapping
-- You need stable folder paths for each version to maintain BigQuery table continuity
-
-**Dry-run (default - safe to run):**
-
-```bash
-datawagon migrate-to-versioned-folders
-```
-
-This will:
-1. Scan your GCS bucket for all files
-2. Extract version information from filenames
-3. Show a detailed migration plan grouped by file type
-4. Display what would be migrated without making any changes
-
-**Execute migration:**
-
-```bash
-datawagon migrate-to-versioned-folders --execute
-```
-
-This will:
-1. Show the migration plan
-2. Prompt for confirmation
-3. Copy files to versioned folders with progress tracking
-4. Preserve original files (you can delete them manually after verification)
-5. Display summary and next steps
-
-**Example transformation:**
-
-```
-FROM: caravan/claim_raw/report_date=2025-07-31/YouTube_Brand_M_20250701_claim_raw_v1-1.csv.gz
-TO:   caravan-versioned/claim_raw_v1-1/report_date=2025-07-31/YouTube_Brand_M_20250701_claim_raw_v1-1.csv.gz
-```
-
-Note: The migration changes the root folder from `caravan` to `caravan-versioned` and adds version suffixes.
-
-**Post-migration workflow:**
-
-1. Verify files copied correctly: `datawagon files-in-storage`
-2. Update BigQuery external table URIs to point to versioned folders
-3. Test BigQuery queries against new table locations
-4. Once verified, delete original files from GCS (via console or `gsutil`)
-
-**Safety features:**
-- Dry-run mode by default (must explicitly use `--execute`)
-- User confirmation required before copying
-- Original files never deleted
-- Each copy is verified before marking success
-- Individual file errors don't stop the migration
 
 ### BigQuery External Tables
 
@@ -672,7 +611,6 @@ datawagon/
 │   │   ├── compare.py
 │   │   ├── upload_to_storage.py
 │   │   ├── file_zip_to_gzip.py
-│   │   ├── migrate_to_versioned_folders.py
 │   │   ├── list_bigquery_tables.py
 │   │   └── create_bigquery_tables.py
 │   ├── objects/                 # Core data models
