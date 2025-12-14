@@ -6,6 +6,8 @@ metadata. Includes retry logic for transient failures and security validation.
 """
 
 import os
+import time
+from pathlib import Path
 from typing import List
 
 import pandas as pd
@@ -195,6 +197,14 @@ class GcsManager:
             >>> manager.upload_blob("/data/file.csv.gz", "youtube/report_date=2023-06-30/file.csv.gz")
             True
         """
+        # Get file size for metrics
+        file_path = Path(source_file_name)
+        file_size_bytes = file_path.stat().st_size
+        file_size_mb = file_size_bytes / (1024 * 1024)
+
+        # Start timing
+        start_time = time.perf_counter()
+
         # Validate blob name for security
         try:
             validated_destination = validate_blob_name(destination_blob_name)
@@ -211,19 +221,31 @@ class GcsManager:
             generation_match = None if overwrite else 0
 
             blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
-            logger.info(f"Uploaded: {destination_blob_name}")
+
+            # Calculate metrics
+            duration = time.perf_counter() - start_time
+            throughput = file_size_mb / duration if duration > 0 else 0
+
+            logger.info(
+                f"Uploaded: {os.path.basename(destination_blob_name)} "
+                f"({file_size_mb:.2f} MB in {duration:.2f}s, {throughput:.2f} MB/s)"
+            )
             return True
         except google_api_exceptions.PreconditionFailed:
-            logger.warning(f"Blob already exists, skipping: {destination_blob_name}")
+            duration = time.perf_counter() - start_time
+            logger.warning(f"Blob already exists (checked in {duration:.2f}s), skipping: {destination_blob_name}")
             return False
         except google_api_exceptions.PermissionDenied as e:
-            logger.error(f"Permission denied uploading to bucket: {e}")
+            duration = time.perf_counter() - start_time
+            logger.error(f"Permission denied after {duration:.2f}s uploading to bucket: {e}")
             return False
         except google_api_exceptions.NotFound as e:
-            logger.error(f"Bucket not found: {e}")
+            duration = time.perf_counter() - start_time
+            logger.error(f"Bucket not found after {duration:.2f}s: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unable to upload file to bucket: {e}", exc_info=True)
+            duration = time.perf_counter() - start_time
+            logger.error(f"Unable to upload file after {duration:.2f}s to bucket: {e}", exc_info=True)
             return False
 
     # 10/2/23 - all four of these functions are currently unused

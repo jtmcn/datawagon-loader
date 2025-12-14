@@ -1,4 +1,5 @@
 # from pathlib import Path
+import time
 from typing import List
 
 import click
@@ -6,8 +7,11 @@ import click
 from datawagon.bucket.gcs_manager import GcsManager
 from datawagon.commands.compare import compare_local_files_to_bucket
 from datawagon.console import confirm, error, inline_status_end, inline_status_start, newline, success
+from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
+
+logger = get_logger(__name__)
 
 
 @click.command(name="upload-to-gcs")
@@ -39,6 +43,14 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
         newline()
 
+        # Collect metrics for upload summary
+        total_files = len(csv_file_infos)
+        total_bytes = sum(f.file_size_in_bytes for f in csv_file_infos)
+        total_mb = total_bytes / (1024 * 1024)
+        start_time = time.perf_counter()
+        success_count = 0
+        fail_count = 0
+
         has_errors = False
         for csv_info in csv_file_infos:
             inline_status_start(f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}...")
@@ -60,9 +72,25 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
             if not is_success:
                 has_errors = True
+                fail_count += 1
                 inline_status_end(False, error_msg=f"Failed: {csv_info.file_name}")
             else:
+                success_count += 1
                 inline_status_end(True)
+
+        # Calculate total metrics
+        total_duration = time.perf_counter() - start_time
+        avg_throughput = total_mb / total_duration if total_duration > 0 else 0
+
+        # Log upload summary
+        logger.info("=" * 60)
+        logger.info("Upload Summary:")
+        logger.info(f"  Total files: {total_files}")
+        logger.info(f"  Total size: {total_mb:.2f} MB")
+        logger.info(f"  Duration: {total_duration:.2f}s")
+        logger.info(f"  Avg throughput: {avg_throughput:.2f} MB/s")
+        logger.info(f"  Succeeded: {success_count}, Failed: {fail_count}")
+        logger.info("=" * 60)
 
         if has_errors:
             error("Import errors, check output")
