@@ -354,3 +354,90 @@ class TestBuildDataItem:
 
         assert result.file_size_in_bytes == 2048
         assert result.file_size == "2.00 KB"
+
+    def test_build_with_custom_dynamic_fields(self, temp_dir: Path) -> None:
+        """Test that custom dynamic fields from regex are preserved."""
+        file_path = temp_dir / "custom_file.csv"
+        file_path.write_text("test")
+
+        # Simulate extra fields that might come from custom regex patterns
+        source_file = ManagedFileInput(
+            file_name=file_path.name,
+            file_path=file_path,
+            base_name="custom_file",
+            table_name="test_table",
+            table_append_or_replace="append",
+            storage_folder_name="test_folder",
+            content_owner="BrandName",
+            file_date_key="20230601",
+            # Custom dynamic fields from regex
+            region="US",
+            channel_id="UC123456",
+            video_type="live",
+        )
+
+        result = ManagedFileMetadata.build_data_item(source_file)
+
+        # Check that standard fields are present
+        assert result.content_owner == "BrandName"
+        assert result.report_date_str == "2023-06-30"
+
+        # Check that custom dynamic fields are preserved
+        result_dict = result.model_dump()
+        assert result_dict["region"] == "US"
+        assert result_dict["channel_id"] == "UC123456"
+        assert result_dict["video_type"] == "live"
+
+    def test_build_with_only_custom_fields_no_standard_extras(self, temp_dir: Path) -> None:
+        """Test dynamic fields work without content_owner or file_date_key."""
+        file_path = temp_dir / "custom_only.csv"
+        file_path.write_text("test")
+
+        source_file = ManagedFileInput(
+            file_name=file_path.name,
+            file_path=file_path,
+            base_name="custom_only",
+            table_name="test_table",
+            table_append_or_replace="append",
+            storage_folder_name="test_folder",
+            # Only custom fields, no standard extras
+            product_type="premium",
+            tier="gold",
+        )
+
+        result = ManagedFileMetadata.build_data_item(source_file)
+
+        # Standard extras should be None
+        assert result.content_owner is None
+        assert result.report_date_str is None
+        assert result.report_date_key is None
+
+        # Custom fields should be preserved
+        result_dict = result.model_dump()
+        assert result_dict["product_type"] == "premium"
+        assert result_dict["tier"] == "gold"
+
+    def test_build_file_date_key_not_in_result_dict(self, temp_dir: Path) -> None:
+        """Test that file_date_key is converted and not present in result."""
+        file_path = temp_dir / "date_test.csv"
+        file_path.write_text("test")
+
+        source_file = ManagedFileInput(
+            file_name=file_path.name,
+            file_path=file_path,
+            base_name="date_test",
+            table_name="test_table",
+            table_append_or_replace="append",
+            storage_folder_name="test_folder",
+            file_date_key="20230601",
+        )
+
+        result = ManagedFileMetadata.build_data_item(source_file)
+
+        # file_date_key should be converted to report_date fields
+        assert result.report_date_str == "2023-06-30"
+        assert result.report_date_key == 20230630
+
+        # file_date_key should NOT be in the result dict (it was converted)
+        result_dict = result.model_dump()
+        assert "file_date_key" not in result_dict

@@ -43,7 +43,6 @@ class ManagedFileInput(BaseModel):
         ... )
     """
 
-    # TODO: merge with SourceFileMetadata
     file_name: str
     file_path: Path
     base_name: str
@@ -94,13 +93,14 @@ class ManagedFileMetadata(ManagedFileInput):
 
         Computes file version, file size, report dates, and content owner from
         the source file input. Converts file_date_key (YYYYMMDD or YYYYMM) to
-        month-end date for partitioning.
+        month-end date for partitioning. Preserves all dynamic fields from
+        regex extraction.
 
         Args:
             source_file: Basic file input with path and configuration
 
         Returns:
-            Enriched ManagedFileMetadata with computed fields
+            Enriched ManagedFileMetadata with computed fields and dynamic attributes
 
         Example:
             >>> input_file = ManagedFileInput(...)
@@ -109,42 +109,44 @@ class ManagedFileMetadata(ManagedFileInput):
             '2023-06-30'
         """
         file_path = source_file.file_path
-
         file_size_in_bytes = file_path.stat().st_size
         file_size = cls.human_readable_size(file_size_in_bytes)
-
         file_dir = str(file_path.parent)
-
         file_name = file_path.name
-
         file_version = cls.get_file_version(file_name)
 
-        file_attributes_dict = source_file.model_dump()
+        file_attributes = source_file.model_dump()
 
+        # Process file_date_key if present (special case - converts to report dates)
         report_date_key, report_date_str = None, None
-
-        if "file_date_key" in file_attributes_dict.keys():
-            file_date_key = file_attributes_dict["file_date_key"]
-
+        if "file_date_key" in file_attributes:
+            file_date_key = file_attributes.pop("file_date_key")
             file_date = cls.date_key_to_date(file_date_key)
-
             file_month_end_date = file_date.replace(day=calendar.monthrange(file_date.year, file_date.month)[1])
-
             report_date_str = file_month_end_date.strftime("%Y-%m-%d")
-
             report_date_key = int(file_month_end_date.strftime("%Y%m%d"))
 
-        content_owner = None
+        # Extract content_owner (common optional field)
+        content_owner = file_attributes.pop("content_owner", None)
 
-        if "content_owner" in file_attributes_dict.keys():
-            content_owner = file_attributes_dict["content_owner"]
+        # Define fields we're handling explicitly
+        explicit_fields = {
+            "file_path",
+            "file_name",
+            "base_name",
+            "table_name",
+            "table_append_or_replace",
+            "storage_folder_name",
+        }
 
-        # TODO: handle user defined props with *kwargs
+        # Collect dynamic fields (anything not in base model or handled explicitly)
+        dynamic_fields = {k: v for k, v in file_attributes.items() if k not in explicit_fields}
+
+        # Build with explicit + dynamic fields via kwargs
         data_item = cls(
             file_path=file_path,
             file_dir=file_dir,
             file_name=file_name,
-            # file_name_without_extension=file_name_without_extension,
             file_version=file_version,
             base_name=source_file.base_name,
             table_name=source_file.table_name,
@@ -155,6 +157,7 @@ class ManagedFileMetadata(ManagedFileInput):
             report_date_str=report_date_str,
             content_owner=content_owner,
             storage_folder_name=source_file.storage_folder_name or source_file.base_name,
+            **dynamic_fields,  # Pass through any other custom regex fields
         )
 
         return data_item

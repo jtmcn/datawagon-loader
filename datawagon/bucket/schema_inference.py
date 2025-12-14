@@ -61,7 +61,7 @@ class SchemaInferenceManager:
     def normalize_column_names(columns: List[str]) -> List[str]:
         """Normalize column names to lowercase with underscores.
 
-        Reuses CSVLoader._format_columns() logic for consistency:
+        Normalization rules:
         - Replaces special characters with underscores
         - Converts to lowercase
         - Handles duplicate names by appending _1, _2, etc.
@@ -78,7 +78,7 @@ class SchemaInferenceManager:
         """
         normalized = []
         for col in columns:
-            # Apply same normalization as CSVLoader._format_columns()
+            # Normalize column names to BigQuery-compatible format
             normalized_col = (
                 col.replace(" ", "_")
                 .replace(".", "_")
