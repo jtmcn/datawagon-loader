@@ -189,11 +189,20 @@ poetry build
 ### Running the Application
 ```bash
 datawagon --help                     # Show available commands
+
+# File operations
 datawagon files-in-local-fs          # List files in source directory
 datawagon compare-local-to-bucket    # Compare local files to GCS bucket
 datawagon upload-to-gcs              # Upload new files to GCS
 datawagon file-zip-to-gzip           # Convert .zip files to .gzip
 datawagon files-in-storage           # List files in GCS bucket
+
+# BigQuery table operations
+datawagon list-bigquery-tables       # List all external tables
+datawagon create-bigquery-tables     # Create new tables with inferred schema
+datawagon recreate-bigquery-tables --force  # Drop and recreate all tables
+datawagon recreate-bigquery-tables --force --tables table1 table2  # Specific tables
+datawagon drop-bigquery-tables       # Drop external tables
 ```
 
 Commands can be chained:
@@ -259,6 +268,10 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `compare_local_files_to_bucket`: Shows diff between local and bucket files
 - `upload_to_storage`: Prompts user and uploads new files with partitioning
 - `file_zip_to_gzip`: Converts .zip to .gzip format
+- `create_bigquery_tables`: Creates BigQuery external tables with inferred schema
+- `recreate_bigquery_tables`: Drops and recreates existing tables with inferred schema
+- `drop_bigquery_tables`: Drops BigQuery external tables
+- `list_bigquery_tables`: Lists all BigQuery external tables in dataset
 
 ### Data Flow
 
@@ -298,6 +311,99 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `ManagedFileMetadata`: Validated file metadata with computed fields
 - `ManagedFiles`: Base class grouping files by selector
 - `ManagedFilesToDatabase`: Adds table name and append/replace strategy
+
+### BigQuery Schema Inference
+
+**Schema Inference Manager (`datawagon/bucket/schema_inference.py`)**:
+- Automatically infers BigQuery column types from CSV data in GCS
+- Normalizes column names to lowercase with underscores
+- Uses data-driven type detection (no heuristics)
+
+**Type Detection Strategy**:
+
+The schema inference system samples 100 rows from CSV files and analyzes actual data values to determine appropriate BigQuery types. Type detection follows this priority order:
+
+1. **INT64** - Whole numbers without decimals
+   - Rejects leading zeros (e.g., "00123" → STRING, could be ZIP code)
+   - Validates INT64 range: -(2^63) to (2^63-1)
+   - Checked before BOOL so "1"/"0" are recognized as numbers
+
+2. **BOOL** - Boolean values
+   - Accepts: true, false, yes, no, TRUE, FALSE, YES, NO
+   - Excludes numeric "1"/"0" (already detected as INT64)
+
+3. **FLOAT64** - Numbers with decimals or scientific notation
+   - Examples: "123.45", "1e10", "1.0", ".5"
+   - Excludes values that qualify as INT64
+
+4. **TIMESTAMP** - Date and time values
+   - Format: "YYYY-MM-DD HH:MM:SS" or "YYYY/MM/DD HH:MM:SS"
+   - Supports optional milliseconds: "YYYY-MM-DD HH:MM:SS.fff"
+
+5. **DATE** - Date-only values
+   - Format: "YYYY-MM-DD" or "YYYY/MM/DD"
+
+6. **STRING** - Everything else (fallback)
+
+**Confidence Rules**:
+- Requires **95% agreement** for non-STRING types
+- Requires **10+ non-null values** minimum for inference
+- Skips empty strings and null values during type detection
+- Falls back to STRING if insufficient data or mixed types
+
+**Column Name Normalization**:
+- Converts to lowercase: "Asset ID" → "asset_id"
+- Replaces special characters with underscores: "Revenue (USD)" → "revenue__usd"
+- Handles duplicates by appending suffixes: "id", "ID" → "id", "id_1"
+- Consistent with CSVLoader formatting logic
+
+**Example**:
+
+For a CSV with columns:
+```
+Asset ID,Views,Revenue,Is Partner,Report Date
+123,1500,19.99,true,2023-06-30
+```
+
+Schema inference produces:
+```python
+[
+    SchemaField('asset_id', 'INT64', mode='NULLABLE'),
+    SchemaField('views', 'INT64', mode='NULLABLE'),
+    SchemaField('revenue', 'FLOAT64', mode='NULLABLE'),
+    SchemaField('is_partner', 'BOOL', mode='NULLABLE'),
+    SchemaField('report_date', 'DATE', mode='NULLABLE'),
+]
+```
+
+**Usage**:
+
+Schema inference runs automatically when creating BigQuery external tables:
+
+```bash
+# New tables use inferred schema
+datawagon create-bigquery-tables
+
+# Recreate existing tables with inferred schema
+datawagon recreate-bigquery-tables --force
+
+# Recreate specific tables only
+datawagon recreate-bigquery-tables --force --tables table_one table_two
+```
+
+**Error Handling**:
+- GCS read failure → Returns None, falls back to autodetect
+- Gzip corruption → Catches BadGzipFile, returns None
+- Empty file → Falls back to all-STRING schema
+- Parse exceptions → Treats values as STRING candidates
+- Insufficient samples → Uses STRING for that column
+- Ragged rows → Handles with index bounds checking
+
+**Performance**:
+- Samples only 100 rows (not entire file)
+- Streams data without downloading to disk
+- Typical latency: ~1 second per table
+- Memory usage: ~500KB per table (in-memory processing)
 
 ## Code Style
 

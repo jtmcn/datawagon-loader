@@ -6,10 +6,10 @@ partitioning, listing tables, and schema auto-detection.
 """
 
 import re
-from typing import List
+from typing import List, Optional
 
 from google.api_core import exceptions as google_api_exceptions
-from google.cloud import bigquery
+from google.cloud import bigquery, storage
 
 from datawagon.bucket.retry_utils import retry_with_backoff
 from datawagon.logging_config import get_logger
@@ -57,6 +57,7 @@ class BigQueryManager:
             Run 'gcloud auth application-default login' if authentication fails.
         """
         self.bq_client = bigquery.Client(project=project_id)
+        self.storage_client = storage.Client(project=project_id)
         self.project_id = project_id
         self.dataset_id = dataset_id
         self.bucket_name = bucket_name
@@ -191,12 +192,14 @@ class BigQueryManager:
         storage_folder_name: str,
         use_hive_partitioning: bool = True,
         partition_column: str = "report_date",
+        schema: Optional[List[bigquery.SchemaField]] = None,
+        use_autodetect_fallback: bool = True,
     ) -> bool:
         """Create external table referencing GCS CSV files.
 
         Creates a BigQuery external table with:
         - CSV format with GZIP compression
-        - Auto-detected schema from CSV headers
+        - Explicit schema with lowercase column names (or auto-detected schema)
         - Hive partitioning on report_date column (if enabled)
 
         Args:
@@ -204,6 +207,8 @@ class BigQueryManager:
             storage_folder_name: GCS folder path (e.g., "caravan-versioned/claim_raw_v1-1")
             use_hive_partitioning: Enable Hive partitioning (default: True)
             partition_column: Partition column name (default: "report_date")
+            schema: Optional explicit schema. If None, will attempt to infer from CSV.
+            use_autodetect_fallback: If schema inference fails, fall back to autodetect
 
         Returns:
             True if creation succeeded, False otherwise
@@ -235,7 +240,28 @@ class BigQueryManager:
             external_config = bigquery.ExternalConfig("CSV")
             external_config.source_uris = source_uris
             external_config.compression = "GZIP"
-            external_config.autodetect = True
+
+            # Use explicit schema if provided, otherwise try to infer
+            if schema is None:
+                from datawagon.bucket.schema_inference import SchemaInferenceManager
+
+                schema_manager = SchemaInferenceManager(self.storage_client, self.bucket_name)
+                schema = schema_manager.infer_schema(storage_folder_name)
+
+            # Set schema or fall back to autodetect
+            if schema:
+                external_config.schema = schema
+                external_config.autodetect = False
+                logger.info(f"Using explicit schema with {len(schema)} columns")
+            elif use_autodetect_fallback:
+                external_config.autodetect = True
+                logger.warning(
+                    f"Schema inference failed for {storage_folder_name}, "
+                    "falling back to autodetect (column names may not be lowercase)"
+                )
+            else:
+                logger.error("Schema inference failed and autodetect disabled")
+                return False
 
             # Configure CSV-specific options
             csv_options = bigquery.CSVOptions()

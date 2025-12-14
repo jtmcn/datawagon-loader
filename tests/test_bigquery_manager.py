@@ -3,6 +3,7 @@
 from unittest.mock import Mock, patch
 
 from google.api_core import exceptions as google_api_exceptions
+from google.cloud import bigquery
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
 
@@ -111,18 +112,31 @@ def test_list_external_tables_empty(mock_client_class: Mock) -> None:
     assert tables == []
 
 
+@patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
 @patch("datawagon.bucket.bigquery_manager.bigquery.Client")
-def test_create_external_table_with_partitioning(mock_client_class: Mock) -> None:
+def test_create_external_table_with_partitioning(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock, mock_schema_manager_class: Mock
+) -> None:
     """Test creating external table with Hive partitioning."""
-    # Setup mock
-    mock_client = Mock()
-    mock_client_class.return_value = mock_client
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
     mock_dataset = Mock()
     mock_dataset.dataset_id = "test_dataset"
-    mock_client.get_dataset.return_value = mock_dataset
+    mock_bq_client.get_dataset.return_value = mock_dataset
     mock_created_table = Mock()
     mock_created_table.full_table_id = "test-project.test_dataset.claim_raw_v1_1"
-    mock_client.create_table.return_value = mock_created_table
+    mock_bq_client.create_table.return_value = mock_created_table
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    # Mock schema inference to return a simple schema
+    inferred_schema = [bigquery.SchemaField("col1", "STRING", mode="NULLABLE")]
+    mock_schema_manager = Mock()
+    mock_schema_manager.infer_schema.return_value = inferred_schema
+    mock_schema_manager_class.return_value = mock_schema_manager
 
     # Initialize manager and create table
     manager = BigQueryManager(
@@ -138,10 +152,10 @@ def test_create_external_table_with_partitioning(mock_client_class: Mock) -> Non
 
     # Assertions
     assert success is True
-    mock_client.create_table.assert_called_once()
+    mock_bq_client.create_table.assert_called_once()
 
     # Verify source URI has single wildcard (not double)
-    call_args = mock_client.create_table.call_args
+    call_args = mock_bq_client.create_table.call_args
     table_arg = call_args[0][0]
     source_uris = table_arg.external_data_configuration.source_uris
     assert len(source_uris) == 1
@@ -151,16 +165,29 @@ def test_create_external_table_with_partitioning(mock_client_class: Mock) -> Non
     assert source_uris[0].count("*") == 1  # Only ONE wildcard
 
 
+@patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
 @patch("datawagon.bucket.bigquery_manager.bigquery.Client")
-def test_create_external_table_already_exists(mock_client_class: Mock) -> None:
+def test_create_external_table_already_exists(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock, mock_schema_manager_class: Mock
+) -> None:
     """Test creating external table that already exists."""
-    # Setup mock
-    mock_client = Mock()
-    mock_client_class.return_value = mock_client
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
     mock_dataset = Mock()
     mock_dataset.dataset_id = "test_dataset"
-    mock_client.get_dataset.return_value = mock_dataset
-    mock_client.create_table.side_effect = google_api_exceptions.Conflict("Conflict")
+    mock_bq_client.get_dataset.return_value = mock_dataset
+    mock_bq_client.create_table.side_effect = google_api_exceptions.Conflict("Conflict")
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    # Mock schema inference
+    inferred_schema = [bigquery.SchemaField("col1", "STRING", mode="NULLABLE")]
+    mock_schema_manager = Mock()
+    mock_schema_manager.infer_schema.return_value = inferred_schema
+    mock_schema_manager_class.return_value = mock_schema_manager
 
     # Initialize manager and attempt to create table
     manager = BigQueryManager(
@@ -314,3 +341,189 @@ def test_extract_partition_columns_none() -> None:
     uri = "gs://bucket/folder/file.csv.gz"
     result = BigQueryManager._extract_partition_columns(uri)
     assert result == []
+
+
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_create_external_table_with_explicit_schema(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock
+) -> None:
+    """Test table creation with explicit schema."""
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_bq_client.get_dataset.return_value = mock_dataset
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    mock_created_table = Mock()
+    mock_created_table.full_table_id = "test-project.test_dataset.test_table"
+    mock_bq_client.create_table.return_value = mock_created_table
+
+    # Create explicit schema
+    schema = [
+        bigquery.SchemaField("asset_id", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("revenue", "STRING", mode="NULLABLE"),
+    ]
+
+    # Initialize manager and create table
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.create_external_table(
+        table_name="test_table",
+        storage_folder_name="test-folder",
+        schema=schema,
+    )
+
+    # Assertions
+    assert success is True
+
+    # Verify schema was used and autodetect disabled
+    call_args = mock_bq_client.create_table.call_args
+    table_arg = call_args[0][0]
+    assert table_arg.external_data_configuration.schema == schema
+    assert table_arg.external_data_configuration.autodetect is False
+
+
+@patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_create_external_table_with_schema_inference(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock, mock_schema_manager_class: Mock
+) -> None:
+    """Test table creation with schema inference."""
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_bq_client.get_dataset.return_value = mock_dataset
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    mock_created_table = Mock()
+    mock_created_table.full_table_id = "test-project.test_dataset.test_table"
+    mock_bq_client.create_table.return_value = mock_created_table
+
+    # Mock schema inference
+    inferred_schema = [
+        bigquery.SchemaField("column_a", "STRING", mode="NULLABLE"),
+        bigquery.SchemaField("column_b", "STRING", mode="NULLABLE"),
+    ]
+    mock_schema_manager = Mock()
+    mock_schema_manager.infer_schema.return_value = inferred_schema
+    mock_schema_manager_class.return_value = mock_schema_manager
+
+    # Initialize manager and create table (no explicit schema)
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.create_external_table(
+        table_name="test_table",
+        storage_folder_name="test-folder",
+    )
+
+    # Assertions
+    assert success is True
+    mock_schema_manager.infer_schema.assert_called_once_with("test-folder")
+
+    # Verify inferred schema was used
+    call_args = mock_bq_client.create_table.call_args
+    table_arg = call_args[0][0]
+    assert table_arg.external_data_configuration.schema == inferred_schema
+    assert table_arg.external_data_configuration.autodetect is False
+
+
+@patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_create_external_table_falls_back_to_autodetect(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock, mock_schema_manager_class: Mock
+) -> None:
+    """Test table creation falls back to autodetect when schema inference fails."""
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_bq_client.get_dataset.return_value = mock_dataset
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    mock_created_table = Mock()
+    mock_created_table.full_table_id = "test-project.test_dataset.test_table"
+    mock_bq_client.create_table.return_value = mock_created_table
+
+    # Mock schema inference failure
+    mock_schema_manager = Mock()
+    mock_schema_manager.infer_schema.return_value = None  # Inference failed
+    mock_schema_manager_class.return_value = mock_schema_manager
+
+    # Initialize manager and create table
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.create_external_table(
+        table_name="test_table",
+        storage_folder_name="test-folder",
+        use_autodetect_fallback=True,
+    )
+
+    # Assertions
+    assert success is True
+
+    # Verify autodetect was enabled as fallback
+    call_args = mock_bq_client.create_table.call_args
+    table_arg = call_args[0][0]
+    assert table_arg.external_data_configuration.autodetect is True
+
+
+@patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
+@patch("datawagon.bucket.bigquery_manager.storage.Client")
+@patch("datawagon.bucket.bigquery_manager.bigquery.Client")
+def test_create_external_table_fails_without_fallback(
+    mock_bq_client_class: Mock, mock_storage_client_class: Mock, mock_schema_manager_class: Mock
+) -> None:
+    """Test table creation fails when schema inference fails and fallback disabled."""
+    # Setup mocks
+    mock_bq_client = Mock()
+    mock_bq_client_class.return_value = mock_bq_client
+    mock_dataset = Mock()
+    mock_dataset.dataset_id = "test_dataset"
+    mock_bq_client.get_dataset.return_value = mock_dataset
+
+    mock_storage_client = Mock()
+    mock_storage_client_class.return_value = mock_storage_client
+
+    # Mock schema inference failure
+    mock_schema_manager = Mock()
+    mock_schema_manager.infer_schema.return_value = None
+    mock_schema_manager_class.return_value = mock_schema_manager
+
+    # Initialize manager and create table
+    manager = BigQueryManager(
+        project_id="test-project",
+        dataset_id="test_dataset",
+        bucket_name="test-bucket",
+    )
+    success = manager.create_external_table(
+        table_name="test_table",
+        storage_folder_name="test-folder",
+        use_autodetect_fallback=False,  # Disable fallback
+    )
+
+    # Assertions
+    assert success is False
+    mock_bq_client.create_table.assert_not_called()
