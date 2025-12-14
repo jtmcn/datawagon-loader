@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2025-12-13
+
+### Removed
+- Removed dead code identified by vulture static analysis
+  - Removed unused `partition_column` parameter from `create_external_table()` method
+    - Function uses Hive partitioning AUTO mode which automatically detects partition columns
+    - Updated all callers in `create_bigquery_tables.py` and `recreate_bigquery_tables.py`
+  - Removed unused `progress_bar()` and `spinner()` functions from `console.py`
+    - These were only used by the migration command removed in v1.0.5
+    - Cleaned up unused imports: `Iterator`, `contextmanager`, and `rich.progress` classes
+  - Total cleanup: 70 lines of dead code removed across 4 files
+
+### Changed
+- Simplified `create_external_table()` API by removing unused parameter
+- Reduced console.py module complexity by removing unused progress indicator functions
+
 ## [1.0.5] - 2025-12-13
 
 ### Removed
@@ -168,7 +184,8 @@ Initial working version with core functionality:
 - Basic configuration via TOML files
 - Click-based CLI with command chaining
 
-[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/joeltkeller/datawagon/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/joeltkeller/datawagon/compare/v1.0.1...v1.0.5
 [1.0.1]: https://github.com/joeltkeller/datawagon/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/joeltkeller/datawagon/releases/tag/v1.0.0
