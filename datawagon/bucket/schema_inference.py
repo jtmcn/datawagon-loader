@@ -166,37 +166,32 @@ class SchemaInferenceManager:
             return False
 
     @staticmethod
-    def _try_parse_float(value: str) -> bool:
-        """Check if value is a float (but not an int).
+    def _try_parse_numeric(value: str) -> bool:
+        """Check if value is numeric (integer or decimal).
 
-        Accepts: "123.45", "1e10", "1.0", ".5", "NaN", "Infinity"
-        Rejects: "123" (would be INT64), non-numeric strings
+        Accepts: "123", "123.45", "1e10", "1.0", ".5"
+        Used for NUMERIC type (exact decimal precision)
 
         Args:
             value: String value to check
 
         Returns:
-            True if valid FLOAT64, False otherwise
+            True if parseable as numeric, False otherwise
 
         Example:
-            >>> SchemaInferenceManager._try_parse_float("123.45")
+            >>> SchemaInferenceManager._try_parse_numeric("123.45")
             True
-            >>> SchemaInferenceManager._try_parse_float("123")
+            >>> SchemaInferenceManager._try_parse_numeric("123")
+            True
+            >>> SchemaInferenceManager._try_parse_numeric("abc")
             False
         """
         if not value:
             return False
 
         try:
-            # Must parse as float
             float(value.strip())
-
-            # But exclude values that would be better as INT64
-            if SchemaInferenceManager._try_parse_int(value):
-                return False
-
             return True
-
         except (ValueError, OverflowError):
             return False
 
@@ -354,10 +349,15 @@ class SchemaInferenceManager:
         Type detection order (most specific to least):
         1. INT64 - Whole numbers without decimals (checked before BOOL so "1"/"0" are numbers)
         2. BOOL - true/false/yes/no (excludes numeric "1"/"0")
-        3. FLOAT64 - Numbers with decimals or scientific notation
-        4. DATE - YYYY-MM-DD format
-        5. TIMESTAMP - YYYY-MM-DD HH:MM:SS format
+        3. NUMERIC - Numbers with decimals or scientific notation (exact precision)
+        4. TIMESTAMP - YYYY-MM-DD HH:MM:SS format
+        5. DATE - YYYY-MM-DD format
         6. STRING - Everything else (fallback)
+
+        Special handling:
+        - Columns containing "revenue" in name always prefer NUMERIC over INT64
+        - NUMERIC accepts both integers and decimals (100, 100.50)
+        - No FLOAT64 support (replaced with NUMERIC for exact precision)
 
         Args:
             column_name: Column name (for logging)
@@ -367,11 +367,11 @@ class SchemaInferenceManager:
             min_non_null_samples: Minimum non-null values required (default: 10)
 
         Returns:
-            BigQuery type: "BOOL", "INT64", "FLOAT64", "DATE", "TIMESTAMP", "STRING"
+            BigQuery type: "BOOL", "INT64", "NUMERIC", "DATE", "TIMESTAMP", "STRING"
 
         Example:
-            >>> manager.infer_column_type("revenue", 1, sample_rows)
-            'FLOAT64'
+            >>> manager.infer_column_type("partner_revenue", 1, sample_rows)
+            'NUMERIC'
         """
         # Extract non-null values for this column
         sample_values = []
@@ -397,7 +397,7 @@ class SchemaInferenceManager:
         type_counts = {
             "BOOL": 0,
             "INT64": 0,
-            "FLOAT64": 0,
+            "NUMERIC": 0,
             "DATE": 0,
             "TIMESTAMP": 0,
             "STRING": len(sample_values),  # Everything can be STRING
@@ -410,8 +410,8 @@ class SchemaInferenceManager:
                 type_counts["INT64"] += 1
             elif self._try_parse_bool(value):
                 type_counts["BOOL"] += 1
-            elif self._try_parse_float(value):
-                type_counts["FLOAT64"] += 1
+            elif self._try_parse_numeric(value):
+                type_counts["NUMERIC"] += 1
             else:
                 date_type = self._try_parse_date(value)
                 if date_type == "TIMESTAMP":
@@ -422,8 +422,21 @@ class SchemaInferenceManager:
         # Calculate confidence for each type
         total_samples = len(sample_values)
 
+        # Special handling for revenue columns
+        is_revenue_column = "revenue" in column_name.lower()
+
+        if is_revenue_column:
+            # Revenue columns: combine INT64 + NUMERIC counts
+            numeric_confidence = (type_counts["INT64"] + type_counts["NUMERIC"]) / total_samples
+            if numeric_confidence >= confidence_threshold:
+                logger.info(
+                    f"Column '{column_name}': Inferred NUMERIC (revenue column) "
+                    f"({type_counts['INT64']}+{type_counts['NUMERIC']}/{total_samples} = {numeric_confidence:.1%})"
+                )
+                return "NUMERIC"
+
         # Check types in priority order (matches detection order above)
-        type_priority = ["INT64", "BOOL", "FLOAT64", "TIMESTAMP", "DATE"]
+        type_priority = ["INT64", "BOOL", "NUMERIC", "TIMESTAMP", "DATE"]
 
         for bq_type in type_priority:
             confidence = type_counts[bq_type] / total_samples
@@ -454,7 +467,7 @@ class SchemaInferenceManager:
             >>> manager.infer_schema("caravan-versioned/claim_raw_v1-1")
             [
                 SchemaField('asset_id', 'STRING', mode='NULLABLE'),
-                SchemaField('revenue', 'FLOAT64', mode='NULLABLE'),
+                SchemaField('partner_revenue', 'NUMERIC', mode='NULLABLE'),
                 SchemaField('views', 'INT64', mode='NULLABLE'),
                 SchemaField('report_date', 'DATE', mode='NULLABLE'),
                 ...
@@ -486,7 +499,7 @@ class SchemaInferenceManager:
 
         # Infer type for each column from sample data
         schema = []
-        type_distribution = {"BOOL": 0, "INT64": 0, "FLOAT64": 0, "DATE": 0, "TIMESTAMP": 0, "STRING": 0}
+        type_distribution = {"BOOL": 0, "INT64": 0, "NUMERIC": 0, "DATE": 0, "TIMESTAMP": 0, "STRING": 0}
 
         for i, col_name in enumerate(normalized_columns):
             inferred_type = self.infer_column_type(
@@ -505,7 +518,7 @@ class SchemaInferenceManager:
             f"Inferred schema with {len(schema)} columns from {len(sample_rows)} sample rows: "
             f"BOOL={type_distribution['BOOL']}, "
             f"INT64={type_distribution['INT64']}, "
-            f"FLOAT64={type_distribution['FLOAT64']}, "
+            f"NUMERIC={type_distribution['NUMERIC']}, "
             f"DATE={type_distribution['DATE']}, "
             f"TIMESTAMP={type_distribution['TIMESTAMP']}, "
             f"STRING={type_distribution['STRING']}"

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2025-12-13
+
+### Changed
+- **Schema inference now uses NUMERIC instead of FLOAT64 for decimal values**
+  - Replaced FLOAT64 type detection with NUMERIC for exact decimal precision
+  - Eliminates floating-point precision loss for financial and currency data
+  - Added `_try_parse_numeric()` method that accepts both integers and decimals
+  - Special handling for revenue columns: combines INT64 and NUMERIC counts to ensure proper type inference
+  - Revenue columns with mixed integers and decimals (e.g., "100", "200.50") now correctly infer as NUMERIC
+  - Non-revenue integer columns (e.g., view_count, subscriber_count) remain as INT64
+- Updated all tests to expect NUMERIC instead of FLOAT64
+- Added 4 new tests for revenue column handling
+- Updated documentation to reflect NUMERIC type usage
+
+### Fixed
+- Fixed schema inference for columns with mixed integer and decimal values
+  - Previously: `partner_revenue` with ["100", "200.50"] → STRING (50% INT64 + 50% FLOAT64 = neither reaches 95%)
+  - Now: `partner_revenue` with ["100", "200.50"] → NUMERIC (100% numeric values)
+
+### Breaking Changes
+- Existing BigQuery tables with FLOAT64 columns will need to be recreated
+- Run `datawagon recreate-bigquery-tables --force` to update schemas
+- No data loss: external tables reference existing GCS data
+
 ## [1.0.6] - 2025-12-13
 
 ### Removed
@@ -184,7 +208,8 @@ Initial working version with core functionality:
 - Basic configuration via TOML files
 - Click-based CLI with command chaining
 
-[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/joeltkeller/datawagon/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/joeltkeller/datawagon/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/joeltkeller/datawagon/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/joeltkeller/datawagon/compare/v1.0.1...v1.0.5
 [1.0.1]: https://github.com/joeltkeller/datawagon/compare/v1.0.0...v1.0.1

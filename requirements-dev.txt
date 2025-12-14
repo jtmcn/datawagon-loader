@@ -2,7 +2,7 @@
 # Generated from poetry.lock using 'make requirements'
 # Includes: runtime + dev + test dependencies
 #
-# Generated: 2025-12-14 01:38:58 UTC
+# Generated: 2025-12-14 02:03:28 UTC
 
 altgraph==0.17.5 ; python_version >= "3.9" and python_version < "3.13"
 annotated-types==0.7.0 ; python_version >= "3.9" and python_version < "3.13"

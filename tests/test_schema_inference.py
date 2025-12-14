@@ -225,25 +225,29 @@ def test_try_parse_int_invalid() -> None:
         assert SchemaInferenceManager._try_parse_int(value) is False, f"Failed for: {value}"
 
 
-def test_try_parse_float_valid() -> None:
-    """Test float parsing with valid values."""
-    valid_floats = ["123.45", "-456.78", "1e10", "1.0", ".5", "3.14159", "  2.718  "]
-    for value in valid_floats:
-        assert SchemaInferenceManager._try_parse_float(value) is True, f"Failed for: {value}"
+def test_try_parse_numeric_valid() -> None:
+    """Test numeric parsing with valid values."""
+    valid_numerics = [
+        "123.45",
+        "-456.78",
+        "1e10",
+        "1.0",
+        ".5",
+        "3.14159",
+        "  2.718  ",
+        "123",
+        "-456",
+        "0",  # Also accepts integers
+    ]
+    for value in valid_numerics:
+        assert SchemaInferenceManager._try_parse_numeric(value) is True, f"Failed for: {value}"
 
 
-def test_try_parse_float_excludes_ints() -> None:
-    """Test that float parsing excludes valid integers."""
-    int_cases = ["123", "-456", "0"]
-    for value in int_cases:
-        assert SchemaInferenceManager._try_parse_float(value) is False, f"Failed for: {value}"
-
-
-def test_try_parse_float_invalid() -> None:
-    """Test float parsing with invalid values."""
-    invalid_floats = ["", "abc", "123abc", "null"]
-    for value in invalid_floats:
-        assert SchemaInferenceManager._try_parse_float(value) is False, f"Failed for: {value}"
+def test_try_parse_numeric_invalid() -> None:
+    """Test numeric parsing with invalid values."""
+    invalid_numerics = ["", "abc", "123abc", "null"]
+    for value in invalid_numerics:
+        assert SchemaInferenceManager._try_parse_numeric(value) is False, f"Failed for: {value}"
 
 
 def test_try_parse_date_valid_dates() -> None:
@@ -302,13 +306,13 @@ def test_infer_column_type_all_int() -> None:
     assert result == "INT64"
 
 
-def test_infer_column_type_all_float() -> None:
-    """Test column type inference with all float values."""
+def test_infer_column_type_all_numeric() -> None:
+    """Test column type inference with all numeric decimal values."""
     sample_rows = [[f"{i}.5", "other"] for i in range(1, 101)]
     manager = SchemaInferenceManager(Mock(), "test-bucket")
 
     result = manager.infer_column_type("test_col", 0, sample_rows)
-    assert result == "FLOAT64"
+    assert result == "NUMERIC"
 
 
 def test_infer_column_type_all_bool() -> None:
@@ -452,8 +456,50 @@ def test_infer_schema_with_mixed_types(mock_storage_client: Any) -> None:
         assert schema[2].name == "count"  # type: ignore[index]
         assert schema[2].field_type == "INT64"  # type: ignore[index]
         assert schema[3].name == "price"  # type: ignore[index]
-        assert schema[3].field_type == "FLOAT64"  # type: ignore[index]
+        assert schema[3].field_type == "NUMERIC"  # type: ignore[index]
         assert schema[4].name == "active"  # type: ignore[index]
         assert schema[4].field_type == "BOOL"  # type: ignore[index]
         assert schema[5].name == "created_date"  # type: ignore[index]
         assert schema[5].field_type == "DATE"  # type: ignore[index]
+
+
+def test_infer_column_type_mixed_int_and_decimal() -> None:
+    """Test that mixed integers and decimals infer as STRING (non-revenue column)."""
+    # 50 integers + 50 decimals
+    sample_rows = [[str(i), "other"] for i in range(1, 51)] + [[f"{i}.5", "other"] for i in range(51, 101)]
+    manager = SchemaInferenceManager(Mock(), "test-bucket")
+
+    result = manager.infer_column_type("test_col", 0, sample_rows)
+    # Without revenue handling: INT64 (50%) + NUMERIC (50%) → STRING
+    assert result == "STRING"
+
+
+def test_infer_column_type_revenue_mixed_int_and_decimal() -> None:
+    """Test that revenue columns with mixed integers and decimals infer as NUMERIC."""
+    # 50 integers + 50 decimals
+    sample_rows = [[str(i), "other"] for i in range(1, 51)] + [[f"{i}.5", "other"] for i in range(51, 101)]
+    manager = SchemaInferenceManager(Mock(), "test-bucket")
+
+    result = manager.infer_column_type("partner_revenue", 0, sample_rows)
+    # Revenue column: INT64 (50) + NUMERIC (50) = 100/100 = 100% → NUMERIC
+    assert result == "NUMERIC"
+
+
+def test_infer_column_type_revenue_all_integers() -> None:
+    """Test that revenue columns with all integers still infer as NUMERIC."""
+    sample_rows = [[str(i), "other"] for i in range(1, 101)]
+    manager = SchemaInferenceManager(Mock(), "test-bucket")
+
+    result = manager.infer_column_type("total_revenue", 0, sample_rows)
+    # Revenue column: INT64 (100) + NUMERIC (0) = 100/100 = 100% → NUMERIC
+    assert result == "NUMERIC"
+
+
+def test_infer_column_type_non_revenue_integers_stay_int64() -> None:
+    """Test that non-revenue integer columns infer as INT64."""
+    sample_rows = [[str(i), "other"] for i in range(1, 101)]
+    manager = SchemaInferenceManager(Mock(), "test-bucket")
+
+    result = manager.infer_column_type("view_count", 0, sample_rows)
+    # Non-revenue column with all integers → INT64
+    assert result == "INT64"

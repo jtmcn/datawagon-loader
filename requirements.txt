@@ -2,7 +2,7 @@
 # Generated from poetry.lock using 'make requirements'
 # To update: modify pyproject.toml, run 'poetry lock', then 'make requirements'
 #
-# Generated: 2025-12-14 01:38:58 UTC
+# Generated: 2025-12-14 02:03:27 UTC
 
 annotated-types==0.7.0 ; python_version >= "3.9" and python_version < "3.13"
 cachetools==6.2.2 ; python_version >= "3.9" and python_version < "3.13"
