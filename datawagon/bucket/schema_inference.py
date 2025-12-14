@@ -246,49 +246,57 @@ class SchemaInferenceManager:
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def read_csv_header_and_sample(
         self, storage_folder_name: str, sample_size: int = 100
-    ) -> Optional[Tuple[List[str], List[List[str]]]]:
-        """Read CSV header and sample rows from first file in GCS folder.
+    ) -> Optional[Tuple[List[str], List[List[str]], bool]]:
+        """Read CSV header and sample rows from files in GCS folder.
 
-        Finds the first .csv.gz file in the specified folder and extracts
-        the header row plus sample_size data rows. Uses streaming to avoid
-        downloading entire file.
+        Finds .csv.gz files in the specified folder and extracts the header row
+        plus sample_size data rows. Checks multiple files to detect if title rows
+        are present, handling mixed-format tables by using the most recent file format.
 
         Args:
             storage_folder_name: GCS folder path (e.g., "caravan-versioned/claim_raw_v1-1")
             sample_size: Number of data rows to sample (default: 100)
 
         Returns:
-            Tuple of (header, sample_rows) or None if no files found
+            Tuple of (header, sample_rows, has_title_row) or None if no files found
             - header: List of column names from CSV header
             - sample_rows: List of rows, where each row is a list of values
+            - has_title_row: True if MOST RECENT files have single-column title row
 
         Raises:
             Exception: If blob download or decompression fails
 
         Example:
-            >>> header, rows = manager.read_csv_header_and_sample("folder")
+            >>> header, rows, has_title = manager.read_csv_header_and_sample("folder")
             >>> print(header)
             ['Asset ID', 'Revenue', 'Date']
             >>> print(len(rows))
             100
+            >>> print(has_title)
+            True
         """
         # List blobs in folder
         bucket = self.storage_client.bucket(self.bucket_name)
         blobs = list(bucket.list_blobs(prefix=storage_folder_name))
 
-        # Find first .csv.gz file
+        # Find all .csv.gz files
         csv_blobs = [b for b in blobs if b.name.endswith(".csv.gz")]
         if not csv_blobs:
             logger.warning(f"No .csv.gz files found in {storage_folder_name}")
             return None
 
-        first_blob = csv_blobs[0]
-        logger.info(f"Reading header and {sample_size} rows from: {first_blob.name}")
+        # Sort by name (descending) to get most recent files first
+        # Partition names like report_date=2025-11-30 will sort correctly
+        csv_blobs_sorted = sorted(csv_blobs, key=lambda b: b.name, reverse=True)
+
+        # Check the most recent file (not the oldest) for title row detection
+        target_blob = csv_blobs_sorted[0]
+        logger.info(f"Reading header and {sample_size} rows from most recent file: {target_blob.name}")
 
         try:
             # Download blob to memory (not disk)
             blob_bytes = BytesIO()
-            first_blob.download_to_file(blob_bytes)
+            target_blob.download_to_file(blob_bytes)
             blob_bytes.seek(0)
 
             # Decompress gzip and read header + sample rows
@@ -298,7 +306,9 @@ class SchemaInferenceManager:
                 # Some files contain an invalid row above the header row
                 # it can be identified if it contains only one column
                 header = next(csv_reader)
+                has_title_row = False
                 if len(header) == 1:
+                    has_title_row = True
                     header = next(csv_reader)
 
                 # Read sample rows
@@ -308,14 +318,16 @@ class SchemaInferenceManager:
                         break
                     sample_rows.append(row)
 
-                logger.info(f"Sampled {len(sample_rows)} rows with {len(header)} columns")
-                return (header, sample_rows)
+                logger.info(
+                    f"Sampled {len(sample_rows)} rows with {len(header)} columns (has_title_row={has_title_row})"
+                )
+                return (header, sample_rows, has_title_row)
 
         except gzip.BadGzipFile:
-            logger.error(f"Failed to decompress {first_blob.name} - not a valid gzip file")
+            logger.error(f"Failed to decompress {target_blob.name} - not a valid gzip file")
             return None
         except StopIteration:
-            logger.error(f"Empty CSV file: {first_blob.name}")
+            logger.error(f"Empty CSV file: {target_blob.name}")
             return None
         except Exception as e:
             logger.error(f"Error reading CSV header and sample: {e}", exc_info=True)
@@ -334,7 +346,8 @@ class SchemaInferenceManager:
         """
         result = self.read_csv_header_and_sample(storage_folder_name, sample_size=0)
         if result:
-            return result[0]
+            header, _sample_rows, _has_title_row = result
+            return header
         return None
 
     def infer_column_type(
@@ -452,20 +465,24 @@ class SchemaInferenceManager:
         logger.info(f"Column '{column_name}': No type meets {confidence_threshold:.0%} threshold, using STRING")
         return "STRING"
 
-    def infer_schema(self, storage_folder_name: str) -> Optional[List[bigquery.SchemaField]]:
+    def infer_schema(self, storage_folder_name: str) -> Optional[Tuple[List[bigquery.SchemaField], bool]]:
         """Infer BigQuery schema from CSV files in GCS folder.
 
         Uses data-driven type inference by sampling 100 rows from CSV files
-        and analyzing actual data values for each column.
+        and analyzing actual data values for each column. Also detects whether
+        files have a single-column title row before the headers.
 
         Args:
             storage_folder_name: GCS folder path
 
         Returns:
-            List of BigQuery SchemaField objects with inferred types, or None if inference fails
+            Tuple of (schema_fields, has_title_row) or None if inference fails
+            - schema_fields: List of BigQuery SchemaField objects with inferred types
+            - has_title_row: True if CSV has single-column title row before headers
 
         Example:
-            >>> manager.infer_schema("caravan-versioned/claim_raw_v1-1")
+            >>> schema, has_title = manager.infer_schema("caravan-versioned/claim_raw_v1-1")
+            >>> schema
             [
                 SchemaField('asset_id', 'STRING', mode='NULLABLE'),
                 SchemaField('partner_revenue', 'BIGNUMERIC', mode='NULLABLE'),
@@ -473,6 +490,8 @@ class SchemaInferenceManager:
                 SchemaField('report_date', 'DATE', mode='NULLABLE'),
                 ...
             ]
+            >>> has_title
+            True
         """
         # Start timing
         start_time = time.perf_counter()
@@ -485,7 +504,7 @@ class SchemaInferenceManager:
             logger.error(f"Cannot infer schema after {duration:.2f}s: no data found in {storage_folder_name}")
             return None
 
-        header, sample_rows = result
+        header, sample_rows, has_title_row = result
 
         # Normalize column names
         normalized_columns = self.normalize_column_names(header)
@@ -503,7 +522,7 @@ class SchemaInferenceManager:
                 f"in {duration:.2f}s"
             )
             schema = [bigquery.SchemaField(col_name, "STRING", mode="NULLABLE") for col_name in normalized_columns]
-            return schema
+            return (schema, has_title_row)
 
         # Infer type for each column from sample data
         schema = []
@@ -536,4 +555,4 @@ class SchemaInferenceManager:
             f"STRING={type_distribution['STRING']}"
         )
 
-        return schema
+        return (schema, has_title_row)

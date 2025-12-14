@@ -130,14 +130,17 @@ def test_infer_schema_creates_string_fields(mock_storage_client: Any) -> None:
 
     with patch.object(manager, "read_csv_header_and_sample") as mock_read:
         # Return header with no sample rows (fallback to all-STRING)
-        mock_read.return_value = (["Asset ID", "Revenue", "Date"], [])
+        mock_read.return_value = (["Asset ID", "Revenue", "Date"], [], False)
 
-        schema = manager.infer_schema("test-folder")
+        result = manager.infer_schema("test-folder")
+        assert result is not None
+        schema, has_title_row = result
 
-        assert len(schema) == 3  # type: ignore[arg-type]
-        assert all(isinstance(f, bigquery.SchemaField) for f in schema)  # type: ignore[union-attr]
-        assert all(f.field_type == "STRING" for f in schema)  # type: ignore[union-attr]
-        assert [f.name for f in schema] == ["asset_id", "revenue", "date"]  # type: ignore[union-attr]
+        assert len(schema) == 3
+        assert has_title_row is False
+        assert all(isinstance(f, bigquery.SchemaField) for f in schema)
+        assert all(f.field_type == "STRING" for f in schema)
+        assert [f.name for f in schema] == ["asset_id", "revenue", "date"]
 
 
 @patch("datawagon.bucket.schema_inference.storage.Client")
@@ -162,16 +165,19 @@ def test_infer_schema_with_special_characters(mock_storage_client: Any) -> None:
 
     with patch.object(manager, "read_csv_header_and_sample") as mock_read:
         # Return header with no sample rows (fallback to all-STRING)
-        mock_read.return_value = (["Asset ID", "Revenue (USD)", "Date-Time", "Views/Clicks"], [])
+        mock_read.return_value = (["Asset ID", "Revenue (USD)", "Date-Time", "Views/Clicks"], [], False)
 
-        schema = manager.infer_schema("test-folder")
+        result = manager.infer_schema("test-folder")
+        assert result is not None
+        schema, has_title_row = result
 
-        assert len(schema) == 4  # type: ignore[arg-type]
+        assert len(schema) == 4
+        assert has_title_row is False
         # Parentheses are removed, not replaced with _
-        expected_names = ["asset_id", "revenue__usd", "date_time", "views_clicks"]  # type: ignore[union-attr]
-        assert [f.name for f in schema] == expected_names  # type: ignore[union-attr]
-        assert all(f.field_type == "STRING" for f in schema)  # type: ignore[union-attr]
-        assert all(f.mode == "NULLABLE" for f in schema)  # type: ignore[union-attr]
+        expected_names = ["asset_id", "revenue__usd", "date_time", "views_clicks"]
+        assert [f.name for f in schema] == expected_names
+        assert all(f.field_type == "STRING" for f in schema)
+        assert all(f.mode == "NULLABLE" for f in schema)
 
 
 # ============================================================================
@@ -423,10 +429,11 @@ def test_read_csv_header_and_sample_returns_sample_rows(mock_storage_client: Any
     result = manager.read_csv_header_and_sample("test-folder", sample_size=3)
 
     assert result is not None
-    header, sample_rows = result
+    header, sample_rows, has_title_row = result
     assert header == ["Col1", "Col2", "Col3"]
     assert len(sample_rows) == 3  # Should only read 3 rows (requested sample_size)
     assert sample_rows[0] == ["val01", "val02", "val03"]
+    assert has_title_row is False  # No title row in this CSV
 
 
 @patch("datawagon.bucket.schema_inference.storage.Client")
@@ -444,23 +451,26 @@ def test_infer_schema_with_mixed_types(mock_storage_client: Any) -> None:
     ] * 34  # Repeat to get 102 rows (>95% confidence)
 
     with patch.object(manager, "read_csv_header_and_sample") as mock_read:
-        mock_read.return_value = (header, sample_rows)
+        mock_read.return_value = (header, sample_rows, False)
 
-        schema = manager.infer_schema("test-folder")
+        result = manager.infer_schema("test-folder")
+        assert result is not None
+        schema, has_title_row = result
 
-        assert len(schema) == 6  # type: ignore[arg-type]
-        assert schema[0].name == "id"  # type: ignore[index]
-        assert schema[0].field_type == "INT64"  # type: ignore[index]
-        assert schema[1].name == "name"  # type: ignore[index]
-        assert schema[1].field_type == "STRING"  # type: ignore[index]
-        assert schema[2].name == "count"  # type: ignore[index]
-        assert schema[2].field_type == "INT64"  # type: ignore[index]
-        assert schema[3].name == "price"  # type: ignore[index]
-        assert schema[3].field_type == "BIGNUMERIC"  # type: ignore[index]
-        assert schema[4].name == "active"  # type: ignore[index]
-        assert schema[4].field_type == "BOOL"  # type: ignore[index]
-        assert schema[5].name == "created_date"  # type: ignore[index]
-        assert schema[5].field_type == "DATE"  # type: ignore[index]
+        assert len(schema) == 6
+        assert has_title_row is False
+        assert schema[0].name == "id"
+        assert schema[0].field_type == "INT64"
+        assert schema[1].name == "name"
+        assert schema[1].field_type == "STRING"
+        assert schema[2].name == "count"
+        assert schema[2].field_type == "INT64"
+        assert schema[3].name == "price"
+        assert schema[3].field_type == "BIGNUMERIC"
+        assert schema[4].name == "active"
+        assert schema[4].field_type == "BOOL"
+        assert schema[5].name == "created_date"
+        assert schema[5].field_type == "DATE"
 
 
 def test_infer_column_type_mixed_int_and_decimal() -> None:

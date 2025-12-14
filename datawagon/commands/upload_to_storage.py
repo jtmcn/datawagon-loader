@@ -58,6 +58,18 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
             str_path = str(csv_info.file_path)
 
             if csv_info.report_date_str:
+                # CRITICAL: Only .csv.gz files allowed in partitioned folders
+                # BigQuery with Hive partitioning cannot filter by extension
+                if not csv_info.file_name.endswith(".csv.gz"):
+                    error(
+                        f"Cannot upload non-.csv.gz file to partitioned folder: {csv_info.file_name}. "
+                        f"BigQuery external tables with Hive partitioning require all files to be .csv.gz"
+                    )
+                    inline_status_end(False, error_msg=f"Skipped: {csv_info.file_name} (invalid extension)")
+                    fail_count += 1
+                    has_errors = True
+                    continue  # Skip to next file
+
                 destination_name = (
                     f"{csv_info.storage_folder_name or csv_info.base_name}/"
                     + f"report_date={csv_info.report_date_str}/{csv_info.file_name}"

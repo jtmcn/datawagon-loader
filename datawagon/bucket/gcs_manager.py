@@ -224,6 +224,15 @@ class GcsManager(StorageProvider):
 
             blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
 
+            # Verify upload integrity
+            blob.reload()
+            if blob.size != file_size_bytes:
+                logger.error(
+                    f"Upload verification failed: local={file_size_bytes}B, "
+                    f"remote={blob.size}B for {destination_blob_name}"
+                )
+                return False
+
             # Calculate metrics
             duration = time.perf_counter() - start_time
             throughput = file_size_mb / duration if duration > 0 else 0

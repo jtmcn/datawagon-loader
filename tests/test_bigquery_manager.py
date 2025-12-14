@@ -132,10 +132,10 @@ def test_create_external_table_with_partitioning(
     mock_storage_client = Mock()
     mock_storage_client_class.return_value = mock_storage_client
 
-    # Mock schema inference to return a simple schema
+    # Mock schema inference to return a simple schema (schema, has_title_row)
     inferred_schema = [bigquery.SchemaField("col1", "STRING", mode="NULLABLE")]
     mock_schema_manager = Mock()
-    mock_schema_manager.infer_schema.return_value = inferred_schema
+    mock_schema_manager.infer_schema.return_value = (inferred_schema, False)
     mock_schema_manager_class.return_value = mock_schema_manager
 
     # Initialize manager and create table
@@ -154,15 +154,14 @@ def test_create_external_table_with_partitioning(
     assert success is True
     mock_bq_client.create_table.assert_called_once()
 
-    # Verify source URI has single wildcard (not double)
+    # Verify source URI uses single wildcard only (BigQuery limitation)
     call_args = mock_bq_client.create_table.call_args
     table_arg = call_args[0][0]
     source_uris = table_arg.external_data_configuration.source_uris
     assert len(source_uris) == 1
     assert source_uris[0] == "gs://test-bucket/caravan-versioned/claim_raw_v1-1/*"
-    # Ensure no double wildcard (report_date=*/*.csv.gz)
-    assert "report_date=" not in source_uris[0]
-    assert source_uris[0].count("*") == 1  # Only ONE wildcard
+    # Verify single wildcard only (BigQuery doesn't support multiple wildcards)
+    assert source_uris[0].count("*") == 1
 
 
 @patch("datawagon.bucket.schema_inference.SchemaInferenceManager")
@@ -412,13 +411,13 @@ def test_create_external_table_with_schema_inference(
     mock_created_table.full_table_id = "test-project.test_dataset.test_table"
     mock_bq_client.create_table.return_value = mock_created_table
 
-    # Mock schema inference
+    # Mock schema inference (return schema and has_title_row)
     inferred_schema = [
         bigquery.SchemaField("column_a", "STRING", mode="NULLABLE"),
         bigquery.SchemaField("column_b", "STRING", mode="NULLABLE"),
     ]
     mock_schema_manager = Mock()
-    mock_schema_manager.infer_schema.return_value = inferred_schema
+    mock_schema_manager.infer_schema.return_value = (inferred_schema, False)
     mock_schema_manager_class.return_value = mock_schema_manager
 
     # Initialize manager and create table (no explicit schema)

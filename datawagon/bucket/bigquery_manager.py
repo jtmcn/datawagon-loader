@@ -229,8 +229,8 @@ class BigQueryManager(AnalyticsProvider):
             # Build source URIs
             if use_hive_partitioning:
                 source_uri_prefix = f"gs://{self.bucket_name}/{storage_folder_name}"
-                # Use single wildcard - BigQuery doesn't support multiple wildcards
-                # The source_uri_prefix tells BigQuery where Hive partitioning starts
+                # BigQuery limitation: Only single wildcard supported
+                # Files must be filtered at upload time, not query time
                 source_uris = [f"{source_uri_prefix}/*"]
             else:
                 source_uris = [f"gs://{self.bucket_name}/{storage_folder_name}/*.csv.gz"]
@@ -241,11 +241,21 @@ class BigQueryManager(AnalyticsProvider):
             external_config.compression = "GZIP"
 
             # Use explicit schema if provided, otherwise try to infer
+            has_title_row = False
             if schema is None:
                 from datawagon.bucket.schema_inference import SchemaInferenceManager
 
                 schema_manager = SchemaInferenceManager(self.storage_client, self.bucket_name)
-                schema = schema_manager.infer_schema(storage_folder_name)
+                inference_result = schema_manager.infer_schema(storage_folder_name)
+
+                if inference_result is not None:
+                    schema, has_title_row = inference_result
+                else:
+                    schema = None
+            else:
+                # When schema is provided explicitly, assume no title row
+                # (in the future, this could be made configurable via a parameter)
+                has_title_row = False
 
             # Set schema or fall back to autodetect
             if schema:
@@ -264,7 +274,10 @@ class BigQueryManager(AnalyticsProvider):
 
             # Configure CSV-specific options
             csv_options = bigquery.CSVOptions()
-            csv_options.skip_leading_rows = 1  # Skip header row
+            # Skip title row (if present) + header row
+            skip_rows = 2 if has_title_row else 1
+            csv_options.skip_leading_rows = skip_rows
+            logger.info(f"CSV skip_leading_rows set to {skip_rows} (has_title_row={has_title_row})")
             external_config.csv_options = csv_options
 
             # Configure Hive partitioning if enabled

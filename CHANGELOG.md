@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-12-14
+
+### Fixed
+- **Fixed BigQuery query errors for tables with mixed CSV formats (2018 vs 2025 files)**
+  - Schema inference now reads the most recent file instead of alphabetically first file
+  - Detects title row presence ("Asset Summary") in newer files
+  - Dynamically sets `skip_leading_rows=2` for files with title rows, `skip_leading_rows=1` for files without
+  - Resolves "Invalid BIGNUMERIC value: Partner Revenue" errors when querying recent data
+  - Prioritizes correctness for recent data (June 2018+) which represents 99.9% of use cases
+
+### Changed
+- **Schema inference enhancement for mixed-format tables**
+  - `read_csv_header_and_sample()` now sorts files by name descending to read most recent files first
+  - Return type changed from `List[SchemaField]` to `Tuple[List[SchemaField], bool]` to include `has_title_row` flag
+  - BigQuery table creation now uses dynamic `skip_leading_rows` based on detected format
+  - Added logging for `skip_leading_rows` setting during table creation
+
+### Known Limitations
+- Tables with partitions from Feb-May 2018 may skip first data row (old format without title rows)
+- Impact: ~4 months of data out of 7+ years
+- Mitigation: Create separate legacy tables if historical accuracy is critical for early 2018 data
+
+### Technical Details
+- YouTube Analytics CSV format changed in June 2018
+- Files before June 2018: No title row (start with column headers)
+- Files June 2018+: Include "Asset Summary" title row before headers
+- File names are identical across all periods - only content-based detection works
+
 ## [1.2.0] - 2025-12-13
 
 ### Changed

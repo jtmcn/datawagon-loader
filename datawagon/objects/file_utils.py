@@ -134,6 +134,16 @@ class FileUtils:
                 except Exception as e:
                     logger.error(f"Failed to gzip file: {e}")
 
+        # Verify gzip integrity if compression succeeded
+        if is_successful:
+            try:
+                with gzip.open(output_gzip_path, "rb") as f:
+                    f.read(1024)  # Read first chunk to verify header
+            except Exception as e:
+                logger.error(f"Gzip integrity check failed for {output_gzip_path}: {e}")
+                Path(output_gzip_path).unlink()  # Delete corrupted file
+                raise
+
         if remove_original_zip and is_successful:
             os.remove(input_csv_file)
 
@@ -188,6 +198,15 @@ class FileUtils:
                             with gzip.open(output_gzip_path, "wb") as gzip_file:
                                 for chunk in iter(lambda: input_file.read(1024 * 1024), b""):  # 1MB chunks
                                     gzip_file.write(chunk)
+
+                        # Verify gzip integrity
+                        try:
+                            with gzip.open(output_gzip_path, "rb") as f:
+                                f.read(1024)  # Read first chunk to verify header
+                        except Exception as e:
+                            logger.error(f"Gzip integrity check failed for {output_gzip_path}: {e}")
+                            output_gzip_path.unlink()  # Delete corrupted file
+                            raise
 
                         output_gzip_paths.append(output_gzip_path)
 
