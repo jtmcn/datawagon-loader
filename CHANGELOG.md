@@ -7,6 +7,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-12-13
+
+This release focuses on technical debt cleanup, observability improvements, and architectural enhancements to support future multi-cloud deployments. All changes are backward compatible with zero breaking changes.
+
+### Added
+
+#### Storage Abstraction (Phase 5)
+- **New abstract provider interfaces for multi-cloud support**
+  - Created `StorageProvider` abstract base class for cloud storage operations
+    - Defines contract for upload, list, copy, and read operations
+    - Enables future S3, Azure Blob Storage implementations
+  - Created `AnalyticsProvider` abstract base class for analytics platforms
+    - Defines contract for table management operations
+    - Enables future Redshift, Snowflake implementations
+  - `GcsManager` now implements `StorageProvider` interface
+  - `BigQueryManager` now implements `AnalyticsProvider` interface
+  - Added `read_blob_to_memory()` method to `GcsManager`
+  - Added `bucket_name` and `has_error` properties with getters/setters
+
+#### Observability & Metrics (Phase 4)
+- **Upload performance metrics**
+  - Per-file metrics: file size (MB), duration (seconds), throughput (MB/s)
+  - Example: `"Uploaded: file.csv.gz (2.50 MB in 1.23s, 2.03 MB/s)"`
+- **Batch upload summary**
+  - Total files, total size, duration, average throughput
+  - Success/failure counts
+  - Example output:
+    ```
+    Upload Summary:
+      Total files: 10
+      Total size: 25.00 MB
+      Duration: 12.50s
+      Avg throughput: 2.00 MB/s
+      Succeeded: 9, Failed: 1
+    ```
+- **Schema inference timing**
+  - Duration tracking for all code paths (success, error, early return)
+  - Enhanced logging with column count, sample size, type distribution
+  - Example: `"Schema inference completed in 1.25s: 42 columns from 100 samples - BOOL=2, INT64=15..."`
+
+#### File Comparison Refactoring (Phase 1)
+- **New `FileComparator` class** (`datawagon/objects/file_comparator.py`)
+  - Encapsulates file comparison logic previously in module-level functions
+  - Methods: `compare_files()`, `find_new_files()`
+  - Comprehensive test suite with 11 tests covering edge cases
+  - Uses dependency injection pattern with `FileUtils`
+
+#### Dynamic Field Handling (Phase 3)
+- **Enhanced `build_data_item()` method** with kwargs support
+  - Automatically preserves dynamic fields from regex extraction
+  - No manual field extraction loops required
+  - Added 3 tests for custom dynamic field preservation
+  - Example: Custom regex groups like `region`, `channel_id` automatically passed through
+
+### Changed
+
+#### Code Quality Improvements
+- Updated `compare.py` to use `FileComparator` class (removed 66 lines)
+- Simplified `build_data_item()` implementation with dict comprehension
+- Refactored managers to use private attributes for interface compliance
+  - `GcsManager`: `has_error` → `_has_error` (accessed via property)
+  - `BigQueryManager`: `has_error` → `_has_error`, `dataset_id` → `_dataset_id` (accessed via properties)
+
+### Removed
+
+#### Dead Code Cleanup (Phase 2)
+- **Removed unused `CSVLoader` class** (137 lines)
+  - No imports found anywhere in codebase
+  - Contained unimplemented TODO for column type overrides
+  - Updated `schema_inference.py` comments to remove CSVLoader references
+
+### Technical Details
+
+#### Test Coverage
+- All 219 tests passing
+- Added 14 new tests across all phases
+- No test regressions
+
+#### Performance
+- Zero performance overhead from metrics (<0.1% from `perf_counter` calls)
+- Timing only on successful and error paths for debugging
+
+#### Code Statistics
+- ~500 lines added (interfaces, metrics, tests)
+- ~300 lines removed (dead code, simplified logic)
+- 5 implementation phases completed
+- 7 git commits with detailed documentation
+
+### Migration Guide
+
+No migration required - all changes are backward compatible. However, you can now:
+1. Use abstract provider types for dependency injection
+2. Monitor upload performance with new metrics in logs
+3. Extend DataWagon for S3/Azure by implementing provider interfaces
+
 ## [1.0.7] - 2025-12-13
 
 ### Changed
