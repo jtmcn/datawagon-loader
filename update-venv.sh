@@ -189,6 +189,15 @@ main() {
 
     print_info ""
     print_success "Update complete!"
+
+    # Show installed version
+    if [ -d "$VENV" ] && [ -f "$VENV/bin/python" ]; then
+        print_info ""
+        print_info "Installed version:"
+        "$VENV/bin/python" -c "import importlib.metadata; print('  DataWagon v' + importlib.metadata.version('datawagon'))" 2>/dev/null || {
+            print_warning "Could not determine installed version"
+        }
+    fi
 }
 
 main "$@"

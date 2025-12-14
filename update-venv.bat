@@ -70,6 +70,16 @@ if !HAS_UPDATES! equ 1 (
 
 echo.
 echo [OK] Update complete!
+
+REM Show installed version
+if exist "%VENV%\Scripts\python.exe" (
+    echo.
+    echo [INFO] Installed version:
+    "%VENV%\Scripts\python.exe" -c "import importlib.metadata; print('  DataWagon v' + importlib.metadata.version('datawagon'))" 2>nul
+    if errorlevel 1 (
+        echo [WARNING] Could not determine installed version
+    )
+)
 goto :eof
 
 REM ============================================================================
