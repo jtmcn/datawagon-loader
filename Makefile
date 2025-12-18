@@ -125,7 +125,7 @@ update: ## Update dependencies and regenerate lock file
 # Code Quality Checks
 # ============================================================================
 
-pre-commit: check format-fix lint-check type shellcheck test requirements requirements-check ## Run all pre-commit checks
+pre-commit: check format-fix lint-check type shellcheck test requirements requirements-check security-check ## Run all pre-commit checks
 
 pre-commit-fast: type lint shellcheck test ## Run faster pre-commit checks (skip format/isort)
 
@@ -197,6 +197,15 @@ shellcheck: ## Lint shell scripts with shellcheck
 		exit 1; \
 	}
 	@echo "✓ Shell scripts passed linting"
+
+security-check: ## Run security audit with pip-audit
+	@echo "Running security audit with pip-audit..."
+	@$(CMD) pip-audit --requirement requirements.txt || { \
+		echo "⚠ Security vulnerabilities detected"; \
+		echo "→ Review findings and update dependencies if needed"; \
+		exit 1; \
+	}
+	@echo "✓ Security audit passed"
 
 requirements: ## Generate requirements.txt and requirements-dev.txt from poetry.lock
 	@echo "Generating requirements.txt..."

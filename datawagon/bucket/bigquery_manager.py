@@ -367,17 +367,12 @@ class BigQueryManager(AnalyticsProvider):
         Example:
             >>> if manager.has_error:
             ...     print("Cannot proceed - manager has errors")
+
+        Note:
+            This property is read-only. Error state is set internally during initialization
+            and error handling. Cannot be modified externally to prevent masking errors.
         """
         return self._has_error
-
-    @has_error.setter
-    def has_error(self, value: bool) -> None:
-        """Set the error state of the manager.
-
-        Args:
-            value: True to mark manager as in error state, False otherwise
-        """
-        self._has_error = value
 
     @property
     def dataset_id(self) -> str:

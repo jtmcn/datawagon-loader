@@ -73,7 +73,7 @@ class GcsManager(StorageProvider):
         except google_api_exceptions.PermissionDenied as e:
             logger.error(f"GCS permission denied: {e}")
             self._has_error = True
-        except Exception as e:
+        except (google_api_exceptions.GoogleAPIError, ValueError, OSError) as e:
             logger.error(f"Error connecting to GCS: {e}", exc_info=True)
             self._has_error = True
 
@@ -127,10 +127,10 @@ class GcsManager(StorageProvider):
             self._has_error = True
             raise  # Re-raise to signal caller
 
-        except Exception as e:
-            # Other errors - log with full trace and return empty
+        except (google_api_exceptions.GoogleAPIError, ValueError, OSError) as e:
+            # Other errors - log with full trace and raise
             logger.error(f"Unable to list files in bucket: {e}", exc_info=True)
-            return []
+            raise  # Don't mask failures by returning empty list
 
     def files_in_blobs_df(self, source_confg: SourceConfig) -> pd.DataFrame:
         """Get DataFrame of files in bucket for all enabled sources.
@@ -254,7 +254,7 @@ class GcsManager(StorageProvider):
             duration = time.perf_counter() - start_time
             logger.error(f"Bucket not found after {duration:.2f}s: {e}")
             return False
-        except Exception as e:
+        except (google_api_exceptions.GoogleAPIError, OSError, ValueError) as e:
             duration = time.perf_counter() - start_time
             logger.error(f"Unable to upload file after {duration:.2f}s to bucket: {e}", exc_info=True)
             return False
@@ -355,7 +355,7 @@ class GcsManager(StorageProvider):
             except google_api_exceptions.PermissionDenied as e:
                 logger.error(f"Permission denied copying blob: {e}")
                 return False
-            except Exception as e:
+            except (google_api_exceptions.GoogleAPIError, ValueError) as e:
                 logger.error(f"Error copying blob: {e}", exc_info=True)
                 return False
         return False
@@ -373,7 +373,7 @@ class GcsManager(StorageProvider):
             except google_api_exceptions.PermissionDenied as e:
                 logger.error(f"Permission denied listing blobs: {e}")
                 return []
-            except Exception as e:
+            except (google_api_exceptions.GoogleAPIError, ValueError) as e:
                 logger.error(f"Error listing blobs: {e}", exc_info=True)
                 return []
         return []
@@ -408,17 +408,12 @@ class GcsManager(StorageProvider):
         Example:
             >>> if manager.has_error:
             ...     print("Cannot proceed - manager has errors")
+
+        Note:
+            This property is read-only. Error state is set internally during initialization
+            and error handling. Cannot be modified externally to prevent masking errors.
         """
         return self._has_error
-
-    @has_error.setter
-    def has_error(self, value: bool) -> None:
-        """Set the error state of the manager.
-
-        Args:
-            value: True to mark manager as in error state, False otherwise
-        """
-        self._has_error = value
 
     @property
     def bucket_name(self) -> str:
