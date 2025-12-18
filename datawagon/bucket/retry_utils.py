@@ -34,13 +34,11 @@ def retry_with_backoff(
         @functools.wraps(func)
         def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def]
             delay = 1.0
-            last_exception = None
 
             for attempt in range(retries + 1):
                 try:
                     return func(*args, **kwargs)
                 except exceptions as e:
-                    last_exception = e
                     if attempt == retries:
                         logger.error(f"{func.__name__} failed after {retries} retries: {e}")
                         raise
@@ -50,10 +48,6 @@ def retry_with_backoff(
                     )
                     time.sleep(delay)
                     delay *= backoff_factor
-
-            # Should never reach here, but satisfy type checker
-            if last_exception:
-                raise last_exception
 
         return wrapper
 

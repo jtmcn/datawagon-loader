@@ -131,7 +131,7 @@ class FileUtils:
                 try:
                     shutil.copyfileobj(f_in, f_out)
                     is_successful = True
-                except Exception as e:
+                except (OSError, IOError, gzip.BadGzipFile) as e:
                     logger.error(f"Failed to gzip file: {e}")
 
         # Verify gzip integrity if compression succeeded
@@ -139,7 +139,7 @@ class FileUtils:
             try:
                 with gzip.open(output_gzip_path, "rb") as f:
                     f.read(1024)  # Read first chunk to verify header
-            except Exception as e:
+            except (gzip.BadGzipFile, OSError, IOError) as e:
                 logger.error(f"Gzip integrity check failed for {output_gzip_path}: {e}")
                 Path(output_gzip_path).unlink()  # Delete corrupted file
                 raise
@@ -203,7 +203,7 @@ class FileUtils:
                         try:
                             with gzip.open(output_gzip_path, "rb") as f:
                                 f.read(1024)  # Read first chunk to verify header
-                        except Exception as e:
+                        except (gzip.BadGzipFile, OSError, IOError) as e:
                             logger.error(f"Gzip integrity check failed for {output_gzip_path}: {e}")
                             output_gzip_path.unlink()  # Delete corrupted file
                             raise

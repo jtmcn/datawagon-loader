@@ -106,16 +106,9 @@ class StorageProvider(ABC):
 
         Returns:
             True if provider is in error state, False otherwise
-        """
-        pass
 
-    @has_error.setter
-    @abstractmethod
-    def has_error(self, value: bool) -> None:
-        """Set the error state of the provider.
-
-        Args:
-            value: True to mark provider as in error state, False otherwise
+        Note:
+            Read-only property to prevent external code from resetting error state.
         """
         pass
 

@@ -329,7 +329,7 @@ class SchemaInferenceManager:
         except StopIteration:
             logger.error(f"Empty CSV file: {target_blob.name}")
             return None
-        except Exception as e:
+        except (UnicodeDecodeError, csv.Error, OSError, ValueError) as e:
             logger.error(f"Error reading CSV header and sample: {e}", exc_info=True)
             return None
 
