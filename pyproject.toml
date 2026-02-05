@@ -27,7 +27,7 @@ certifi = ">=2024.7.4"          # PYSEC-2024-230
 requests = ">=2.32.0"           # CVE-2024-35195, CVE-2024-47081
 urllib3 = ">=2.2.3"             # 5 CVEs (start conservative, escalate to >=2.5.0 if needed)
 idna = ">=3.7"                  # PYSEC-2024-60
-protobuf = ">=4.25.8,<5.0.0"    # CVE-2025-4565 (stay in v4.x for compatibility)
+protobuf = ">=4.25.8,<6.0.0"    # CVE-2025-4565 (stay in v4.x for compatibility)
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"
