@@ -108,6 +108,35 @@ class OldNamingCleanup:
 
         return bad_folders
 
+    def remove_empty_folder_markers(self, folders: List[str], dry_run: bool = True) -> int:
+        """
+        Remove empty folder marker objects from GCS.
+
+        Args:
+            folders: List of folder paths
+            dry_run: If True, only show what would be deleted
+
+        Returns:
+            Number of folder markers removed
+        """
+        bucket = self.storage_client.bucket(self.bucket_name)
+        removed = 0
+
+        for folder in folders:
+            # Check for folder marker (blob named exactly "folder/")
+            marker_path = f"{folder}/"
+            marker_blob = bucket.blob(marker_path)
+
+            if marker_blob.exists():
+                if dry_run:
+                    console.print(f"[yellow]Would remove folder marker: gs://{self.bucket_name}/{marker_path}[/yellow]")
+                else:
+                    marker_blob.delete()
+                    console.print(f"[green]✓ Removed folder marker: {marker_path}[/green]")
+                removed += 1
+
+        return removed
+
     def find_tables_for_folders(self, folders: List[str]) -> List[Tuple[str, str]]:
         """
         Find BigQuery tables pointing to the given GCS folders.
@@ -150,7 +179,7 @@ class OldNamingCleanup:
 
     def delete_folders(self, folders: List[str], dry_run: bool = True) -> int:
         """
-        Delete GCS folders and their contents.
+        Delete all files in GCS folders.
 
         Args:
             folders: List of folder paths to delete
@@ -381,12 +410,34 @@ def main():
         files_deleted = cleanup.delete_folders(bad_folders, dry_run=args.dry_run)
         console.print(f"[green]✓ Processed {files_deleted} files[/green]\n")
 
+        # Remove empty folder markers
+        console.print("[cyan]Step 3: Removing folder markers...[/cyan]")
+        markers_removed = cleanup.remove_empty_folder_markers(bad_folders, dry_run=args.dry_run)
+        if markers_removed > 0:
+            console.print(f"[green]✓ Processed {markers_removed} folder markers[/green]\n")
+        else:
+            console.print("[dim]No folder markers found[/dim]\n")
+
     # Final message
     if args.dry_run:
         console.print("\n[yellow bold]DRY RUN COMPLETE[/yellow bold]")
         console.print("Run without --dry-run to actually delete these resources")
     else:
         console.print("\n[green bold]✓ CLEANUP COMPLETE[/green bold]")
+
+        # Verify cleanup
+        console.print("\n[cyan]Verifying cleanup...[/cyan]")
+        remaining_folders = cleanup.find_bad_folders()
+        if remaining_folders:
+            console.print(
+                f"[yellow]Warning: {len(remaining_folders)} folders still exist (may be empty folder markers)[/yellow]"
+            )
+            for folder in remaining_folders:
+                console.print(f"  • {folder}")
+            console.print("\n[yellow]Note: Empty folders may still appear in GCS Console but contain no files[/yellow]")
+        else:
+            console.print("[green]✓ All old naming convention resources removed[/green]")
+
         console.print("\nNext steps:")
         console.print("1. Re-upload files: [cyan]datawagon compare-local-to-bucket upload-to-gcs[/cyan]")
         console.print("2. Create tables: [cyan]datawagon create-bigquery-tables[/cyan]")

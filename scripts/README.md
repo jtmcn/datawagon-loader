@@ -6,6 +6,10 @@ Utility scripts for DataWagon maintenance and operations.
 
 Removes GCS folders and BigQuery tables created with the old naming convention (without version suffixes).
 
+## remove_folder_markers.py
+
+Removes empty GCS folder marker objects. Use this if folders still appear in GCS Console after running cleanup.
+
 ### Problem
 
 Before version 1.2.0, DataWagon created folders without version suffixes:
@@ -189,3 +193,46 @@ The script uses:
 - `google.cloud.bigquery` to drop external tables
 - `rich` for formatted output
 - Regex pattern `_v\d+-\d+$` to identify version suffixes
+
+## Why Do Folders Still Appear After Cleanup?
+
+In Google Cloud Storage, folders are **virtual** - they don't exist as physical objects. Instead:
+
+1. **Virtual folders**: Derived from blob names with slashes (e.g., `folder/file.csv` creates a virtual `folder/`)
+2. **Folder markers**: Actual blobs named `folder/` (end with `/`) that explicitly mark a folder
+
+When you delete all files from a folder:
+- Virtual folders disappear automatically
+- Folder markers remain until explicitly deleted
+
+### The cleanup script now handles both automatically:
+1. Deletes all files in bad folders
+2. Removes folder marker objects
+3. Verifies cleanup was successful
+
+### Manual Folder Marker Removal
+
+If folders still appear after cleanup, remove markers manually:
+
+```bash
+# Check specific folders (dry run)
+source .venv/bin/activate
+python scripts/remove_folder_markers.py --dry-run \
+    caravan-versioned/claim_raw \
+    caravan-versioned/ownership_raw
+
+# Actually remove
+python scripts/remove_folder_markers.py \
+    caravan-versioned/claim_raw \
+    caravan-versioned/ownership_raw
+```
+
+**Why this happens:**
+- Some GCS clients create folder markers explicitly
+- The GCS Console may create them when you create folders via UI
+- They're harmless but clutter the folder list
+
+**After removal:**
+- Folders will disappear from GCS Console
+- No impact on actual data (files were already deleted)
+- Just cleaning up metadata
