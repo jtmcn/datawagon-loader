@@ -539,6 +539,14 @@ make requirements         # Generates requirements.txt and requirements-dev.txt
 
 Pre-commit hooks automatically check that requirements files are in sync (Poetry users only). Non-Poetry users will see a skip message, which is expected and normal.
 
+## Agent Skills
+
+Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`), pinned in `skills-lock.json`: `bigquery-basics`, `google-cloud-storage-basics`, `google-cloud-recipe-auth`, `pytest-coverage`.
+
+**Keep them updated:** run `npx skills update -p` at the start of a work session (and before dependency bumps), then commit any changes to `skills-lock.json` and `.agents/skills/`. Restore on a fresh clone with `npx skills experimental_install`.
+
+`update` skips `google-cloud-recipe-auth` (upstream `google/skills` has two copies of it); refresh it with `npx skills add google/skills@google-cloud-recipe-auth -y` instead.
+
 ## Platform-Specific Messaging
 
 The installation scripts use different status symbols based on platform:
