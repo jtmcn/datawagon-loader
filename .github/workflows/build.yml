@@ -257,6 +257,7 @@ jobs:
             exit /b 1
           ) || (
             echo ✓ Runtime-only installation verified
+            exit /b 0
           )
         shell: cmd
 
