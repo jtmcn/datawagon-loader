@@ -115,7 +115,7 @@ if errorlevel 1 (
 set /p PY_STATUS=<"%TEMP%\dw_pyver.txt"
 if not "%PY_STATUS%"=="OK" (
     for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
-        echo [ERROR] Python 3.10+ required (found: Python %%V)
+        echo [ERROR] Python 3.10+ required ^(found: Python %%V^)
     )
     del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
@@ -154,7 +154,7 @@ if errorlevel 1 (
 REM Fetch updates
 git fetch --quiet 2>nul
 if errorlevel 1 (
-    echo [WARNING] Failed to fetch from remote (continuing anyway)
+    echo [WARNING] Failed to fetch from remote ^(continuing anyway^)
 )
 
 REM Check for updates
