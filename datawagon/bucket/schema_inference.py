@@ -12,7 +12,8 @@ from io import BytesIO
 from typing import List, Optional, Tuple
 
 from google.api_core import exceptions as google_api_exceptions
-from google.cloud import bigquery, storage
+from google.cloud import storage  # type: ignore[attr-defined]
+from google.cloud import bigquery
 
 from datawagon.bucket.retry_utils import retry_with_backoff
 from datawagon.logging_config import get_logger

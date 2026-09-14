@@ -157,9 +157,9 @@ jobs:
           - 'ubuntu-latest'
           - 'macos-latest'
         python-version:
-          - '3.9'
           - '3.10'
           - '3.11'
+          - '3.12'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -199,7 +199,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.9', '3.11']
+        python-version: ['3.10', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -257,6 +257,7 @@ jobs:
             exit /b 1
           ) || (
             echo ✓ Runtime-only installation verified
+            exit /b 0
           )
         shell: cmd
 
@@ -276,10 +277,10 @@ jobs:
           mkdir "test dir"
           cd "test dir"
           copy ..\.env.example .env
+          copy ..\.env.example .
           copy ..\setup-venv.bat .
-          copy ..\setup.py .
           copy ..\pyproject.toml .
-          copy ..\README.md .
+          copy ..\readme.md .
           xcopy ..\datawagon datawagon\ /E /I /Q
           setup-venv.bat
           if errorlevel 1 exit /b 1
@@ -294,10 +295,10 @@ jobs:
           mkdir "test dir"
           cd "test dir"
           cp ../.env.example .env
+          cp ../.env.example .
           cp ../setup-venv.sh .
-          cp ../setup.py .
           cp ../pyproject.toml .
-          cp ../README.md .
+          cp ../readme.md .
           cp -r ../datawagon .
           chmod +x setup-venv.sh
           ./setup-venv.sh

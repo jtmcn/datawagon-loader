@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/joeltkeller/datawagon/workflows/Build/badge.svg)](https://github.com/joeltkeller/datawagon/actions/workflows/build.yml)
 [![Release](https://github.com/joeltkeller/datawagon/workflows/Release/badge.svg)](https://github.com/joeltkeller/datawagon/actions/workflows/release.yml)
 [![codecov](https://codecov.io/gh/joeltkeller/datawagon/branch/main/graph/badge.svg)](https://codecov.io/gh/joeltkeller/datawagon)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Automated loading of YouTube Analytics CSV files into Google Cloud Storage buckets with BigQuery external table management.
@@ -33,7 +33,7 @@ This project was built to replace an existing process which used a bash script t
 
 ## Prerequisites
 
-- Python 3.9 or higher (3.12 recommended)
+- Python 3.10 or higher (3.12 recommended)
 - Google Cloud Platform account with Storage and BigQuery access
 - Google Cloud credentials configured locally
 
@@ -736,7 +736,7 @@ This will show:
 
 ### Python version mismatch
 
-**Symptom**: `setup-venv.sh` fails with "Python 3.9+ required".
+**Symptom**: `setup-venv.sh` fails with "Python 3.10+ required".
 
 **Solution**:
 ```bash
@@ -893,11 +893,11 @@ git add requirements.txt requirements-dev.txt poetry.lock
    git commit
    ```
 
-2. **Local vs CI Python version**: CI tests on 3.9, 3.10, 3.11
+2. **Local vs CI Python version**: CI tests on 3.10, 3.11, 3.12
    ```bash
    # Test with specific Python version locally (requires pyenv)
-   pyenv install 3.9.18
-   pyenv local 3.9.18
+   pyenv install 3.10
+   pyenv local 3.10
    rm -rf .venv
    make setup
    make test
@@ -972,7 +972,7 @@ REM 2. Add to PATH via System Properties > Environment Variables
 REM 3. Or use Python Launcher (py command):
 
 py --version
-py -3.9 -m venv .venv
+py -3.10 -m venv .venv
 ```
 
 **Common causes**:

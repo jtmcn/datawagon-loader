@@ -112,7 +112,7 @@ If `setup-venv.bat` fails silently or exits without creating `.venv`:
    - **Python not in PATH:** Reinstall Python with "Add to PATH" option checked
    - **Temp folder permissions:** Run command prompt as administrator
    - **Antivirus blocking:** Temporarily disable or whitelist the project folder
-   - **Old Python version:** Ensure Python 3.9 or higher is installed
+   - **Old Python version:** Ensure Python 3.10 or higher is installed
 
 ### Code Quality (Pre-commit Checks)
 

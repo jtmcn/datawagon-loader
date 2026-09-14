@@ -1,11 +1,20 @@
 """Tests for BigQueryManager."""
 
+from typing import Iterator
 from unittest.mock import Mock, patch
 
+import pytest
 from google.api_core import exceptions as google_api_exceptions
 from google.cloud import bigquery
 
 from datawagon.bucket.bigquery_manager import BigQueryManager
+
+
+@pytest.fixture(autouse=True)
+def _mock_storage_client() -> Iterator[Mock]:
+    # BigQueryManager.__init__ builds a storage.Client; unmocked, it needs real GCP credentials
+    with patch("datawagon.bucket.bigquery_manager.storage.Client") as mock_storage:
+        yield mock_storage
 
 
 def test_normalize_table_name_with_version() -> None:

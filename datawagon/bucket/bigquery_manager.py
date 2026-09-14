@@ -9,7 +9,8 @@ import re
 from typing import List, Optional
 
 from google.api_core import exceptions as google_api_exceptions
-from google.cloud import bigquery, storage
+from google.cloud import storage  # type: ignore[attr-defined]
+from google.cloud import bigquery
 
 from datawagon.bucket.analytics_provider import AnalyticsProvider
 from datawagon.bucket.retry_utils import retry_with_backoff
