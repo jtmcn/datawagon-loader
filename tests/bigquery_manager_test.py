@@ -12,8 +12,9 @@ class BigQueryManagerTestCase(TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         # Mock the BigQuery and Storage clients
-        with patch("datawagon.bucket.bigquery_manager.bigquery.Client"), patch(
-            "datawagon.bucket.bigquery_manager.storage.Client"
+        with (
+            patch("datawagon.bucket.bigquery_manager.bigquery.Client"),
+            patch("datawagon.bucket.bigquery_manager.storage.Client"),
         ):
             self.manager = BigQueryManager(
                 project_id="test-project", bucket_name="test-bucket", dataset_id="test_dataset"

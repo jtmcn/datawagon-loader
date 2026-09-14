@@ -36,8 +36,8 @@ check_python() {
     # Use Python itself to check version (portable & reliable)
     if ! python3 - <<'EOF'
 import sys
-if sys.version_info < (3, 9):
-    print(f"Error: Python 3.9+ required (found: Python {sys.version_info.major}.{sys.version_info.minor})")
+if sys.version_info < (3, 10):
+    print(f"Error: Python 3.10+ required (found: Python {sys.version_info.major}.{sys.version_info.minor})")
     sys.exit(1)
 print(f"✓ Python found: Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
 EOF

@@ -7,7 +7,7 @@ REM ============================================================================
 REM Updates DataWagon and runtime dependencies only.
 REM
 REM Requirements:
-REM   - Python 3.9 or higher
+REM   - Python 3.10 or higher
 REM   - Git (for repository updates)
 REM   - Internet connection for pip downloads
 REM
@@ -105,7 +105,7 @@ if errorlevel 1 (
 )
 
 REM Single Python call for version check and display (optimized)
-python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>nul
+python -c "import sys; print('OK' if sys.version_info >= (3, 10) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>nul
 if errorlevel 1 (
     echo [ERROR] Failed to check Python version
     del "%TEMP%\dw_pyver.txt" 2>nul
@@ -115,7 +115,7 @@ if errorlevel 1 (
 set /p PY_STATUS=<"%TEMP%\dw_pyver.txt"
 if not "%PY_STATUS%"=="OK" (
     for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt"') do (
-        echo [ERROR] Python 3.9+ required (found: Python %%V)
+        echo [ERROR] Python 3.10+ required (found: Python %%V)
     )
     del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1

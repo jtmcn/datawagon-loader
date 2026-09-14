@@ -8,7 +8,7 @@ REM This script creates a standard Python virtual environment and installs
 REM DataWagon with runtime dependencies ONLY (no development tools).
 REM
 REM Requirements:
-REM   - Python 3.9 or higher
+REM   - Python 3.10 or higher
 REM   - Internet connection for pip downloads
 REM
 REM For development with full tooling, use Poetry: make setup-poetry
@@ -84,7 +84,7 @@ if errorlevel 1 (
 
 REM Run Python check and capture both status and version
 REM Changed 2>nul to 2>&1 to capture stderr for debugging
-python -c "import sys; print('OK' if sys.version_info >= (3, 9) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>&1
+python -c "import sys; print('OK' if sys.version_info >= (3, 10) else 'FAIL'); print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" > "%TEMP%\dw_pyver.txt" 2>&1
 if errorlevel 1 (
     echo [ERROR] Failed to check Python version
     echo [ERROR] Python may not be installed correctly
@@ -124,7 +124,7 @@ if "%DEBUG%"=="1" (
 
 REM Check if version is acceptable
 if not "%PY_STATUS%"=="OK" (
-    echo [ERROR] Python 3.9+ required
+    echo [ERROR] Python 3.10+ required
     REM Try to read version from line 2, but fallback to generic error
     set VERSION_FOUND=unknown
     for /f "skip=1 tokens=*" %%V in ('type "%TEMP%\dw_pyver.txt" 2^>nul') do (
@@ -133,7 +133,7 @@ if not "%PY_STATUS%"=="OK" (
     )
     :version_read
     echo [ERROR] Found: Python !VERSION_FOUND!
-    echo [INFO] Install Python 3.9+ from: https://www.python.org/downloads/
+    echo [INFO] Install Python 3.10+ from: https://www.python.org/downloads/
     del "%TEMP%\dw_pyver.txt" 2>nul
     exit /b 1
 )
