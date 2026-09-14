@@ -176,15 +176,32 @@ def test_list_blobs_generic_error_returns_empty(manager: GcsManager, client: Moc
     assert "Unable to list files in bucket" in _error_calls(mock_logger)
 
 
-def test_list_blobs_transient_error_is_swallowed_without_retry(
-    manager: GcsManager, client: Mock, no_sleep: Mock
-) -> None:
-    # Pins current behavior: the broad `except Exception` swallows transient errors, so the
-    # retry decorator never fires. Update if that bug is fixed.
+def _failing_pages(exc: Exception) -> Iterator[Mock]:
+    # list_blobs() is lazy: real HTTP errors surface while iterating, not on the call
+    raise exc
+    yield Mock()  # pragma: no cover
+
+
+def test_list_blobs_retries_transient_error(manager: GcsManager, client: Mock, no_sleep: Mock) -> None:
     client.list_blobs.side_effect = [gexc.ServiceUnavailable("503"), _named("a/b.csv")]
+    assert manager.list_blobs("f", "b", ".csv") == ["a/b.csv"]
+    assert client.list_blobs.call_count == 2
+    no_sleep.assert_called_once()
+
+
+def test_list_blobs_retries_error_raised_during_iteration(manager: GcsManager, client: Mock) -> None:
+    client.list_blobs.side_effect = [_failing_pages(gexc.TooManyRequests("429")), _named("a/b.csv")]
+    assert manager.list_blobs("f", "b", ".csv") == ["a/b.csv"]
+
+
+def test_list_blobs_transient_error_exhausted_returns_empty(
+    manager: GcsManager, client: Mock, no_sleep: Mock, mock_logger: Mock
+) -> None:
+    client.list_blobs.side_effect = gexc.ServiceUnavailable("503")
     assert manager.list_blobs("f", "b", ".csv") == []
-    client.list_blobs.assert_called_once()
-    no_sleep.assert_not_called()
+    assert client.list_blobs.call_count == 4  # first attempt + 3 retries
+    assert no_sleep.call_count == 3
+    assert "Unable to list files in bucket" in _error_calls(mock_logger)
 
 
 # --- files_in_blobs_df ---
@@ -296,16 +313,25 @@ def test_upload_blob_errors_return_false(
     assert fragment in str(getattr(mock_logger, method).call_args.args[0])
 
 
-def test_upload_blob_transient_error_is_swallowed_without_retry(
+def test_upload_blob_retries_transient_error(
     manager: GcsManager, client: Mock, local_file: Path, no_sleep: Mock
 ) -> None:
-    # Pins current behavior: the broad `except Exception` catches transient errors before
-    # retry_with_backoff sees them, so no retry happens. Update if that bug is fixed.
+    blob = client.bucket.return_value.blob.return_value
+    blob.size = 100
+    blob.upload_from_filename.side_effect = [gexc.TooManyRequests("429"), None]
+    assert manager.upload_blob(str(local_file), "dir/f.csv.gz") is True
+    assert blob.upload_from_filename.call_count == 2
+    no_sleep.assert_called_once()
+
+
+def test_upload_blob_transient_error_exhausted_returns_false(
+    manager: GcsManager, client: Mock, local_file: Path, mock_logger: Mock
+) -> None:
     upload = client.bucket.return_value.blob.return_value.upload_from_filename
-    upload.side_effect = gexc.TooManyRequests("429")
+    upload.side_effect = gexc.InternalServerError("500")
     assert manager.upload_blob(str(local_file), "dir/f.csv.gz") is False
-    upload.assert_called_once()
-    no_sleep.assert_not_called()
+    assert upload.call_count == 4
+    assert "Unable to upload file" in _error_calls(mock_logger)
 
 
 def test_upload_blob_missing_local_file_raises(manager: GcsManager, temp_dir: Path) -> None:
@@ -405,3 +431,18 @@ def test_list_all_blobs_errors_return_empty(
     client.list_blobs.side_effect = exc
     assert manager.list_all_blobs_with_prefix("p/") == []
     assert fragment in _error_calls(mock_logger)
+
+
+def test_list_all_blobs_retries_error_raised_during_iteration(manager: GcsManager, client: Mock) -> None:
+    client.list_blobs.side_effect = [_failing_pages(gexc.DeadlineExceeded("504")), _named("p/a")]
+    assert manager.list_all_blobs_with_prefix("p/") == ["p/a"]
+    assert client.list_blobs.call_count == 2
+
+
+def test_copy_blob_retries_transient_error(manager: GcsManager, client: Mock, no_sleep: Mock) -> None:
+    _, dst = _setup_copy(client, 50, 50)
+    copy_blob = client.bucket.return_value.copy_blob
+    copy_blob.side_effect = [gexc.ServiceUnavailable("503"), dst]
+    assert manager.copy_blob_within_bucket("a/src.csv", "b/dst.csv") is True
+    assert copy_blob.call_count == 2
+    no_sleep.assert_called_once()

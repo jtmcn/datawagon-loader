@@ -2,6 +2,7 @@
 
 import importlib
 import logging
+import runpy
 import sys
 from pathlib import Path
 from typing import Any, Generator
@@ -9,6 +10,7 @@ from unittest.mock import Mock
 
 import click
 import pytest
+import toml
 from click.testing import CliRunner, Result
 
 import datawagon.main as main_module
@@ -197,7 +199,6 @@ class TestCliContext:
         assert invoke(args, flag_obj, env=env).exit_code == 0
         assert (flag_obj["CONFIG"].bq_dataset, flag_obj["CONFIG"].bq_storage_prefix) == ("flag_ds", "flag-prefix")
 
-    @pytest.mark.xfail(strict=True, reason="--bq-storage-prefix default always shadows TOML storage_prefix")
     def test_toml_storage_prefix_used_as_fallback(self, source_dir: Path, tmp_path: Path) -> None:
         config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\nstorage_prefix = "toml-prefix"\n')
         obj: dict[str, Any] = {}
@@ -234,13 +235,25 @@ def test_start_cli_loads_env_and_runs_cli(monkeypatch: pytest.MonkeyPatch, tmp_p
     load_dotenv.assert_called_once_with(env_file, verbose=True)
 
 
-def test_dunder_main_invokes_start_cli(monkeypatch: pytest.MonkeyPatch) -> None:
-    start = Mock()
-    monkeypatch.setattr(main_module, "start_cli", start)
+@pytest.fixture
+def start(monkeypatch: pytest.MonkeyPatch) -> Mock:
+    mock = Mock()
+    monkeypatch.setattr(main_module, "start_cli", mock)
     monkeypatch.delitem(sys.modules, "datawagon.__main__", raising=False)
+    return mock
 
-    with pytest.raises(SystemExit) as exc:
-        importlib.import_module("datawagon.__main__")
 
-    assert exc.value.code == 0
+def test_python_dash_m_runs_cli(start: Mock) -> None:
+    runpy.run_module("datawagon", run_name="__main__")
     start.assert_called_once_with()
+
+
+def test_importing_dunder_main_does_not_run_cli(start: Mock) -> None:
+    importlib.import_module("datawagon.__main__")
+    start.assert_not_called()
+
+
+def test_console_script_resolves_to_start_cli(start: Mock) -> None:
+    target = toml.load(Path(__file__).parents[1] / "pyproject.toml")["tool"]["poetry"]["scripts"]["datawagon"]
+    module_name, attr = target.split(":")
+    assert getattr(importlib.import_module(module_name), attr) is start

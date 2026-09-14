@@ -76,7 +76,7 @@ from datawagon.objects.source_config import SourceConfig
 @click.option(
     "--bq-storage-prefix",
     type=str,
-    default="caravan-versioned",
+    default=None,
     help="GCS folder prefix for BigQuery table creation (default: caravan-versioned)",
     envvar="DW_BQ_STORAGE_PREFIX",
 )
