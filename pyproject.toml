@@ -8,7 +8,7 @@ readme = "readme.md"
 packages = [{ include = "datawagon" }]
 
 [tool.poetry.scripts]
-datawagon = "datawagon.__main__:__main__"
+datawagon = "datawagon.main:start_cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"

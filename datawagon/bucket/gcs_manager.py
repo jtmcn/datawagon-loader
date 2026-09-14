@@ -31,6 +31,9 @@ TRANSIENT_EXCEPTIONS = (
     google_api_exceptions.TooManyRequests,  # 429 rate limiting
 )
 
+# Wraps only the GCS call, so methods keep their log-and-return fallback once retries run out
+_retry_transient = retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
+
 
 class GcsManager(StorageProvider):
     """Google Cloud Storage implementation of StorageProvider.
@@ -86,7 +89,6 @@ class GcsManager(StorageProvider):
         buckets = self.storage_client.list_buckets()
         return [bucket.name for bucket in buckets]
 
-    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_blobs(self, storage_folder_name: str, file_name_base: str, file_extension: str) -> List[str]:
         """List blobs matching pattern with proper error propagation."""
         if self._has_error:
@@ -106,12 +108,16 @@ class GcsManager(StorageProvider):
             # Search with glob that matches both:
             # - caravan/claim_raw/report_date=*/file.csv.gz
             # - caravan/claim_raw_v1-0/report_date=*/file.csv.gz
-            blobs = self.storage_client.list_blobs(
-                self.source_bucket_name,
-                prefix=parent_prefix,
-                match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
-            )
-            return [blob.name for blob in blobs]
+            def fetch() -> List[str]:
+                # list_blobs() is lazy; iterate inside the retry so paging errors are retried too
+                blobs = self.storage_client.list_blobs(
+                    self.source_bucket_name,
+                    prefix=parent_prefix,
+                    match_glob=f"**{folder_base}*/**{file_name_base}**{file_extension}",
+                )
+                return [blob.name for blob in blobs]
+
+            return _retry_transient(fetch)()
 
         except google_api_exceptions.NotFound:
             # Bucket not found - return empty (expected case)
@@ -176,7 +182,6 @@ class GcsManager(StorageProvider):
 
         return combined_df
 
-    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def upload_blob(self, source_file_name: str, destination_blob_name: str, overwrite: bool = False) -> bool:
         """Upload file to GCS bucket with retry logic and race condition protection.
 
@@ -222,10 +227,13 @@ class GcsManager(StorageProvider):
             # if_generation_match=0 means only succeed if blob doesn't exist
             generation_match = None if overwrite else 0
 
-            blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
+            def upload() -> None:
+                blob.upload_from_filename(source_file_name, if_generation_match=generation_match)
+                blob.reload()
+
+            _retry_transient(upload)()
 
             # Verify upload integrity
-            blob.reload()
             if blob.size != file_size_bytes:
                 logger.error(
                     f"Upload verification failed: local={file_size_bytes}B, "
@@ -305,7 +313,6 @@ class GcsManager(StorageProvider):
         blob = self.get_blob(blob_name)
         blob.download_to_filename(destination_file_name)
 
-    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def copy_blob_within_bucket(self, source_blob_name: str, destination_blob_name: str) -> bool:
         """Copy a blob to a new location within the same bucket with atomic verification."""
         if not self._has_error:
@@ -323,15 +330,15 @@ class GcsManager(StorageProvider):
                 bucket = self.storage_client.bucket(self.source_bucket_name)
                 source_blob = bucket.blob(source_blob_name)
 
-                # Fetch source blob metadata from GCS (required for size comparison)
-                source_blob.reload()
+                def copy() -> storage.Blob:
+                    # Fetch source metadata (required for size comparison), copy, then refresh destination
+                    source_blob.reload()
+                    copied = bucket.copy_blob(source_blob, bucket, destination_blob_name)
+                    copied.reload()
+                    return copied
+
+                destination_blob = _retry_transient(copy)()
                 logger.debug(f"Source blob size: {source_blob.size} bytes")
-
-                # Copy blob within same bucket - returns new blob with metadata
-                destination_blob = bucket.copy_blob(source_blob, bucket, destination_blob_name)
-
-                # Reload destination blob to get fresh metadata from GCS
-                destination_blob.reload()
                 logger.debug(f"Destination blob created with size: {destination_blob.size} bytes")
 
                 # FIX: Verify immediately using returned object (no TOCTOU gap)
@@ -360,13 +367,18 @@ class GcsManager(StorageProvider):
                 return False
         return False
 
-    @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_all_blobs_with_prefix(self, prefix: str = "") -> List[str]:
         """List all blobs in bucket with given prefix."""
         if not self._has_error:
             try:
-                blobs = self.storage_client.list_blobs(self.source_bucket_name, prefix=prefix)
-                return [blob.name for blob in blobs]
+
+                def fetch() -> List[str]:
+                    # list_blobs() is lazy; iterate inside the retry so paging errors are retried too
+                    return [
+                        blob.name for blob in self.storage_client.list_blobs(self.source_bucket_name, prefix=prefix)
+                    ]
+
+                return _retry_transient(fetch)()
             except google_api_exceptions.NotFound as e:
                 logger.error(f"Bucket not found: {e}")
                 return []
