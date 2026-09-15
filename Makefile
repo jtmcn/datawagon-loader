@@ -42,9 +42,9 @@ setup-venv: check-python check-env install-deps-venv verify-install ## Non-Poetr
 	@echo "  2. Activate virtualenv: source .venv/bin/activate"
 	@echo "  3. Run application: datawagon --help"
 
-check-python: ## Check if Python 3.10+ is available
-	@python3 --version | grep -qE "Python 3\.1[0-2]" || { \
-		echo "⚠ Python 3.10+ required"; \
+check-python: ## Check if Python 3.11+ is available
+	@python3 --version | grep -qE "Python 3\.1[12]" || { \
+		echo "⚠ Python 3.11+ required"; \
 		exit 1; \
 	}
 	@echo "✓ Python found: $$(python3 --version)"

@@ -8,14 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Removed
-- **BREAKING: Dropped Python 3.9 support** (EOL Oct 2025); DataWagon now requires Python 3.10–3.12
+- **BREAKING: Dropped Python 3.9 and 3.10 support** (3.9 EOL Oct 2025; 3.10 EOL Oct 2026, with Google Cloud client libraries ending 3.10 support 2026-10-04); DataWagon now requires Python 3.11–3.12
 
 ### Security
 - Upgraded dependencies to resolve all 33 open Dependabot advisories (urllib3, pyasn1, protobuf, requests, idna, python-dotenv, cryptography, Pygments, plus dev tooling)
 - Raised `protobuf` from 4.x to `>=5.29.6,<8.0.0` and added `pyasn1>=0.6.4` floor
 
 ### Changed
-- CI now tests Python 3.10, 3.11, 3.12
+- CI now tests Python 3.11, 3.12
 - Upgraded `pytest` to 9.x, `pytest-cov` to 7.x, `black` to 26.x
 
 ### Fixed
