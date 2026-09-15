@@ -22,7 +22,6 @@ class TestManagedFileInput:
             file_path=file_path,
             base_name="test",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
         )
 
@@ -30,7 +29,6 @@ class TestManagedFileInput:
         assert file_input.file_path == file_path
         assert file_input.base_name == "test"
         assert file_input.table_name == "test_table"
-        assert file_input.table_append_or_replace == "append"
         assert file_input.storage_folder_name == "test_folder"
 
     def test_file_input_allows_extra_fields(self, temp_dir: Path) -> None:
@@ -43,7 +41,6 @@ class TestManagedFileInput:
             file_path=file_path,
             base_name="test",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             # Extra fields from regex groups
             content_owner="BrandName",
@@ -167,7 +164,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="YouTube_BrandName_M",
             table_name="youtube_raw",
-            table_append_or_replace="append",
             storage_folder_name="youtube_analytics",
             content_owner="BrandName",
             file_date_key="20230601",
@@ -181,7 +177,6 @@ class TestBuildDataItem:
         assert result.file_dir == str(temp_dir)
         assert result.base_name == "YouTube_BrandName_M"
         assert result.table_name == "youtube_raw"
-        assert result.table_append_or_replace == "append"
         assert result.storage_folder_name == "youtube_analytics"
 
         # Check extracted fields
@@ -204,7 +199,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             file_date_key="202302",  # February 2023
         )
@@ -225,7 +219,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             file_date_key="202402",  # February 2024 (leap year)
         )
@@ -246,7 +239,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="simple_file",
             table_name="test_table",
-            table_append_or_replace="replace",
             storage_folder_name="test_folder",
         )
 
@@ -266,7 +258,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             file_date_key="20230601",
         )
@@ -286,7 +277,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="",  # Empty string
         )
 
@@ -305,7 +295,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
         )
 
@@ -324,7 +313,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             file_date_key="202312",  # December 2023
         )
@@ -346,7 +334,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="size_test",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
         )
 
@@ -366,7 +353,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="custom_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             content_owner="BrandName",
             file_date_key="20230601",
@@ -398,7 +384,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="custom_only",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             # Only custom fields, no standard extras
             product_type="premium",
@@ -427,7 +412,6 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="date_test",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
             file_date_key="20230601",
         )

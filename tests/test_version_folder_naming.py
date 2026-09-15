@@ -14,7 +14,6 @@ def test_versioned_file_gets_suffix() -> None:
         file_path=Path("/test/test_v1-1.csv.gz"),
         base_name="test",
         table_name="test",
-        table_append_or_replace="append",
         storage_folder_name="caravan/test",
         file_dir="/test",
         content_owner="Brand",
@@ -27,7 +26,6 @@ def test_versioned_file_gets_suffix() -> None:
 
     file_group = ManagedFilesToDatabase(
         table_name="test",
-        table_append_or_replace="append",
         file_selector_base_name="test",
         files=[file1],
     )
@@ -47,7 +45,6 @@ def test_non_versioned_file_no_suffix() -> None:
         file_path=Path("/test/test.csv.gz"),
         base_name="test",
         table_name="test",
-        table_append_or_replace="append",
         storage_folder_name="caravan/test",
         file_dir="/test",
         content_owner="Brand",
@@ -60,7 +57,6 @@ def test_non_versioned_file_no_suffix() -> None:
 
     file_group = ManagedFilesToDatabase(
         table_name="test",
-        table_append_or_replace="append",
         file_selector_base_name="test",
         files=[file1],
     )
@@ -80,7 +76,6 @@ def test_multiple_versions_with_suffix() -> None:
         file_path=Path("/test/test_v1-0.csv.gz"),
         base_name="test",
         table_name="test",
-        table_append_or_replace="append",
         storage_folder_name="caravan/test",
         file_dir="/test",
         content_owner="Brand",
@@ -96,7 +91,6 @@ def test_multiple_versions_with_suffix() -> None:
         file_path=Path("/test/test_v1-1.csv.gz"),
         base_name="test",
         table_name="test",
-        table_append_or_replace="append",
         storage_folder_name="caravan/test",
         file_dir="/test",
         content_owner="Brand",
@@ -109,7 +103,6 @@ def test_multiple_versions_with_suffix() -> None:
 
     file_group = ManagedFilesToDatabase(
         table_name="test",
-        table_append_or_replace="append",
         file_selector_base_name="test",
         files=[file1, file2],
     )

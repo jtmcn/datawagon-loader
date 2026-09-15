@@ -39,7 +39,6 @@ def mock_source_config() -> SourceConfig:
                 regex_group_names=["content_owner", "file_date_key"],
                 storage_folder_name="youtube_analytics",
                 table_name="youtube_raw",
-                table_append_or_replace="append",
             )
         }
     )

@@ -216,7 +216,6 @@ def _source(enabled: bool, base: str, folder: str | None) -> SourceFromLocalFS:
         regex_group_names=["content_owner"],
         storage_folder_name=folder,
         table_name="t",
-        table_append_or_replace="append",
     )
 
 

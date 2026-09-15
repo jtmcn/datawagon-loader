@@ -45,7 +45,7 @@ class FileComparator:
             bucket_files: Files currently in GCS bucket
 
         Returns:
-            DataFrame with columns: Base Name, DB File Count, Source File Count
+            DataFrame with columns: Base Name, Bucket File Count, Source File Count
             Sorted by Base Name in ascending order
 
         Example:
@@ -54,9 +54,9 @@ class FileComparator:
             >>> bucket_files = [...]  # List of CurrentDestinationData
             >>> df = comparator.compare_files(local_files, bucket_files)
             >>> print(df)
-            Base Name         DB File Count  Source File Count
-            claim_raw         10             12
-            revenue_summary   5              5
+            Base Name         Bucket File Count  Source File Count
+            claim_raw         10                 12
+            revenue_summary   5                  5
         """
         grouped_files = self.file_utils.group_by_base_name(local_files)
 
@@ -68,12 +68,12 @@ class FileComparator:
 
         for base_name in all_base_names:
             source_file_count = len(grouped_files.get(base_name, []))
-            db_file_count = bucket_file_dict.get(base_name, 0)
+            bucket_file_count = bucket_file_dict.get(base_name, 0)
 
             data_rows.append(
                 {
                     "Base Name": base_name,
-                    "DB File Count": db_file_count,
+                    "Bucket File Count": bucket_file_count,
                     "Source File Count": source_file_count,
                 }
             )

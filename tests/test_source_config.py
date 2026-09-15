@@ -22,7 +22,6 @@ class TestSourceFromLocalFS:
             regex_group_names=["content_owner", "file_date_key"],
             storage_folder_name="youtube_analytics",
             table_name="youtube_raw",
-            table_append_or_replace="append",
         )
 
         assert config.is_enabled is True
@@ -39,7 +38,6 @@ class TestSourceFromLocalFS:
             regex_group_names=["number"],
             storage_folder_name="test_folder",
             table_name="test_table",
-            table_append_or_replace="append",
         )
 
         assert isinstance(config.regex_pattern, re.Pattern)
@@ -56,7 +54,6 @@ class TestSourceFromLocalFS:
                 regex_group_names=["test"],
                 storage_folder_name="test_folder",
                 table_name="test_table",
-                table_append_or_replace="append",
             )
 
         assert "Unsafe regex pattern" in str(exc_info.value)
@@ -74,7 +71,6 @@ class TestSourceFromLocalFS:
                 regex_group_names=["test"],
                 storage_folder_name="test_folder",
                 table_name="test_table",
-                table_append_or_replace="append",
             )
 
         assert "Unsafe regex pattern" in str(exc_info.value)
@@ -90,7 +86,6 @@ class TestSourceFromLocalFS:
                 regex_group_names=["test"],
                 storage_folder_name="test_folder",
                 table_name="test_table",
-                table_append_or_replace="append",
             )
 
         assert "Invalid regex pattern" in str(exc_info.value)
@@ -105,7 +100,6 @@ class TestSourceFromLocalFS:
             regex_group_names=None,
             storage_folder_name="test_folder",
             table_name="test_table",
-            table_append_or_replace="append",
         )
 
         assert config.regex_pattern is None
@@ -127,7 +121,6 @@ class TestSourceConfig:
                     regex_group_names=["owner"],
                     storage_folder_name="youtube",
                     table_name="youtube_table",
-                    table_append_or_replace="append",
                 )
             }
         )
@@ -147,7 +140,6 @@ class TestSourceConfig:
                     regex_group_names=None,
                     storage_folder_name="youtube",
                     table_name="youtube_table",
-                    table_append_or_replace="append",
                 ),
                 "tiktok": SourceFromLocalFS(
                     is_enabled=False,
@@ -157,7 +149,6 @@ class TestSourceConfig:
                     regex_group_names=None,
                     storage_folder_name="tiktok",
                     table_name="tiktok_table",
-                    table_append_or_replace="replace",
                 ),
             }
         )
@@ -208,7 +199,6 @@ class TestSourceConfigWithBigQuery:
                     regex_group_names=None,
                     storage_folder_name="test",
                     table_name="test_table",
-                    table_append_or_replace="append",
                 )
             },
         )
@@ -229,7 +219,6 @@ class TestSourceConfigWithBigQuery:
                     regex_group_names=None,
                     storage_folder_name="test",
                     table_name="test_table",
-                    table_append_or_replace="append",
                 )
             }
         )
@@ -249,7 +238,6 @@ class TestSourceConfigWithBigQuery:
                     regex_group_names=None,
                     storage_folder_name="test",
                     table_name="test_table",
-                    table_append_or_replace="append",
                 )
             },
         )
@@ -257,3 +245,21 @@ class TestSourceConfigWithBigQuery:
         assert config.bigquery is not None
         assert config.bigquery.dataset == "analytics_dataset"
         assert config.bigquery.storage_prefix == "my-custom-prefix"
+
+
+@pytest.mark.unit
+def test_legacy_table_append_or_replace_key_is_ignored() -> None:
+    """Configs that still set the removed table_append_or_replace key keep loading."""
+    config = SourceConfig.model_validate(
+        {
+            "file": {
+                "claim_raw": {
+                    "is_enabled": True,
+                    "select_file_name_base": "claim_raw",
+                    "table_append_or_replace": "append",
+                }
+            }
+        }
+    )
+
+    assert not hasattr(config.file["claim_raw"], "table_append_or_replace")

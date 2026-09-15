@@ -227,7 +227,6 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
 - `storage_folder_name`: GCS destination folder
 - `table_name`: Destination table name
-- `table_append_or_replace`: Upload strategy
 
 **Runtime Configuration**: Via environment variables or CLI flags (takes precedence over TOML):
 - `DW_CSV_SOURCE_DIR`: Source directory for CSV files
@@ -310,7 +309,7 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `ManagedFileInput`: Raw file attributes before validation
 - `ManagedFileMetadata`: Validated file metadata with computed fields
 - `ManagedFiles`: Base class grouping files by selector
-- `ManagedFilesToDatabase`: Adds table name and append/replace strategy
+- `ManagedFilesToDatabase`: Adds table name
 
 ### BigQuery Schema Inference
 

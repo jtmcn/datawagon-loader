@@ -477,7 +477,6 @@ regex_pattern = "YouTube_(.+)_M_(\\d{8}|\\d{6})"
 regex_group_names = ["content_owner", "file_date_key"]
 storage_folder_name = "youtube_claims"
 table_name = "claims"
-table_append_or_replace = "append"
 ```
 
 **Configuration Fields:**
@@ -487,7 +486,6 @@ table_append_or_replace = "append"
 - `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
 - `storage_folder_name`: GCS destination folder
 - `table_name`: Table identifier for tracking
-- `table_append_or_replace`: Upload strategy (append or replace)
 
 ### Special Metadata Fields
 

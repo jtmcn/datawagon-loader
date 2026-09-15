@@ -28,13 +28,11 @@ class TestManagedFilesModels:
         db_files = ManagedFilesToDatabase(
             file_selector_base_name="YouTube_*_M",
             table_name="youtube_raw",
-            table_append_or_replace="append",
             files=[],
         )
 
         assert db_files.file_selector_base_name == "YouTube_*_M"
         assert db_files.table_name == "youtube_raw"
-        assert db_files.table_append_or_replace == "append"
         assert db_files.files == []
 
 
@@ -59,7 +57,6 @@ class TestManagedFileScannerInit:
                     "regex_group_names": ["content_owner", "file_date_key"],
                     "storage_folder_name": "youtube_analytics",
                     "table_name": "youtube_raw",
-                    "table_append_or_replace": "append",
                 }
             }
         }
@@ -253,28 +250,6 @@ class TestSourceFileAttrs:
         assert attrs_dict["content_owner"] == "BrandName"
         assert attrs_dict["file_date_key"] == "20230601"
 
-    def test_source_file_attrs_with_replace_override(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
-        """Test that replace override changes table_append_or_replace."""
-        source_dir = temp_dir / "source"
-        source_dir.mkdir()
-
-        file_path = source_dir / "YouTube_Brand_M_20230601.csv"
-        file_path.touch()
-
-        scanner = object.__new__(ManagedFileScanner)
-        scanner.csv_source_dir = source_dir
-        scanner.valid_config = mock_source_config
-
-        file_source = mock_source_config.file["youtube_data"]
-
-        # Without override (should be "append" from config)
-        result_no_override = scanner.source_file_attrs(file_path, file_source, is_replace_override=False)
-        assert result_no_override.table_append_or_replace == "append"
-
-        # With override (should be "replace")
-        result_with_override = scanner.source_file_attrs(file_path, file_source, is_replace_override=True)
-        assert result_with_override.table_append_or_replace == "replace"
-
     def test_source_file_attrs_invalid_regex_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
         """Test that invalid file name raises ValueError."""
         source_dir = temp_dir / "source"
@@ -310,7 +285,6 @@ class TestApplyVersionBasedFolderNaming:
             file_path=youtube_file_in_temp_dir,
             base_name="YouTube_Brand_M",
             table_name="youtube_raw",
-            table_append_or_replace="append",
             storage_folder_name="youtube_analytics",
             content_owner="BrandName",
             file_date_key="20230601",
@@ -324,7 +298,6 @@ class TestApplyVersionBasedFolderNaming:
         file_group = ManagedFilesToDatabase(
             file_selector_base_name="YouTube_*_M",
             table_name="youtube_raw",
-            table_append_or_replace="append",
             files=[metadata],
         )
 
@@ -348,7 +321,6 @@ class TestApplyVersionBasedFolderNaming:
             file_path=file_path,
             base_name="simple_file",
             table_name="test_table",
-            table_append_or_replace="append",
             storage_folder_name="test_folder",
         )
 
@@ -360,7 +332,6 @@ class TestApplyVersionBasedFolderNaming:
         file_group = ManagedFilesToDatabase(
             file_selector_base_name="simple_file",
             table_name="test_table",
-            table_append_or_replace="append",
             files=[metadata],
         )
 
@@ -370,75 +341,6 @@ class TestApplyVersionBasedFolderNaming:
 
         # Should remain unchanged
         assert file_group.files[0].storage_folder_name == "test_folder"
-
-
-@pytest.mark.unit
-class TestMatchedFile:
-    """Test matched_file method (single file matching)."""
-
-    def test_matched_file_finds_by_base_name(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
-        """Test finding a single file by base name."""
-        source_dir = temp_dir / "source"
-        source_dir.mkdir()
-
-        file_path = source_dir / "YouTube_Brand_M_20230601.csv"
-        file_path.touch()
-
-        scanner = object.__new__(ManagedFileScanner)
-        scanner.csv_source_dir = source_dir
-        scanner.valid_config = mock_source_config
-
-        result = scanner.matched_file(
-            file_path,
-            input_file_base_name="YouTube_*_M_*",
-            is_replace_override=False,
-        )
-
-        assert result is not None
-        assert result.table_name == "youtube_raw"
-        assert len(result.files) == 1
-        assert result.files[0].file_name == file_path.name
-
-    def test_matched_file_returns_none_for_no_match(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
-        """Test that non-matching base name returns None."""
-        source_dir = temp_dir / "source"
-        source_dir.mkdir()
-
-        file_path = source_dir / "YouTube_Brand_M_20230601.csv"
-        file_path.touch()
-
-        scanner = object.__new__(ManagedFileScanner)
-        scanner.csv_source_dir = source_dir
-        scanner.valid_config = mock_source_config
-
-        result = scanner.matched_file(
-            file_path,
-            input_file_base_name="NonExistentPattern",
-            is_replace_override=False,
-        )
-
-        assert result is None
-
-    def test_matched_file_with_replace_override(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
-        """Test matched_file with replace override."""
-        source_dir = temp_dir / "source"
-        source_dir.mkdir()
-
-        file_path = source_dir / "YouTube_Brand_M_20230601.csv"
-        file_path.touch()
-
-        scanner = object.__new__(ManagedFileScanner)
-        scanner.csv_source_dir = source_dir
-        scanner.valid_config = mock_source_config
-
-        result = scanner.matched_file(
-            file_path,
-            input_file_base_name="YouTube_*_M_*",
-            is_replace_override=True,
-        )
-
-        assert result is not None
-        assert result.files[0].table_append_or_replace == "replace"
 
 
 @pytest.mark.integration

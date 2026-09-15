@@ -9,7 +9,7 @@ import calendar
 import re
 from datetime import date
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -23,9 +23,8 @@ class ManagedFileInput(BaseModel):
     Attributes:
         file_name: Name of the file with extension
         file_path: Full path to the file
-        base_name: Base pattern matched (e.g., "YouTube_Brand_M")
+        base_name: Report Type selector from config (e.g., "claim_raw")
         table_name: Destination table name
-        table_append_or_replace: Upload strategy ("append" or "replace")
         storage_folder_name: GCS folder name for upload
 
     Note:
@@ -34,11 +33,10 @@ class ManagedFileInput(BaseModel):
 
     Example:
         >>> file_input = ManagedFileInput(
-        ...     file_name="YouTube_Brand_M_20230601.csv",
+        ...     file_name="YouTube_Brand_M_20230601_claim_raw_v1-1.csv.gz",
         ...     file_path=Path("/data/file.csv"),
-        ...     base_name="YouTube_Brand_M",
+        ...     base_name="claim_raw",
         ...     table_name="youtube_raw",
-        ...     table_append_or_replace="append",
         ...     storage_folder_name="youtube_analytics"
         ... )
     """
@@ -47,7 +45,6 @@ class ManagedFileInput(BaseModel):
     file_path: Path
     base_name: str
     table_name: str
-    table_append_or_replace: Literal["append", "replace"]
     storage_folder_name: str
 
     # allows for additional fields defined at runtime by regex_group_names
@@ -135,7 +132,6 @@ class ManagedFileMetadata(ManagedFileInput):
             "file_name",
             "base_name",
             "table_name",
-            "table_append_or_replace",
             "storage_folder_name",
         }
 
@@ -152,7 +148,6 @@ class ManagedFileMetadata(ManagedFileInput):
             table_name=source_file.table_name,
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
-            table_append_or_replace=source_file.table_append_or_replace,
             report_date_key=report_date_key,
             report_date_str=report_date_str,
             content_owner=content_owner,

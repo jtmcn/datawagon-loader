@@ -37,7 +37,7 @@ class TestCompareFiles:
 
         assert len(result) == 1
         assert result.iloc[0]["Base Name"] == "claim_raw"
-        assert result.iloc[0]["DB File Count"] == 5
+        assert result.iloc[0]["Bucket File Count"] == 5
         assert result.iloc[0]["Source File Count"] == 0
 
     def test_compare_files_empty_bucket_files(self, tmp_path: Path) -> None:
@@ -57,7 +57,6 @@ class TestCompareFiles:
                 table_name="claim_raw",
                 file_size_in_bytes=100,
                 file_size="100 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -70,7 +69,7 @@ class TestCompareFiles:
 
         assert len(result) == 1
         assert result.iloc[0]["Base Name"] == "claim_raw"
-        assert result.iloc[0]["DB File Count"] == 0
+        assert result.iloc[0]["Bucket File Count"] == 0
         assert result.iloc[0]["Source File Count"] == 1
 
     def test_compare_files_matching_files(self, tmp_path: Path) -> None:
@@ -90,7 +89,6 @@ class TestCompareFiles:
                 table_name="claim_raw",
                 file_size_in_bytes=100,
                 file_size="100 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -103,7 +101,7 @@ class TestCompareFiles:
 
         assert len(result) == 1
         assert result.iloc[0]["Base Name"] == "claim_raw"
-        assert result.iloc[0]["DB File Count"] == 3
+        assert result.iloc[0]["Bucket File Count"] == 3
         assert result.iloc[0]["Source File Count"] == 1
 
     def test_compare_files_multiple_base_names(self, tmp_path: Path) -> None:
@@ -125,7 +123,6 @@ class TestCompareFiles:
                 table_name="claim_raw",
                 file_size_in_bytes=100,
                 file_size="100 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -140,7 +137,6 @@ class TestCompareFiles:
                 table_name="revenue_summary",
                 file_size_in_bytes=200,
                 file_size="200 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -178,7 +174,6 @@ class TestCompareFiles:
                 table_name="zebra_data",
                 file_size_in_bytes=100,
                 file_size="100 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -193,7 +188,6 @@ class TestCompareFiles:
                 table_name="apple_data",
                 file_size_in_bytes=200,
                 file_size="200 B",
-                table_append_or_replace="append",
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
@@ -231,7 +225,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=100,
             file_size="100 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -246,7 +239,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=200,
             file_size="200 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -257,7 +249,6 @@ class TestFindNewFiles:
                 files=[local_file1, local_file2],
                 file_selector_base_name="claim_raw",
                 table_name="claim_raw",
-                table_append_or_replace="append",
             )
         ]
         bucket_files: List[CurrentDestinationData] = []
@@ -283,7 +274,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=100,
             file_size="100 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -294,7 +284,6 @@ class TestFindNewFiles:
                 files=[local_file1],
                 file_selector_base_name="claim_raw",
                 table_name="claim_raw",
-                table_append_or_replace="append",
             )
         ]
         bucket_files = [CurrentDestinationData(base_name="claim_raw", file_count=1, source_files=["file1.csv"])]
@@ -324,7 +313,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=100,
             file_size="100 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -339,7 +327,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=200,
             file_size="200 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -354,7 +341,6 @@ class TestFindNewFiles:
             table_name="claim_raw",
             file_size_in_bytes=300,
             file_size="300 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -365,7 +351,6 @@ class TestFindNewFiles:
                 files=[local_file1, local_file2, local_file3],
                 file_selector_base_name="claim_raw",
                 table_name="claim_raw",
-                table_append_or_replace="append",
             )
         ]
         bucket_files = [CurrentDestinationData(base_name="claim_raw", file_count=1, source_files=["file1.csv"])]
@@ -405,7 +390,6 @@ class TestFindNewFiles:
             table_name="zebra_data",
             file_size_in_bytes=100,
             file_size="100 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -420,7 +404,6 @@ class TestFindNewFiles:
             table_name="apple_data",
             file_size_in_bytes=200,
             file_size="200 B",
-            table_append_or_replace="append",
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
@@ -432,7 +415,6 @@ class TestFindNewFiles:
                 files=[local_file1, local_file2],
                 file_selector_base_name="test_data",
                 table_name="test_data",
-                table_append_or_replace="append",
             )
         ]
         bucket_files: List[CurrentDestinationData] = []
