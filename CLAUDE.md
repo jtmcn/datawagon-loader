@@ -547,6 +547,8 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`), pin
 
 `update` skips `google-cloud-recipe-auth` (upstream `google/skills` has two copies of it); refresh it with `npx skills add google/skills@google-cloud-recipe-auth -y` instead.
 
+Config for the mattpocock-skills plugin (`triage`, `to-spec`, `to-tickets`, `wayfinder`, `domain-modeling`), not managed by `npx skills`:
+
 ### Issue tracker
 
 GitHub Issues on `jtmcn/datawagon-loader` via `gh`. See `docs/agents/issue-tracker.md`.
@@ -557,7 +559,7 @@ Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `
 
 ### Domain docs
 
-Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
+Single-context: root `CONTEXT.md` + `docs/adr/` (created lazily, not yet present). See `docs/agents/domain.md`.
 
 ## Platform-Specific Messaging
 
