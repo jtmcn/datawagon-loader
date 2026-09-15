@@ -33,7 +33,7 @@ class ManagedFileInput(BaseModel):
 
     Example:
         >>> file_input = ManagedFileInput(
-        ...     file_name="YouTube_Brand_M_20230601.csv",
+        ...     file_name="YouTube_Brand_M_20230601_claim_raw_v1-1.csv.gz",
         ...     file_path=Path("/data/file.csv"),
         ...     base_name="claim_raw",
         ...     table_name="youtube_raw",

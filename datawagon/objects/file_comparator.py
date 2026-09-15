@@ -55,8 +55,8 @@ class FileComparator:
             >>> df = comparator.compare_files(local_files, bucket_files)
             >>> print(df)
             Base Name         Bucket File Count  Source File Count
-            claim_raw         10             12
-            revenue_summary   5              5
+            claim_raw         10                 12
+            revenue_summary   5                  5
         """
         grouped_files = self.file_utils.group_by_base_name(local_files)
 

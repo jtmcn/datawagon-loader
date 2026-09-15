@@ -134,6 +134,7 @@ class TestCliValidation:
         assert result.exit_code == 1
         assert isinstance(result.exception, ValueError)
         assert "Validation Failed for source_config.toml" in str(result.exception)
+        assert "select_file_name_base" in str(result.exception)
 
     def test_missing_bq_dataset_everywhere(self, source_dir: Path, tmp_path: Path) -> None:
         result = invoke(base_args(source_dir, write_toml(tmp_path)), {})

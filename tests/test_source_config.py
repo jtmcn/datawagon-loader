@@ -250,8 +250,16 @@ class TestSourceConfigWithBigQuery:
 @pytest.mark.unit
 def test_legacy_table_append_or_replace_key_is_ignored() -> None:
     """Configs that still set the removed table_append_or_replace key keep loading."""
-    config = SourceFromLocalFS.model_validate(
-        {"is_enabled": True, "select_file_name_base": "claim_raw", "table_append_or_replace": "append"}
+    config = SourceConfig.model_validate(
+        {
+            "file": {
+                "claim_raw": {
+                    "is_enabled": True,
+                    "select_file_name_base": "claim_raw",
+                    "table_append_or_replace": "append",
+                }
+            }
+        }
     )
 
-    assert not hasattr(config, "table_append_or_replace")
+    assert not hasattr(config.file["claim_raw"], "table_append_or_replace")
