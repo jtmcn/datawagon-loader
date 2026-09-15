@@ -547,6 +547,18 @@ Project skills live in `.agents/skills/` (symlinked into `.claude/skills/`), pin
 
 `update` skips `google-cloud-recipe-auth` (upstream `google/skills` has two copies of it); refresh it with `npx skills add google/skills@google-cloud-recipe-auth -y` instead.
 
+### Issue tracker
+
+GitHub Issues on `jtmcn/datawagon-loader` via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
+
 ## Platform-Specific Messaging
 
 The installation scripts use different status symbols based on platform:
