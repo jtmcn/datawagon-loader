@@ -6,7 +6,7 @@ validation for regex patterns to prevent ReDoS attacks.
 """
 
 import re
-from typing import Any, List, Literal, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -48,7 +48,6 @@ class SourceFromLocalFS(BaseModel):
         exclude_file_name_base: Glob pattern to exclude files (e.g., ".~lock*")
         regex_pattern: Compiled regex for extracting metadata from filenames
         regex_group_names: Named groups from regex (e.g., ["content_owner", "file_date_key"])
-        table_append_or_replace: Upload strategy ("append" or "replace")
 
     Example:
         >>> config = SourceFromLocalFS(
@@ -58,8 +57,7 @@ class SourceFromLocalFS(BaseModel):
         ...     regex_pattern=r"YouTube_(.+)_M_(\\d{8})",
         ...     regex_group_names=["content_owner", "file_date_key"],
         ...     storage_folder_name="youtube_analytics",
-        ...     table_name="youtube_raw",
-        ...     table_append_or_replace="append"
+        ...     table_name="youtube_raw"
         ... )
     """
 
@@ -70,7 +68,6 @@ class SourceFromLocalFS(BaseModel):
     exclude_file_name_base: Optional[str] = None
     regex_pattern: Optional[re.Pattern] = None
     regex_group_names: Optional[List[str]] = None
-    table_append_or_replace: Literal["append", "replace"]
 
     @field_validator("regex_pattern", mode="before")
     @classmethod

@@ -40,15 +40,13 @@ class ManagedFiles(BaseModel):
 class ManagedFilesToDatabase(ManagedFiles):
     """Container for files grouped by destination table.
 
-    Extends ManagedFiles with destination table information and upload strategy.
+    Extends ManagedFiles with destination table information.
 
     Attributes:
         table_name: Destination table name
-        table_append_or_replace: Upload strategy ("append" or "replace")
     """
 
     table_name: str
-    table_append_or_replace: str
 
 
 class ManagedFileScanner:
@@ -195,7 +193,6 @@ class ManagedFileScanner:
         self,
         file_path: Path,
         file_source: SourceFromLocalFS,
-        is_replace_override: bool = False,
     ) -> ManagedFileInput:
         """Extract file attributes using regex pattern matching.
 
@@ -206,7 +203,6 @@ class ManagedFileScanner:
         Args:
             file_path: Path to file to process
             file_source: Source configuration with regex pattern and group names
-            is_replace_override: Override table_append_or_replace to "replace"
 
         Returns:
             ManagedFileInput with extracted attributes
@@ -220,14 +216,11 @@ class ManagedFileScanner:
             >>> attrs.content_owner
             'Brand'
         """
-        table_append_or_replace = "replace" if is_replace_override else file_source.table_append_or_replace
-
         file_dict = {
             "file_name": file_path.name,
             "file_path": file_path,
             "base_name": file_source.select_file_name_base,
             "table_name": file_source.table_name,
-            "table_append_or_replace": table_append_or_replace,
             "storage_folder_name": file_source.storage_folder_name,
         }
 
@@ -285,7 +278,6 @@ class ManagedFileScanner:
 
                 table_mapper = ManagedFilesToDatabase(
                     table_name=file_source.table_name or file_source.select_file_name_base,
-                    table_append_or_replace=file_source.table_append_or_replace,
                     file_selector_base_name=file_source.select_file_name_base,
                 )
 
@@ -300,48 +292,3 @@ class ManagedFileScanner:
         self._apply_version_based_folder_naming(all_available_files)
 
         return all_available_files
-
-    def matched_file(
-        self,
-        source_file_path: Path,
-        input_file_base_name: str,
-        is_replace_override: bool,
-    ) -> ManagedFilesToDatabase | None:
-        """Process a single file matching a specific configuration.
-
-        Finds configuration matching the base name, extracts metadata from the
-        file, and creates a ManagedFilesToDatabase object for upload.
-
-        Args:
-            source_file_path: Path to file to process
-            input_file_base_name: Base name pattern to match in configuration
-            is_replace_override: Override table_append_or_replace to "replace"
-
-        Returns:
-            ManagedFilesToDatabase with file metadata, or None if no config matches
-
-        Example:
-            >>> result = scanner.matched_file(
-            ...     Path("YouTube_Brand_M_20230601.csv"),
-            ...     "YouTube_*_M_*",
-            ...     is_replace_override=False
-            ... )
-            >>> result.table_name
-            'youtube_raw'
-        """
-        valid_config = self.valid_config
-
-        for file_id in valid_config.file:
-            file_source = valid_config.file[file_id]
-            if file_source.select_file_name_base == input_file_base_name:
-                file_attrs = self.source_file_attrs(source_file_path, file_source, is_replace_override)
-
-                table_mapper = ManagedFilesToDatabase(
-                    table_name=file_source.table_name or file_source.select_file_name_base,
-                    table_append_or_replace=file_source.table_append_or_replace,
-                    file_selector_base_name=file_source.select_file_name_base,
-                    files=[ManagedFileMetadata.build_data_item(file_attrs)],
-                )
-                return table_mapper
-
-        return None

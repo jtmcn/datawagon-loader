@@ -35,7 +35,6 @@ regex_pattern = 'YouTube_(.+)_M_(\\d{8}|\\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 storage_folder_name = "youtube_analytics"
 table_name = "youtube_raw"
-table_append_or_replace = "append"
 """
 
 
@@ -130,7 +129,7 @@ class TestCliValidation:
 
     def test_invalid_source_config_raises_value_error(self, source_dir: Path, tmp_path: Path) -> None:
         bad = tmp_path / "bad.toml"
-        bad.write_text('[file.youtube]\nis_enabled = true\ntable_append_or_replace = "upsert"\n')
+        bad.write_text("[file.youtube]\nis_enabled = true\n")
         result = invoke(base_args(source_dir, bad), {})
         assert result.exit_code == 1
         assert isinstance(result.exception, ValueError)
