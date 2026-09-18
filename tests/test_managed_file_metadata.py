@@ -22,14 +22,14 @@ class TestManagedFileInput:
             file_path=file_path,
             base_name="test",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
         )
 
         assert file_input.file_name == "test.csv"
         assert file_input.file_path == file_path
         assert file_input.base_name == "test"
         assert file_input.table_name == "test_table"
-        assert file_input.storage_folder_name == "test_folder"
+        assert file_input.report_type == "claim_raw"
 
     def test_file_input_allows_extra_fields(self, temp_dir: Path) -> None:
         """Test that ManagedFileInput allows extra fields (Config.extra='allow')."""
@@ -41,7 +41,7 @@ class TestManagedFileInput:
             file_path=file_path,
             base_name="test",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             # Extra fields from regex groups
             content_owner="BrandName",
             file_date_key="20230601",
@@ -164,7 +164,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="YouTube_BrandName_M",
             table_name="youtube_raw",
-            storage_folder_name="youtube_analytics",
+            report_type="claim_raw",
             content_owner="BrandName",
             file_date_key="20230601",
         )
@@ -177,7 +177,7 @@ class TestBuildDataItem:
         assert result.file_dir == str(temp_dir)
         assert result.base_name == "YouTube_BrandName_M"
         assert result.table_name == "youtube_raw"
-        assert result.storage_folder_name == "youtube_analytics"
+        assert result.report_type == "claim_raw"
 
         # Check extracted fields
         assert result.file_version == "v1-1"
@@ -199,7 +199,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             file_date_key="202302",  # February 2023
         )
 
@@ -219,7 +219,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             file_date_key="202402",  # February 2024 (leap year)
         )
 
@@ -239,7 +239,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="simple_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
         )
 
         result = ManagedFileMetadata.build_data_item(source_file)
@@ -258,7 +258,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             file_date_key="20230601",
         )
 
@@ -266,24 +266,6 @@ class TestBuildDataItem:
 
         # Without content_owner, should be None
         assert result.content_owner is None
-
-    def test_build_with_empty_storage_folder_name(self, temp_dir: Path) -> None:
-        """Test building with empty storage_folder_name (should use base_name)."""
-        file_path = temp_dir / "data_file.csv"
-        file_path.write_text("test")
-
-        source_file = ManagedFileInput(
-            file_name=file_path.name,
-            file_path=file_path,
-            base_name="data_file",
-            table_name="test_table",
-            storage_folder_name="",  # Empty string
-        )
-
-        result = ManagedFileMetadata.build_data_item(source_file)
-
-        # Should fallback to base_name when empty
-        assert result.storage_folder_name == "data_file"
 
     def test_build_with_file_without_version(self, temp_dir: Path) -> None:
         """Test building with file that has no version."""
@@ -295,7 +277,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
         )
 
         result = ManagedFileMetadata.build_data_item(source_file)
@@ -313,7 +295,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="data_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             file_date_key="202312",  # December 2023
         )
 
@@ -334,7 +316,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="size_test",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
         )
 
         result = ManagedFileMetadata.build_data_item(source_file)
@@ -353,7 +335,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="custom_file",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             content_owner="BrandName",
             file_date_key="20230601",
             # Custom dynamic fields from regex
@@ -384,7 +366,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="custom_only",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             # Only custom fields, no standard extras
             product_type="premium",
             tier="gold",
@@ -412,7 +394,7 @@ class TestBuildDataItem:
             file_path=file_path,
             base_name="date_test",
             table_name="test_table",
-            storage_folder_name="test_folder",
+            report_type="claim_raw",
             file_date_key="20230601",
         )
 

@@ -10,6 +10,7 @@ from datawagon.console import confirm, error, inline_status_end, inline_status_s
 from datawagon.logging_config import get_logger
 from datawagon.objects.managed_file_metadata import ManagedFileMetadata
 from datawagon.objects.managed_file_scanner import ManagedFilesToDatabase
+from datawagon.objects.storage_layout import StorageLayout
 
 logger = get_logger(__name__)
 
@@ -33,6 +34,7 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
             ctx.abort()
         ctx.obj["GCS_MANAGER"] = gcs_manager
 
+    layout: StorageLayout = ctx.obj["STORAGE_LAYOUT"]
     csv_file_infos: List[ManagedFileMetadata] = [file_info for src in matched_new_files for file_info in src.files]
 
     if len(csv_file_infos) != 0:
@@ -53,29 +55,17 @@ def upload_all_gzip_csv(ctx: click.Context) -> None:
 
         has_errors = False
         for csv_info in csv_file_infos:
-            inline_status_start(f"Uploading {csv_info.file_name} into {csv_info.storage_folder_name}...")
+            try:
+                destination_name = layout.blob_path(csv_info)
+            except ValueError as e:
+                error(f"Cannot upload {e}")
+                fail_count += 1
+                has_errors = True
+                continue
+
+            inline_status_start(f"Uploading {csv_info.file_name} into {destination_name.rsplit('/', 1)[0]}...")
 
             str_path = str(csv_info.file_path)
-
-            if csv_info.report_date_str:
-                # CRITICAL: Only .csv.gz files allowed in partitioned folders
-                # BigQuery with Hive partitioning cannot filter by extension
-                if not csv_info.file_name.endswith(".csv.gz"):
-                    error(
-                        f"Cannot upload non-.csv.gz file to partitioned folder: {csv_info.file_name}. "
-                        f"BigQuery external tables with Hive partitioning require all files to be .csv.gz"
-                    )
-                    inline_status_end(False, error_msg=f"Skipped: {csv_info.file_name} (invalid extension)")
-                    fail_count += 1
-                    has_errors = True
-                    continue  # Skip to next file
-
-                destination_name = (
-                    f"{csv_info.storage_folder_name or csv_info.base_name}/"
-                    + f"report_date={csv_info.report_date_str}/{csv_info.file_name}"
-                )
-            else:
-                destination_name = (csv_info.storage_folder_name or csv_info.base_name) + "/" + csv_info.file_name
 
             is_success = gcs_manager.upload_blob(
                 str_path,

@@ -6,12 +6,13 @@ and human-readable file size formatting.
 """
 
 import calendar
-import re
 from datetime import date
 from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel
+
+from datawagon.objects.storage_layout import StorageLayout
 
 
 class ManagedFileInput(BaseModel):
@@ -24,8 +25,8 @@ class ManagedFileInput(BaseModel):
         file_name: Name of the file with extension
         file_path: Full path to the file
         base_name: Report Type selector from config (e.g., "claim_raw")
+        report_type: Report Type, the config section key (e.g., "claim_raw")
         table_name: Destination table name
-        storage_folder_name: GCS folder name for upload
 
     Note:
         Allows additional fields defined at runtime via regex_group_names
@@ -36,16 +37,16 @@ class ManagedFileInput(BaseModel):
         ...     file_name="YouTube_Brand_M_20230601_claim_raw_v1-1.csv.gz",
         ...     file_path=Path("/data/file.csv"),
         ...     base_name="claim_raw",
-        ...     table_name="youtube_raw",
-        ...     storage_folder_name="youtube_analytics"
+        ...     report_type="claim_raw",
+        ...     table_name="claim_raw",
         ... )
     """
 
     file_name: str
     file_path: Path
     base_name: str
+    report_type: str
     table_name: str
-    storage_folder_name: str
 
     # allows for additional fields defined at runtime by regex_group_names
     class Config:
@@ -131,8 +132,8 @@ class ManagedFileMetadata(ManagedFileInput):
             "file_path",
             "file_name",
             "base_name",
+            "report_type",
             "table_name",
-            "storage_folder_name",
         }
 
         # Collect dynamic fields (anything not in base model or handled explicitly)
@@ -145,13 +146,13 @@ class ManagedFileMetadata(ManagedFileInput):
             file_name=file_name,
             file_version=file_version,
             base_name=source_file.base_name,
+            report_type=source_file.report_type,
             table_name=source_file.table_name,
             file_size_in_bytes=file_size_in_bytes,
             file_size=file_size,
             report_date_key=report_date_key,
             report_date_str=report_date_str,
             content_owner=content_owner,
-            storage_folder_name=source_file.storage_folder_name or source_file.base_name,
             **dynamic_fields,  # Pass through any other custom regex fields
         )
 
@@ -176,12 +177,7 @@ class ManagedFileMetadata(ManagedFileInput):
             >>> ManagedFileMetadata.get_file_version("data.csv")
             ''
         """
-        file_version_pattern = r"_v\d+(-\d+)?"
-        match = re.search(file_version_pattern, file_name)
-        if match:
-            return match.group(0).lstrip("_")  # Remove the leading underscore
-        else:
-            return ""
+        return StorageLayout.version_of(file_name)
 
     @staticmethod
     def date_key_to_date(date_key: int) -> date:

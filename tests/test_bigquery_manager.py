@@ -17,24 +17,6 @@ def _mock_storage_client() -> Iterator[Mock]:
         yield mock_storage
 
 
-def test_normalize_table_name_with_version() -> None:
-    """Test table name normalization with version."""
-    result = BigQueryManager.normalize_table_name("claim_raw", "v1-1")
-    assert result == "claim_raw_v1_1"
-
-
-def test_normalize_table_name_without_version() -> None:
-    """Test table name normalization without version."""
-    result = BigQueryManager.normalize_table_name("asset_raw", "")
-    assert result == "asset_raw"
-
-
-def test_normalize_table_name_complex_version() -> None:
-    """Test table name normalization with complex version."""
-    result = BigQueryManager.normalize_table_name("claim_raw", "v2-3-4")
-    assert result == "claim_raw_v2_3_4"
-
-
 @patch("datawagon.bucket.bigquery_manager.bigquery.Client")
 def test_init_with_valid_dataset(mock_client_class: Mock) -> None:
     """Test BigQueryManager initializes successfully with valid dataset."""

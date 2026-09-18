@@ -85,32 +85,6 @@ class BigQueryManager(AnalyticsProvider):
             logger.error(f"Error connecting to BigQuery: {e}", exc_info=True)
             self._has_error = True
 
-    @staticmethod
-    def normalize_table_name(table_name: str, file_version: str) -> str:
-        """Convert table name and version to BigQuery-compatible format.
-
-        BigQuery table names must use underscores, not hyphens.
-        Converts "claim_raw" + "v1-1" → "claim_raw_v1_1"
-
-        Args:
-            table_name: Base table name (e.g., "claim_raw")
-            file_version: Version string (e.g., "v1-1" or empty)
-
-        Returns:
-            BigQuery-compatible table name
-
-        Example:
-            >>> BigQueryManager.normalize_table_name("claim_raw", "v1-1")
-            'claim_raw_v1_1'
-            >>> BigQueryManager.normalize_table_name("asset_raw", "")
-            'asset_raw'
-        """
-        if file_version:
-            # Replace hyphens with underscores for BigQuery compatibility
-            bq_version = file_version.replace("-", "_")
-            return f"{table_name}_{bq_version}"
-        return table_name
-
     @retry_with_backoff(retries=3, exceptions=TRANSIENT_EXCEPTIONS)
     def list_external_tables(self) -> List[BigQueryTableInfo]:
         """List all external tables in the dataset.

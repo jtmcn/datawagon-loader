@@ -29,6 +29,7 @@ from datawagon.console import brand, info, newline
 from datawagon.logging_config import setup_logging
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
+from datawagon.objects.storage_layout import StorageLayout
 
 
 @click.group(chain=True)
@@ -176,6 +177,10 @@ def cli(
     )
 
     ctx.obj["CONFIG"] = app_config
+    try:
+        ctx.obj["STORAGE_LAYOUT"] = StorageLayout.from_config(valid_config, final_bq_storage_prefix)
+    except ValueError as e:
+        raise click.UsageError(str(e))
     ctx.obj["GLOBAL"] = {}
 
 

@@ -17,6 +17,7 @@ import datawagon.main as main_module
 from datawagon.main import cli, start_cli
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
+from datawagon.objects.storage_layout import StorageLayout
 
 DW_VARS = [
     "DW_CSV_SOURCE_DIR",
@@ -33,8 +34,6 @@ is_enabled = true
 select_file_name_base = "YouTube_*_M_*"
 regex_pattern = 'YouTube_(.+)_M_(\\d{8}|\\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
-storage_folder_name = "youtube_analytics"
-table_name = "youtube_raw"
 """
 
 
@@ -159,6 +158,7 @@ class TestCliContext:
             bq_dataset="ds",
             bq_storage_prefix="caravan-versioned",
         )
+        assert obj["STORAGE_LAYOUT"] == StorageLayout("caravan-versioned", frozenset({"youtube"}))
         assert obj["GLOBAL"] == {}
         assert obj["logger"].level == logging.INFO
         assert f"csv_source_config: {config}" in result.output
@@ -198,6 +198,14 @@ class TestCliContext:
         args = [*base_args(source_dir, config), "--bq-dataset", "flag_ds", "--bq-storage-prefix", "flag-prefix"]
         assert invoke(args, flag_obj, env=env).exit_code == 0
         assert (flag_obj["CONFIG"].bq_dataset, flag_obj["CONFIG"].bq_storage_prefix) == ("flag_ds", "flag-prefix")
+        assert flag_obj["STORAGE_LAYOUT"].prefix == "flag-prefix"
+
+    def test_disagreeing_storage_folder_name_is_a_usage_error(self, source_dir: Path, tmp_path: Path) -> None:
+        config = tmp_path / "datawagon-config.toml"
+        config.write_text(FILE_SECTION + 'storage_folder_name = "caravan/youtube"\n')
+        result = invoke([*base_args(source_dir, config), "--bq-dataset", "ds"], {})
+        assert result.exit_code == 2
+        assert "[file.youtube] storage_folder_name = 'caravan/youtube'" in result.output
 
     def test_toml_storage_prefix_used_as_fallback(self, source_dir: Path, tmp_path: Path) -> None:
         config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\nstorage_prefix = "toml-prefix"\n')

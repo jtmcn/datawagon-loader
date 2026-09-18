@@ -253,7 +253,11 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 **File Metadata (`datawagon/objects/managed_file_metadata.py`)**:
 - `ManagedFileMetadata`: Pydantic model storing file info
 - Auto-converts `file_date_key` (YYYYMMDD or YYYYMM) to `report_date_str` (YYYY-MM-DD)
-- Includes `content_owner`, `file_version`, `base_name`, `storage_folder_name`
+- Includes `content_owner`, `file_version`, `base_name`, `report_type`
+
+**Storage Layout (`datawagon/objects/storage_layout.py`)**:
+- Single owner of "Report Type + Version → Storage Folder, blob path, Table name", both directions
+- `blob_path()` for upload; `locate()` / `table_named()` for create/recreate; folders that match no configured Report Type and Version are strays and are skipped
 
 **GCS Manager (`datawagon/bucket/gcs_manager.py`)**:
 - Wraps Google Cloud Storage client
@@ -279,7 +283,7 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 3. For each file, regex extracts metadata (content_owner, file_date_key, etc.)
 4. `ManagedFileMetadata` converts extracted data, creates `report_date_str`
 5. Commands compare local files to GCS bucket contents
-6. Upload creates partitioned path: `{storage_folder_name}/report_date={YYYY-MM-DD}/{filename}`
+6. `StorageLayout.blob_path()` builds `{storage_prefix}/{report_type}_{version}/report_date={YYYY-MM-DD}/{filename}`
 7. GCS Manager uploads files to bucket
 
 ### File Processing

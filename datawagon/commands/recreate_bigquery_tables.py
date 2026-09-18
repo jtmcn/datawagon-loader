@@ -1,6 +1,6 @@
 """Recreate BigQuery external tables with lowercase column names."""
 
-from typing import List
+from typing import Dict, List
 
 import click
 
@@ -20,6 +20,7 @@ from datawagon.console import (
 )
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
+from datawagon.objects.storage_layout import StorageLayout, Table
 
 
 @click.command(name="recreate-bigquery-tables")
@@ -94,6 +95,18 @@ def recreate_bigquery_tables(
             error(f"No matching tables found: {tables}")
             return
 
+    layout: StorageLayout = ctx.obj["STORAGE_LAYOUT"]
+    targets: Dict[str, Table] = {}
+    for tbl in existing_tables:
+        target = layout.table_named(tbl.table_name)
+        if target:
+            targets[tbl.table_name] = target
+        else:
+            warning(f"Skipping {tbl.table_name}: matches no Report Type and Version")
+    existing_tables = [t for t in existing_tables if t.table_name in targets]
+    if not existing_tables:
+        return
+
     # Initialize BigQuery manager
     bq_manager = ctx.obj.get("BQ_MANAGER")
     if not bq_manager:
@@ -109,18 +122,9 @@ def recreate_bigquery_tables(
     info("External tables don't contain data, but queries/views may break.")
     newline()
 
-    # Show tables to recreate
-    table_data = []
-    for tbl in existing_tables:
-        partitioned = "Yes" if tbl.is_partitioned else "No"
-        source_display = (
-            tbl.source_uri_pattern[:60] + "..." if len(tbl.source_uri_pattern) > 60 else tbl.source_uri_pattern
-        )
-        table_data.append([tbl.table_name, partitioned, source_display])
-
     table(
-        data=table_data,
-        headers=["Table Name", "Partitioned", "Source URI"],
+        data=[[tbl.table_name, targets[tbl.table_name].folder] for tbl in existing_tables],
+        headers=["Table Name", "GCS Folder"],
         title="Tables to Recreate",
     )
     newline()
@@ -141,19 +145,6 @@ def recreate_bigquery_tables(
     for tbl in existing_tables:
         inline_status_start(f"Recreating {tbl.table_name}...")
 
-        # Extract storage folder from source URI
-        # gs://bucket/folder/report_date=*/*.csv.gz → folder
-        # gs://bucket/folder/* → folder
-        source_uri = tbl.source_uri_pattern
-        storage_folder = source_uri.replace(f"gs://{app_config.gcs_bucket}/", "")
-
-        # Remove partition suffix if present
-        if "/report_date=" in storage_folder:
-            storage_folder = storage_folder.split("/report_date=")[0]
-
-        # Remove wildcard suffix
-        storage_folder = storage_folder.rstrip("/*")
-
         # Drop existing table
         if not bq_manager.delete_table(tbl.table_name):
             inline_status_end(False)
@@ -163,8 +154,8 @@ def recreate_bigquery_tables(
         # Recreate with new schema (schema will be inferred automatically)
         recreate_success = bq_manager.create_external_table(
             table_name=tbl.table_name,
-            storage_folder_name=storage_folder,
-            use_hive_partitioning=tbl.is_partitioned,
+            storage_folder_name=targets[tbl.table_name].folder,
+            use_hive_partitioning=True,
         )
 
         inline_status_end(recreate_success)

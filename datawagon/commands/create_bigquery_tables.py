@@ -1,8 +1,7 @@
 """Create BigQuery external tables command."""
 
-import re
 from collections import defaultdict
-from typing import List
+from typing import Dict, List, Set, Tuple
 
 import click
 
@@ -21,7 +20,8 @@ from datawagon.console import (
     warning,
 )
 from datawagon.objects.app_config import AppConfig
-from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo, StorageFolderSummary
+from datawagon.objects.bigquery_table_metadata import BigQueryTableInfo
+from datawagon.objects.storage_layout import StorageLayout, Stray, Table
 
 
 @click.command(name="create-bigquery-tables")
@@ -71,56 +71,43 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
             ctx.abort()
         ctx.obj["BQ_MANAGER"] = bq_manager
 
-    # Scan GCS bucket for storage folders
-    info(f"Scanning GCS bucket for folders under '{app_config.bq_storage_prefix}/'...")
-    storage_folders = _scan_gcs_storage_folders(
-        gcs_manager, app_config.gcs_bucket, storage_prefix=app_config.bq_storage_prefix
-    )
+    layout: StorageLayout = ctx.obj["STORAGE_LAYOUT"]
+    info(f"Scanning GCS bucket for folders under '{layout.prefix}/'...")
+    tables, strays = _tables_in_bucket(gcs_manager, layout)
 
-    if not storage_folders:
+    if strays:
+        warning(f"Skipping {len(strays)} folders that no Table can read:")
+        for folder in sorted(strays):
+            warning(f"  {folder}")
+
+    if not tables:
         warning("No storage folders found in GCS bucket.")
         return
 
-    success(f"Found {len(storage_folders)} storage folders in GCS")
+    success(f"Found {len(tables)} storage folders in GCS")
 
-    # Identify folders without BigQuery tables
-    folders_to_create = []
-    for folder in storage_folders:
-        if folder.proposed_bq_table_name not in existing_table_names:
-            folders_to_create.append(folder)
+    tables_to_create = {t: count for t, count in tables.items() if t.name not in existing_table_names}
 
-    if not folders_to_create:
+    if not tables_to_create:
         newline()
         success("All storage folders already have corresponding BigQuery tables.")
         return
 
     # Display folders that need tables
     newline()
-    warning(f"Found {len(folders_to_create)} storage folders without BigQuery tables:")
+    warning(f"Found {len(tables_to_create)} storage folders without BigQuery tables:")
     newline()
 
-    table_data = []
-    for folder in folders_to_create:
-        partitioned = "Yes" if folder.has_partitioning else "No"
-        table_data.append(
-            [
-                folder.proposed_bq_table_name,
-                folder.storage_folder_name,
-                folder.file_count,
-                partitioned,
-            ]
-        )
-
     table(
-        data=table_data,
-        headers=["Table to Create", "GCS Folder", "File Count", "Partitioned"],
+        data=[[t.name, t.folder, count] for t, count in tables_to_create.items()],
+        headers=["Table to Create", "GCS Folder", "File Count"],
         title="Tables to Create",
     )
     newline()
 
     # Prompt for confirmation
     confirm(
-        f"Create {len(folders_to_create)} BigQuery external tables?",
+        f"Create {len(tables_to_create)} BigQuery external tables?",
         default=False,
         abort=True,
     )
@@ -131,13 +118,13 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
     success_count = 0
     error_count = 0
 
-    for folder in folders_to_create:
-        inline_status_start(f"Creating table {folder.proposed_bq_table_name}...")
+    for tbl in tables_to_create:
+        inline_status_start(f"Creating table {tbl.name}...")
 
         success_result = bq_manager.create_external_table(
-            table_name=folder.proposed_bq_table_name,
-            storage_folder_name=folder.storage_folder_name,
-            use_hive_partitioning=folder.has_partitioning,
+            table_name=tbl.name,
+            storage_folder_name=tbl.folder,
+            use_hive_partitioning=True,
         )
 
         inline_status_end(success_result)
@@ -155,86 +142,16 @@ def create_bigquery_tables(ctx: click.Context, dataset: str | None) -> None:
         success(f"Successfully created {success_count} external tables!")
 
 
-def _scan_gcs_storage_folders(
-    gcs_manager: GcsManager, bucket_name: str, storage_prefix: str = ""
-) -> List[StorageFolderSummary]:
-    """Scan GCS bucket and identify storage folders with CSV files.
-
-    Groups files by storage folder, extracts version information,
-    and detects partitioning patterns.
-
-    Args:
-        gcs_manager: GCS manager instance
-        bucket_name: GCS bucket name
-        storage_prefix: Optional prefix to filter folders (e.g., "caravan-versioned")
-
-    Returns:
-        List of StorageFolderSummary objects
-    """
-    # List all CSV.GZ files in bucket under the specified prefix
-    all_blobs = gcs_manager.list_all_blobs_with_prefix(prefix=storage_prefix)
-    csv_blobs = [blob for blob in all_blobs if blob.endswith(".csv.gz")]
-
-    if not csv_blobs:
-        return []
-
-    # Group files by storage folder
-    folder_groups = defaultdict(list)
-    for blob in csv_blobs:
-        # Extract storage folder (first part of path before partition or file)
-        # Example: caravan-versioned/claim_raw_v1-1/report_date=2023-06-30/file.csv.gz
-        #          → caravan-versioned/claim_raw_v1-1
-
-        parts = blob.split("/")
-        if len(parts) >= 2:
-            # Check if path includes partition (report_date=*)
-            if any("report_date=" in part for part in parts):
-                # Take everything before partition directory
-                partition_idx = next(i for i, p in enumerate(parts) if "report_date=" in p)
-                folder_path = "/".join(parts[:partition_idx])
-            else:
-                # No partitioning, take everything except filename
-                folder_path = "/".join(parts[:-1])
-
-            folder_groups[folder_path].append(blob)
-
-    # Create StorageFolderSummary for each folder
-    summaries = []
-    for folder_path, files in folder_groups.items():
-        # Extract table name and version from folder path
-        # Example: caravan-versioned/claim_raw_v1-1 → table=claim_raw, version=v1-1
-        folder_name = folder_path.split("/")[-1]
-
-        # Try to extract version pattern
-        version_match = re.search(r"_v\d+(-\d+)?$", folder_name)
-        if version_match:
-            file_version = version_match.group(0).lstrip("_")  # v1-1
-            table_name = folder_name[: version_match.start()]  # claim_raw
+def _tables_in_bucket(gcs_manager: GcsManager, layout: StorageLayout) -> Tuple[Dict[Table, int], Set[str]]:
+    """File count per Table found under the Storage Prefix, plus folders that no Table can read."""
+    tables: Dict[Table, int] = defaultdict(int)
+    strays: Set[str] = set()
+    for blob in gcs_manager.list_all_blobs_with_prefix(prefix=layout.prefix):
+        if not blob.endswith(".csv.gz"):
+            continue
+        location = layout.locate(blob)
+        if isinstance(location, Stray):
+            strays.add(location.folder)
         else:
-            file_version = ""
-            table_name = folder_name
-
-        # Normalize table name for BigQuery (replace hyphens in version)
-        proposed_bq_table_name = BigQueryManager.normalize_table_name(table_name, file_version)
-
-        # Check if files use partitioning
-        has_partitioning = any("report_date=" in file for file in files)
-
-        # Sample files for display
-        sample_files = files[:3]
-
-        summary = StorageFolderSummary(
-            storage_folder_name=folder_path,
-            table_name=table_name,
-            file_version=file_version,
-            proposed_bq_table_name=proposed_bq_table_name,
-            file_count=len(files),
-            has_partitioning=has_partitioning,
-            sample_files=sample_files,
-        )
-        summaries.append(summary)
-
-    # Sort by table name for consistent display
-    summaries.sort(key=lambda x: x.proposed_bq_table_name)
-
-    return summaries
+            tables[layout.table(location.report_type, location.version)] += 1
+    return dict(sorted(tables.items())), strays

@@ -60,7 +60,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="claim_raw",
+                report_type="claim_raw",
             )
         ]
         bucket_files: List[CurrentDestinationData] = []
@@ -92,7 +92,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="claim_raw",
+                report_type="claim_raw",
             )
         ]
         bucket_files = [CurrentDestinationData(base_name="claim_raw", file_count=3, source_files=["file1.csv"])]
@@ -126,7 +126,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="claim_raw",
+                report_type="claim_raw",
             ),
             ManagedFileMetadata(
                 file_path=file2,
@@ -140,7 +140,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="revenue_summary",
+                report_type="revenue_summary",
             ),
         ]
         bucket_files = [
@@ -177,7 +177,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="zebra_data",
+                report_type="zebra_data",
             ),
             ManagedFileMetadata(
                 file_path=file2,
@@ -191,7 +191,7 @@ class TestCompareFiles:
                 report_date_key=None,
                 report_date_str=None,
                 content_owner=None,
-                storage_folder_name="apple_data",
+                report_type="apple_data",
             ),
         ]
         bucket_files: List[CurrentDestinationData] = []
@@ -228,7 +228,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_file2 = ManagedFileMetadata(
             file_path=file2,
@@ -242,7 +242,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_groups = [
             ManagedFilesToDatabase(
@@ -277,7 +277,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_groups = [
             ManagedFilesToDatabase(
@@ -316,7 +316,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_file2 = ManagedFileMetadata(
             file_path=file2,
@@ -330,7 +330,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_file3 = ManagedFileMetadata(
             file_path=file3,
@@ -344,7 +344,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="claim_raw",
+            report_type="claim_raw",
         )
         local_groups = [
             ManagedFilesToDatabase(
@@ -393,7 +393,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="zebra_data",
+            report_type="zebra_data",
         )
         local_file2 = ManagedFileMetadata(
             file_path=file2,
@@ -407,7 +407,7 @@ class TestFindNewFiles:
             report_date_key=None,
             report_date_str=None,
             content_owner=None,
-            storage_folder_name="apple_data",
+            report_type="apple_data",
         )
         # Add in non-alphabetical order
         local_groups = [
