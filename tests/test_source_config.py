@@ -163,11 +163,11 @@ class TestBigQueryConfig:
     """Test BigQueryConfig model."""
 
     def test_bigquery_config_with_defaults(self) -> None:
-        """Test BigQueryConfig with default storage_prefix."""
+        """Test BigQueryConfig leaves the deprecated storage_prefix unset."""
         config = BigQueryConfig(dataset="my_dataset")
 
         assert config.dataset == "my_dataset"
-        assert config.storage_prefix == "caravan-versioned"
+        assert config.storage_prefix is None
 
     def test_bigquery_config_with_custom_prefix(self) -> None:
         """Test BigQueryConfig with custom storage_prefix."""
@@ -205,7 +205,7 @@ class TestSourceConfigWithBigQuery:
 
         assert config.bigquery is not None
         assert config.bigquery.dataset == "test_dataset"
-        assert config.bigquery.storage_prefix == "caravan-versioned"
+        assert config.bigquery.storage_prefix is None
 
     def test_source_config_without_bigquery_backwards_compat(self) -> None:
         """Test SourceConfig without bigquery (backward compatibility)."""
@@ -263,3 +263,18 @@ def test_legacy_table_append_or_replace_key_is_ignored() -> None:
     )
 
     assert not hasattr(config.file["claim_raw"], "table_append_or_replace")
+
+
+@pytest.mark.unit
+class TestSelectFileNameBaseDefault:
+    def test_defaults_to_section_key(self) -> None:
+        config = SourceConfig(**{"file": {"claim_raw": {"is_enabled": True}}})
+        assert config.file["claim_raw"].select_file_name_base == "claim_raw"
+
+    def test_explicit_value_wins(self) -> None:
+        config = SourceConfig(**{"file": {"claim_raw": {"is_enabled": True, "select_file_name_base": "claim"}}})
+        assert config.file["claim_raw"].select_file_name_base == "claim"
+
+    def test_top_level_storage_prefix(self) -> None:
+        config = SourceConfig(**{"storage_prefix": "p", "file": {}})
+        assert config.storage_prefix == "p"

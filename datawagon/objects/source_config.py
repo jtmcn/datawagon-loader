@@ -20,17 +20,14 @@ class BigQueryConfig(BaseModel):
 
     Attributes:
         dataset: BigQuery dataset name for external tables
-        storage_prefix: GCS folder prefix for BigQuery table creation
-            (default: "caravan-versioned")
+        storage_prefix: Deprecated; use the top-level ``storage_prefix``
 
     Example:
         >>> config = BigQueryConfig(dataset="youtube_analytics")
-        >>> config.storage_prefix
-        'caravan-versioned'
     """
 
     dataset: str
-    storage_prefix: str = "caravan-versioned"
+    storage_prefix: Optional[str] = None
 
 
 class SourceFromLocalFS(BaseModel):
@@ -42,9 +39,9 @@ class SourceFromLocalFS(BaseModel):
 
     Attributes:
         is_enabled: Whether this file source is active
-        storage_folder_name: GCS folder name for uploads (defaults to table_name if None)
-        table_name: Destination table name
-        select_file_name_base: Glob pattern to match files (e.g., "YouTube_*")
+        storage_folder_name: Deprecated; derived from the Storage Prefix and Report Type
+        table_name: Deprecated; derived from the Report Type and Version
+        select_file_name_base: Pattern to match files (defaults to the section key)
         exclude_file_name_base: Glob pattern to exclude files (e.g., ".~lock*")
         regex_pattern: Compiled regex for extracting metadata from filenames
         regex_group_names: Named groups from regex (e.g., ["content_owner", "file_date_key"])
@@ -56,8 +53,6 @@ class SourceFromLocalFS(BaseModel):
         ...     exclude_file_name_base=".~lock*",
         ...     regex_pattern=r"YouTube_(.+)_M_(\\d{8})",
         ...     regex_group_names=["content_owner", "file_date_key"],
-        ...     storage_folder_name="youtube_analytics",
-        ...     table_name="youtube_raw"
         ... )
     """
 
@@ -117,8 +112,9 @@ class SourceConfig(BaseModel):
     name key. Loaded from source_config.toml.
 
     Attributes:
-        file: Dictionary mapping source names to SourceFromLocalFS configurations
-        bigquery: Optional BigQuery configuration (dataset, storage_prefix)
+        storage_prefix: Bucket root for all Storage Folders (optional)
+        file: Report Type (section key) to SourceFromLocalFS configuration
+        bigquery: Optional BigQuery configuration
 
     Example:
         >>> config = SourceConfig(
@@ -130,5 +126,16 @@ class SourceConfig(BaseModel):
         ... )
     """
 
+    storage_prefix: Optional[str] = None
     file: dict[str, SourceFromLocalFS]
     bigquery: Optional[BigQueryConfig] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_select_file_name_base(cls, data: Any) -> Any:
+        """A ``[file.X]`` section selects files containing ``X`` unless it says otherwise."""
+        if isinstance(data, dict) and isinstance(data.get("file"), dict):
+            for key, source in data["file"].items():
+                if isinstance(source, dict):
+                    source.setdefault("select_file_name_base", key)
+        return data

@@ -79,8 +79,8 @@ class TestManagedFileScannerInit:
         config = {
             "file": {
                 "youtube_data": {
-                    "is_enabled": True,
-                    # Missing required fields
+                    "select_file_name_base": "YouTube",
+                    # Missing required is_enabled
                 }
             }
         }

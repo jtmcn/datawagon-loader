@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecated
+- `[bigquery] storage_prefix`, `DW_BQ_STORAGE_PREFIX` and `--bq-storage-prefix` (use the Storage Prefix settings above)
+- Per-file `storage_folder_name` and `table_name`: they only warn if they match the derived names; a mismatch now fails at startup instead of being silently ignored
+
 ### Removed
 - **BREAKING: Dropped Python 3.9 and 3.10 support** (3.9 EOL Oct 2025; 3.10 EOL Oct 2026, with Google Cloud client libraries ending 3.10 support 2026-10-04); DataWagon now requires Python 3.11–3.12
 
@@ -15,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raised `protobuf` from 4.x to `>=5.29.6,<8.0.0` and added `pyasn1>=0.6.4` floor
 
 ### Changed
+- Upload and BigQuery table creation now share one Storage Prefix: top-level `storage_prefix` in the TOML, `DW_STORAGE_PREFIX`, or `--storage-prefix`
+- Storage Folders and Table names are derived from the `[file.X]` section key plus the Version; `select_file_name_base` defaults to the key
+- Uploads refuse files with no Version or Report Month in the name, and files that aren't `.csv.gz`
+- `create-bigquery-tables` and `recreate-bigquery-tables` skip, with a warning, folders and tables that match no configured Report Type and Version; `recreate` works out the folder from the table name instead of the old source URI, and always recreates Hive-partitioned tables
 - CI now tests Python 3.11, 3.12
 - Upgraded `pytest` to 9.x, `pytest-cov` to 7.x, `black` to 26.x
 

@@ -53,7 +53,6 @@ def test_recreate_tables_with_force(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="folder",
     )
 
     ctx_obj = {"CONFIG": app_config, "STORAGE_LAYOUT": _layout("folder")}
@@ -103,7 +102,6 @@ def test_recreate_tables_no_tables_found(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="folder",
     )
 
     ctx_obj = {"CONFIG": app_config, "STORAGE_LAYOUT": _layout("folder")}
@@ -166,7 +164,6 @@ def test_recreate_specific_tables(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="folder",
     )
 
     ctx_obj = {"CONFIG": app_config, "STORAGE_LAYOUT": _layout("folder")}
@@ -221,7 +218,6 @@ def test_recreate_handles_delete_failure(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="folder",
     )
 
     ctx_obj = {"CONFIG": app_config, "STORAGE_LAYOUT": _layout("folder")}
@@ -279,7 +275,6 @@ def test_recreate_derives_storage_folder_from_table_name(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="prefix",
     )
 
     ctx_obj = {"CONFIG": app_config, "STORAGE_LAYOUT": _layout("prefix")}
@@ -319,7 +314,6 @@ def test_recreate_skips_tables_matching_no_report_type(
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="prefix",
     )
 
     result = CliRunner().invoke(

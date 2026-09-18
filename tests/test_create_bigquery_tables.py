@@ -25,7 +25,6 @@ def ctx_obj() -> Dict[str, Any]:
         gcs_project_id="project",
         gcs_bucket="bucket",
         bq_dataset="dataset",
-        bq_storage_prefix="prefix",
     )
     return {"CONFIG": app_config, "STORAGE_LAYOUT": StorageLayout("prefix", frozenset({"claim_raw", "asset_raw"}))}
 

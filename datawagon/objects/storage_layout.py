@@ -9,10 +9,15 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
+from datawagon.logging_config import get_logger
+
 if TYPE_CHECKING:
     from datawagon.objects.managed_file_metadata import ManagedFileMetadata
     from datawagon.objects.source_config import SourceConfig
 
+logger = get_logger(__name__)
+
+DEFAULT_STORAGE_PREFIX = "caravan-versioned"
 _VERSION = r"v\d+(?:-\d+)?"
 _FILE_VERSION = re.compile(rf"_({_VERSION})")
 _FOLDER = re.compile(rf"^(.+)_({_VERSION})$")
@@ -45,16 +50,15 @@ class StorageLayout:
 
     @classmethod
     def from_config(cls, config: "SourceConfig", prefix: str) -> "StorageLayout":
-        """Report Types are the ``[file.X]`` keys; legacy per-file names must agree with them."""
+        """Report Types are the ``[file.X]`` keys; deprecated per-file names must agree with them."""
         for key, source in config.file.items():
-            folder = f"{prefix}/{key}"
-            if source.storage_folder_name and source.storage_folder_name != folder:
-                raise ValueError(
-                    f"[file.{key}] storage_folder_name = {source.storage_folder_name!r} "
-                    f"disagrees with the Storage Folder {folder!r}"
-                )
-            if source.table_name and source.table_name != key:
-                raise ValueError(f"[file.{key}] table_name = {source.table_name!r} disagrees with the Table {key!r}")
+            for field, derived in [("storage_folder_name", f"{prefix}/{key}"), ("table_name", key)]:
+                value = getattr(source, field)
+                if not value:
+                    continue
+                if value != derived:
+                    raise ValueError(f"[file.{key}] {field} = {value!r} disagrees with the derived {derived!r}")
+                logger.warning(f"[file.{key}] {field} is deprecated and can be removed")
         return cls(prefix, frozenset(config.file))
 
     @staticmethod

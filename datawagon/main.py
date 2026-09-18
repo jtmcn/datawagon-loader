@@ -29,7 +29,7 @@ from datawagon.console import brand, info, newline
 from datawagon.logging_config import setup_logging
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
-from datawagon.objects.storage_layout import StorageLayout
+from datawagon.objects.storage_layout import DEFAULT_STORAGE_PREFIX, StorageLayout
 
 
 @click.group(chain=True)
@@ -75,11 +75,13 @@ from datawagon.objects.storage_layout import StorageLayout
     envvar="DW_BQ_DATASET",
 )
 @click.option(
+    "--storage-prefix",
     "--bq-storage-prefix",
+    "storage_prefix",
     type=str,
     default=None,
-    help="GCS folder prefix for BigQuery table creation (default: caravan-versioned)",
-    envvar="DW_BQ_STORAGE_PREFIX",
+    help=f"Bucket root for all Storage Folders (default: {DEFAULT_STORAGE_PREFIX})",
+    envvar=["DW_STORAGE_PREFIX", "DW_BQ_STORAGE_PREFIX"],
 )
 @click.pass_context
 def cli(
@@ -91,7 +93,7 @@ def cli(
     gcs_project_id: str,
     gcs_bucket: str,
     bq_dataset: str,
-    bq_storage_prefix: str,
+    storage_prefix: str | None,
 ) -> None:
     """DataWagon CLI group for processing CSV files to Google Cloud Storage.
 
@@ -108,7 +110,7 @@ def cli(
         gcs_project_id: Google Cloud Platform project ID
         gcs_bucket: GCS bucket name for uploads
         bq_dataset: BigQuery dataset for external tables
-        bq_storage_prefix: GCS folder prefix for BigQuery table creation
+        storage_prefix: Bucket root for all Storage Folders
 
     Raises:
         click.UsageError: If required parameters are missing or invalid
@@ -147,17 +149,15 @@ def cli(
 
     ctx.obj["FILE_CONFIG"] = valid_config
 
-    # Extract BigQuery config from TOML if present
-    toml_bq_dataset = None
-    toml_bq_storage_prefix = "caravan-versioned"
-
-    if valid_config.bigquery:
-        toml_bq_dataset = valid_config.bigquery.dataset
-        toml_bq_storage_prefix = valid_config.bigquery.storage_prefix
-
-    # Merge configuration: CLI/env takes precedence over TOML
+    toml_bq_dataset = valid_config.bigquery.dataset if valid_config.bigquery else None
     final_bq_dataset = bq_dataset or toml_bq_dataset
-    final_bq_storage_prefix = bq_storage_prefix or toml_bq_storage_prefix
+
+    if os.environ.get("DW_BQ_STORAGE_PREFIX") and not os.environ.get("DW_STORAGE_PREFIX"):
+        logger.warning("DW_BQ_STORAGE_PREFIX is deprecated; rename it to DW_STORAGE_PREFIX")
+    legacy_prefix = valid_config.bigquery.storage_prefix if valid_config.bigquery else None
+    if legacy_prefix:
+        logger.warning("[bigquery] storage_prefix is deprecated; move it to a top-level storage_prefix")
+    final_storage_prefix = storage_prefix or valid_config.storage_prefix or legacy_prefix or DEFAULT_STORAGE_PREFIX
 
     # Validate that bq_dataset is set from at least one source
     if not final_bq_dataset:
@@ -173,12 +173,11 @@ def cli(
         gcs_project_id=gcs_project_id,
         gcs_bucket=gcs_bucket,
         bq_dataset=final_bq_dataset,
-        bq_storage_prefix=final_bq_storage_prefix,
     )
 
     ctx.obj["CONFIG"] = app_config
     try:
-        ctx.obj["STORAGE_LAYOUT"] = StorageLayout.from_config(valid_config, final_bq_storage_prefix)
+        ctx.obj["STORAGE_LAYOUT"] = StorageLayout.from_config(valid_config, final_storage_prefix)
     except ValueError as e:
         raise click.UsageError(str(e))
     ctx.obj["GLOBAL"] = {}

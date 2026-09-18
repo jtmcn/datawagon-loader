@@ -216,17 +216,18 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 
 **Source Configuration (`datawagon-config.toml`)**: Defines file types to process and BigQuery settings.
 
+**Top level**: `storage_prefix`: bucket root for all Storage Folders (default: "caravan-versioned")
+
 **BigQuery Section (`[bigquery]`)**: Optional section for BigQuery configuration:
 - `dataset`: BigQuery dataset name for external tables
-- `storage_prefix`: GCS folder prefix for BigQuery table creation (default: "caravan-versioned")
+- `storage_prefix`: deprecated alias for the top-level key
 
-**File Sections (`[file.{name}]`)**: Each section specifies:
-- `select_file_name_base`: Pattern to match files
+**File Sections (`[file.{report_type}]`)**: The section key is the Report Type; the Storage Folder and Table names are derived from it. Each section specifies:
+- `select_file_name_base`: Pattern to match files (default: the section key)
 - `exclude_file_name_base`: Pattern to exclude files
 - `regex_pattern`: Regex to extract metadata from filenames
 - `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
-- `storage_folder_name`: GCS destination folder
-- `table_name`: Destination table name
+- `storage_folder_name`, `table_name`: deprecated; warn if they match the derived names, fail startup if they don't
 
 **Runtime Configuration**: Via environment variables or CLI flags (takes precedence over TOML):
 - `DW_CSV_SOURCE_DIR`: Source directory for CSV files
@@ -234,9 +235,9 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `DW_GCS_PROJECT_ID`: GCS project ID
 - `DW_GCS_BUCKET`: GCS bucket name
 - `DW_BQ_DATASET`: BigQuery dataset (can also be set in TOML `[bigquery]` section)
-- `DW_BQ_STORAGE_PREFIX`: BigQuery storage prefix (can also be set in TOML `[bigquery]` section)
+- `DW_STORAGE_PREFIX` / `--storage-prefix`: Storage Prefix (`DW_BQ_STORAGE_PREFIX` / `--bq-storage-prefix` are deprecated aliases)
 
-**Configuration Precedence** (for BigQuery settings): CLI flag > Environment variable > TOML config
+**Configuration Precedence** (dataset and Storage Prefix): CLI flag > Environment variable > TOML config
 
 ### Core Components
 
