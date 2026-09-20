@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Deprecated
-- `[bigquery] storage_prefix`, `DW_BQ_STORAGE_PREFIX` and `--bq-storage-prefix` (use the Storage Prefix settings above)
-- Per-file `storage_folder_name` and `table_name`: they only warn if they match the derived names; a mismatch now fails at startup instead of being silently ignored
-
 ### Removed
 - **BREAKING: Dropped Python 3.9 and 3.10 support** (3.9 EOL Oct 2025; 3.10 EOL Oct 2026, with Google Cloud client libraries ending 3.10 support 2026-10-04); DataWagon now requires Python 3.11–3.12
 
@@ -26,9 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI now tests Python 3.11, 3.12
 - Upgraded `pytest` to 9.x, `pytest-cov` to 7.x, `black` to 26.x
 
+### Deprecated
+- `[bigquery] storage_prefix`, `DW_BQ_STORAGE_PREFIX` and `--bq-storage-prefix` (use the Storage Prefix settings above)
+- Per-file `storage_folder_name` and `table_name`: they only warn if they match the derived names; a mismatch now fails at startup instead of being silently ignored
+
 ### Fixed
 - GCS uploads, copies and listings now actually retry transient errors (503/504/500/429); a broad `except Exception` had been swallowing them before the retry decorator ran. Once retries are exhausted, methods still log and return `False`/`[]`
-- `[bigquery] storage_prefix` in the TOML config is now used when neither `--bq-storage-prefix` nor `DW_BQ_STORAGE_PREFIX` is set
 - `python -m datawagon` now runs the CLI, the `datawagon` console script points at `datawagon.main:start_cli`, and importing `datawagon.__main__` no longer launches the CLI
 
 ## [1.2.1] - 2025-12-14

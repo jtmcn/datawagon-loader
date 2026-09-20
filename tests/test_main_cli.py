@@ -227,8 +227,19 @@ class TestCliContext:
         assert "DW_BQ_STORAGE_PREFIX is deprecated" in result.output
 
         flag_obj: dict[str, Any] = {}
-        assert invoke([*base_args(source_dir, config), "--bq-storage-prefix", "flag-prefix"], flag_obj).exit_code == 0
+        result = invoke([*base_args(source_dir, config), "--bq-storage-prefix", "flag-prefix"], flag_obj)
+        assert result.exit_code == 0, result.output
         assert flag_obj["STORAGE_LAYOUT"].prefix == "flag-prefix"
+        assert "--bq-storage-prefix / DW_BQ_STORAGE_PREFIX is deprecated" in result.output
+
+    def test_new_prefix_beats_deprecated_and_still_warns(self, source_dir: Path, tmp_path: Path) -> None:
+        config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\n')
+        obj: dict[str, Any] = {}
+        env = {"DW_STORAGE_PREFIX": "new", "DW_BQ_STORAGE_PREFIX": "old"}
+        result = invoke(base_args(source_dir, config), obj, env=env)
+        assert result.exit_code == 0, result.output
+        assert obj["STORAGE_LAYOUT"].prefix == "new"
+        assert "DW_BQ_STORAGE_PREFIX is deprecated" in result.output
 
     def test_matching_deprecated_file_keys_warn(self, source_dir: Path, tmp_path: Path) -> None:
         config = tmp_path / "datawagon-config.toml"

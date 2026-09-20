@@ -76,13 +76,12 @@ from datawagon.objects.storage_layout import DEFAULT_STORAGE_PREFIX, StorageLayo
 )
 @click.option(
     "--storage-prefix",
-    "--bq-storage-prefix",
-    "storage_prefix",
     type=str,
     default=None,
     help=f"Bucket root for all Storage Folders (default: {DEFAULT_STORAGE_PREFIX})",
-    envvar=["DW_STORAGE_PREFIX", "DW_BQ_STORAGE_PREFIX"],
+    envvar="DW_STORAGE_PREFIX",
 )
+@click.option("--bq-storage-prefix", type=str, default=None, hidden=True, envvar="DW_BQ_STORAGE_PREFIX")
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -94,6 +93,7 @@ def cli(
     gcs_bucket: str,
     bq_dataset: str,
     storage_prefix: str | None,
+    bq_storage_prefix: str | None,
 ) -> None:
     """DataWagon CLI group for processing CSV files to Google Cloud Storage.
 
@@ -111,6 +111,7 @@ def cli(
         gcs_bucket: GCS bucket name for uploads
         bq_dataset: BigQuery dataset for external tables
         storage_prefix: Bucket root for all Storage Folders
+        bq_storage_prefix: Deprecated alias for storage_prefix
 
     Raises:
         click.UsageError: If required parameters are missing or invalid
@@ -149,15 +150,24 @@ def cli(
 
     ctx.obj["FILE_CONFIG"] = valid_config
 
-    toml_bq_dataset = valid_config.bigquery.dataset if valid_config.bigquery else None
-    final_bq_dataset = bq_dataset or toml_bq_dataset
+    bigquery = valid_config.bigquery
+    final_bq_dataset = bq_dataset or (bigquery.dataset if bigquery else None)
 
-    if os.environ.get("DW_BQ_STORAGE_PREFIX") and not os.environ.get("DW_STORAGE_PREFIX"):
-        logger.warning("DW_BQ_STORAGE_PREFIX is deprecated; rename it to DW_STORAGE_PREFIX")
-    legacy_prefix = valid_config.bigquery.storage_prefix if valid_config.bigquery else None
-    if legacy_prefix:
+    toml_bq_storage_prefix = bigquery.storage_prefix if bigquery else None
+    if bq_storage_prefix:
+        logger.warning(
+            "--bq-storage-prefix / DW_BQ_STORAGE_PREFIX is deprecated; use --storage-prefix / DW_STORAGE_PREFIX"
+        )
+    if toml_bq_storage_prefix:
         logger.warning("[bigquery] storage_prefix is deprecated; move it to a top-level storage_prefix")
-    final_storage_prefix = storage_prefix or valid_config.storage_prefix or legacy_prefix or DEFAULT_STORAGE_PREFIX
+    # New names beat deprecated ones; Click already ranks each flag over its env var
+    final_storage_prefix = (
+        storage_prefix
+        or bq_storage_prefix
+        or valid_config.storage_prefix
+        or toml_bq_storage_prefix
+        or DEFAULT_STORAGE_PREFIX
+    )
 
     # Validate that bq_dataset is set from at least one source
     if not final_bq_dataset:

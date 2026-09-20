@@ -275,6 +275,8 @@ class TestSelectFileNameBaseDefault:
         config = SourceConfig(**{"file": {"claim_raw": {"is_enabled": True, "select_file_name_base": "claim"}}})
         assert config.file["claim_raw"].select_file_name_base == "claim"
 
-    def test_top_level_storage_prefix(self) -> None:
-        config = SourceConfig(**{"storage_prefix": "p", "file": {}})
-        assert config.storage_prefix == "p"
+
+@pytest.mark.unit
+def test_top_level_storage_prefix() -> None:
+    config = SourceConfig(**{"storage_prefix": "p", "file": {}})
+    assert config.storage_prefix == "p"
