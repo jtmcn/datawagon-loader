@@ -237,7 +237,7 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `DW_BQ_DATASET`: BigQuery dataset (can also be set in TOML `[bigquery]` section)
 - `DW_STORAGE_PREFIX` / `--storage-prefix`: Storage Prefix (`DW_BQ_STORAGE_PREFIX` / `--bq-storage-prefix` are deprecated aliases)
 
-**Configuration Precedence** (dataset and Storage Prefix): CLI flag > Environment variable > TOML config
+**Configuration Precedence** (dataset and Storage Prefix): CLI flag > Environment variable > TOML config. The deprecated Storage Prefix aliases rank below the current names, so `DW_STORAGE_PREFIX` wins over `--bq-storage-prefix`.
 
 ### Core Components
 

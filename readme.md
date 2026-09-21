@@ -162,7 +162,7 @@ storage_prefix = "caravan-versioned"  # Optional: defaults to "caravan-versioned
 dataset = "your_dataset_name"
 ```
 
-**Configuration precedence** for the dataset and storage prefix: CLI flag > Environment variable > TOML config
+**Configuration precedence** for the dataset and storage prefix: CLI flag > Environment variable > TOML config. The deprecated Storage Prefix aliases rank below the current names, so `DW_STORAGE_PREFIX` wins over `--bq-storage-prefix`.
 
 ### 5. Configure Google Cloud Credentials
 
