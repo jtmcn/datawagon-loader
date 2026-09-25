@@ -216,17 +216,18 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 
 **Source Configuration (`datawagon-config.toml`)**: Defines file types to process and BigQuery settings.
 
+**Top level**: `storage_prefix`: bucket root for all Storage Folders (default: "caravan-versioned")
+
 **BigQuery Section (`[bigquery]`)**: Optional section for BigQuery configuration:
 - `dataset`: BigQuery dataset name for external tables
-- `storage_prefix`: GCS folder prefix for BigQuery table creation (default: "caravan-versioned")
+- `storage_prefix`: deprecated alias for the top-level key
 
-**File Sections (`[file.{name}]`)**: Each section specifies:
-- `select_file_name_base`: Pattern to match files
+**File Sections (`[file.{report_type}]`)**: The section key is the Report Type; the Storage Folder and Table names are derived from it. Each section specifies:
+- `select_file_name_base`: Pattern to match files (default: the section key)
 - `exclude_file_name_base`: Pattern to exclude files
 - `regex_pattern`: Regex to extract metadata from filenames
 - `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
-- `storage_folder_name`: GCS destination folder
-- `table_name`: Destination table name
+- `storage_folder_name`, `table_name`: deprecated; warn if they match the derived names, fail startup if they don't
 
 **Runtime Configuration**: Via environment variables or CLI flags (takes precedence over TOML):
 - `DW_CSV_SOURCE_DIR`: Source directory for CSV files
@@ -234,9 +235,9 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 - `DW_GCS_PROJECT_ID`: GCS project ID
 - `DW_GCS_BUCKET`: GCS bucket name
 - `DW_BQ_DATASET`: BigQuery dataset (can also be set in TOML `[bigquery]` section)
-- `DW_BQ_STORAGE_PREFIX`: BigQuery storage prefix (can also be set in TOML `[bigquery]` section)
+- `DW_STORAGE_PREFIX` / `--storage-prefix`: Storage Prefix (`DW_BQ_STORAGE_PREFIX` / `--bq-storage-prefix` are deprecated aliases)
 
-**Configuration Precedence** (for BigQuery settings): CLI flag > Environment variable > TOML config
+**Configuration Precedence** (dataset and Storage Prefix): CLI flag > Environment variable > TOML config. The deprecated Storage Prefix aliases rank below the current names, so `DW_STORAGE_PREFIX` wins over `--bq-storage-prefix`.
 
 ### Core Components
 
@@ -253,7 +254,11 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 **File Metadata (`datawagon/objects/managed_file_metadata.py`)**:
 - `ManagedFileMetadata`: Pydantic model storing file info
 - Auto-converts `file_date_key` (YYYYMMDD or YYYYMM) to `report_date_str` (YYYY-MM-DD)
-- Includes `content_owner`, `file_version`, `base_name`, `storage_folder_name`
+- Includes `content_owner`, `file_version`, `base_name`, `report_type`
+
+**Storage Layout (`datawagon/objects/storage_layout.py`)**:
+- Single owner of "Report Type + Version → Storage Folder, blob path, Table name", both directions
+- `blob_path()` for upload; `locate()` / `table_named()` for create/recreate; folders that match no configured Report Type and Version are strays and are skipped
 
 **GCS Manager (`datawagon/bucket/gcs_manager.py`)**:
 - Wraps Google Cloud Storage client
@@ -279,7 +284,7 @@ datawagon files-in-local-fs compare-local-to-bucket upload-to-gcs
 3. For each file, regex extracts metadata (content_owner, file_date_key, etc.)
 4. `ManagedFileMetadata` converts extracted data, creates `report_date_str`
 5. Commands compare local files to GCS bucket contents
-6. Upload creates partitioned path: `{storage_folder_name}/report_date={YYYY-MM-DD}/{filename}`
+6. `StorageLayout.blob_path()` builds `{storage_prefix}/{report_type}_{version}/report_date={YYYY-MM-DD}/{filename}`
 7. GCS Manager uploads files to bucket
 
 ### File Processing

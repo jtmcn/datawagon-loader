@@ -17,6 +17,7 @@ import datawagon.main as main_module
 from datawagon.main import cli, start_cli
 from datawagon.objects.app_config import AppConfig
 from datawagon.objects.source_config import SourceConfig
+from datawagon.objects.storage_layout import StorageLayout
 
 DW_VARS = [
     "DW_CSV_SOURCE_DIR",
@@ -25,6 +26,7 @@ DW_VARS = [
     "DW_GCS_BUCKET",
     "DW_BQ_DATASET",
     "DW_BQ_STORAGE_PREFIX",
+    "DW_STORAGE_PREFIX",
 ]
 
 FILE_SECTION = """
@@ -33,8 +35,6 @@ is_enabled = true
 select_file_name_base = "YouTube_*_M_*"
 regex_pattern = 'YouTube_(.+)_M_(\\d{8}|\\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
-storage_folder_name = "youtube_analytics"
-table_name = "youtube_raw"
 """
 
 
@@ -73,9 +73,10 @@ def source_dir(tmp_path: Path) -> Path:
     return d
 
 
-def write_toml(tmp_path: Path, extra: str = "") -> Path:
+def write_toml(tmp_path: Path, extra: str = "", first: bool = False) -> Path:
+    """``first`` puts ``extra`` before the file section, where top-level keys must go."""
     path = tmp_path / "datawagon-config.toml"
-    path.write_text(FILE_SECTION + extra)
+    path.write_text(extra + FILE_SECTION if first else FILE_SECTION + extra)
     return path
 
 
@@ -129,12 +130,12 @@ class TestCliValidation:
 
     def test_invalid_source_config_raises_value_error(self, source_dir: Path, tmp_path: Path) -> None:
         bad = tmp_path / "bad.toml"
-        bad.write_text("[file.youtube]\nis_enabled = true\n")
+        bad.write_text('[file.youtube]\nselect_file_name_base = "YouTube"\n')
         result = invoke(base_args(source_dir, bad), {})
         assert result.exit_code == 1
         assert isinstance(result.exception, ValueError)
         assert "Validation Failed for source_config.toml" in str(result.exception)
-        assert "select_file_name_base" in str(result.exception)
+        assert "is_enabled" in str(result.exception)
 
     def test_missing_bq_dataset_everywhere(self, source_dir: Path, tmp_path: Path) -> None:
         result = invoke(base_args(source_dir, write_toml(tmp_path)), {})
@@ -157,8 +158,8 @@ class TestCliContext:
             gcs_project_id="proj",
             gcs_bucket="bucket",
             bq_dataset="ds",
-            bq_storage_prefix="caravan-versioned",
         )
+        assert obj["STORAGE_LAYOUT"] == StorageLayout("caravan-versioned", frozenset({"youtube"}))
         assert obj["GLOBAL"] == {}
         assert obj["logger"].level == logging.INFO
         assert f"csv_source_config: {config}" in result.output
@@ -170,14 +171,15 @@ class TestCliContext:
             "DW_GCS_PROJECT_ID": "env-proj",
             "DW_GCS_BUCKET": "env-bucket",
             "DW_BQ_DATASET": "env_ds",
-            "DW_BQ_STORAGE_PREFIX": "env-prefix",
+            "DW_STORAGE_PREFIX": "env-prefix",
         }
         obj: dict[str, Any] = {}
         result = invoke([], obj, env=env)
         assert result.exit_code == 0, result.output
         config: AppConfig = obj["CONFIG"]
         assert (config.gcs_project_id, config.gcs_bucket) == ("env-proj", "env-bucket")
-        assert (config.bq_dataset, config.bq_storage_prefix) == ("env_ds", "env-prefix")
+        assert (config.bq_dataset, obj["STORAGE_LAYOUT"].prefix) == ("env_ds", "env-prefix")
+        assert "deprecated" not in result.output
 
     def test_toml_bq_dataset_used_as_fallback(self, source_dir: Path, tmp_path: Path) -> None:
         config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\n')
@@ -187,23 +189,64 @@ class TestCliContext:
         assert obj["CONFIG"].bq_dataset == "toml_ds"
 
     def test_precedence_flag_over_env_over_toml(self, source_dir: Path, tmp_path: Path) -> None:
-        config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\nstorage_prefix = "toml-prefix"\n')
-        env = {"DW_BQ_DATASET": "env_ds", "DW_BQ_STORAGE_PREFIX": "env-prefix"}
+        config = write_toml(tmp_path, 'storage_prefix = "toml-prefix"\n[bigquery]\ndataset = "toml_ds"\n', first=True)
+        env = {"DW_BQ_DATASET": "env_ds", "DW_STORAGE_PREFIX": "env-prefix"}
+
+        toml_obj: dict[str, Any] = {}
+        assert invoke(base_args(source_dir, config), toml_obj).exit_code == 0
+        assert (toml_obj["CONFIG"].bq_dataset, toml_obj["STORAGE_LAYOUT"].prefix) == ("toml_ds", "toml-prefix")
 
         env_obj: dict[str, Any] = {}
         assert invoke(base_args(source_dir, config), env_obj, env=env).exit_code == 0
-        assert (env_obj["CONFIG"].bq_dataset, env_obj["CONFIG"].bq_storage_prefix) == ("env_ds", "env-prefix")
+        assert (env_obj["CONFIG"].bq_dataset, env_obj["STORAGE_LAYOUT"].prefix) == ("env_ds", "env-prefix")
 
         flag_obj: dict[str, Any] = {}
-        args = [*base_args(source_dir, config), "--bq-dataset", "flag_ds", "--bq-storage-prefix", "flag-prefix"]
+        args = [*base_args(source_dir, config), "--bq-dataset", "flag_ds", "--storage-prefix", "flag-prefix"]
         assert invoke(args, flag_obj, env=env).exit_code == 0
-        assert (flag_obj["CONFIG"].bq_dataset, flag_obj["CONFIG"].bq_storage_prefix) == ("flag_ds", "flag-prefix")
+        assert (flag_obj["CONFIG"].bq_dataset, flag_obj["STORAGE_LAYOUT"].prefix) == ("flag_ds", "flag-prefix")
 
-    def test_toml_storage_prefix_used_as_fallback(self, source_dir: Path, tmp_path: Path) -> None:
+    def test_disagreeing_storage_folder_name_is_a_usage_error(self, source_dir: Path, tmp_path: Path) -> None:
+        config = tmp_path / "datawagon-config.toml"
+        config.write_text(FILE_SECTION + 'storage_folder_name = "caravan/youtube"\n')
+        result = invoke([*base_args(source_dir, config), "--bq-dataset", "ds"], {})
+        assert result.exit_code == 2
+        assert "[file.youtube] storage_folder_name = 'caravan/youtube'" in result.output
+
+    def test_deprecated_prefix_settings_still_work(self, source_dir: Path, tmp_path: Path) -> None:
         config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\nstorage_prefix = "toml-prefix"\n')
+        toml_obj: dict[str, Any] = {}
+        result = invoke(base_args(source_dir, config), toml_obj)
+        assert result.exit_code == 0, result.output
+        assert toml_obj["STORAGE_LAYOUT"].prefix == "toml-prefix"
+        assert "[bigquery] storage_prefix is deprecated" in result.output
+
+        env_obj: dict[str, Any] = {}
+        result = invoke(base_args(source_dir, config), env_obj, env={"DW_BQ_STORAGE_PREFIX": "env-prefix"})
+        assert result.exit_code == 0, result.output
+        assert env_obj["STORAGE_LAYOUT"].prefix == "env-prefix"
+        assert "DW_BQ_STORAGE_PREFIX is deprecated" in result.output
+
+        flag_obj: dict[str, Any] = {}
+        result = invoke([*base_args(source_dir, config), "--bq-storage-prefix", "flag-prefix"], flag_obj)
+        assert result.exit_code == 0, result.output
+        assert flag_obj["STORAGE_LAYOUT"].prefix == "flag-prefix"
+        assert "--bq-storage-prefix / DW_BQ_STORAGE_PREFIX is deprecated" in result.output
+
+    def test_new_prefix_beats_deprecated_and_still_warns(self, source_dir: Path, tmp_path: Path) -> None:
+        config = write_toml(tmp_path, '\n[bigquery]\ndataset = "toml_ds"\n')
         obj: dict[str, Any] = {}
-        assert invoke(base_args(source_dir, config), obj).exit_code == 0
-        assert obj["CONFIG"].bq_storage_prefix == "toml-prefix"
+        env = {"DW_STORAGE_PREFIX": "new", "DW_BQ_STORAGE_PREFIX": "old"}
+        result = invoke(base_args(source_dir, config), obj, env=env)
+        assert result.exit_code == 0, result.output
+        assert obj["STORAGE_LAYOUT"].prefix == "new"
+        assert "DW_BQ_STORAGE_PREFIX is deprecated" in result.output
+
+    def test_matching_deprecated_file_keys_warn(self, source_dir: Path, tmp_path: Path) -> None:
+        config = tmp_path / "datawagon-config.toml"
+        config.write_text(FILE_SECTION + 'table_name = "youtube"\n')
+        result = invoke([*base_args(source_dir, config), "--bq-dataset", "ds"], {})
+        assert result.exit_code == 0, result.output
+        assert "[file.youtube] table_name is deprecated" in result.output
 
     def test_verbose_and_log_file(self, source_dir: Path, tmp_path: Path) -> None:
         config = write_toml(tmp_path)

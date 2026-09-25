@@ -79,8 +79,8 @@ class TestManagedFileScannerInit:
         config = {
             "file": {
                 "youtube_data": {
-                    "is_enabled": True,
-                    # Missing required fields
+                    "select_file_name_base": "YouTube",
+                    # Missing required is_enabled
                 }
             }
         }
@@ -238,7 +238,7 @@ class TestSourceFileAttrs:
         scanner.valid_config = mock_source_config
 
         file_source = mock_source_config.file["youtube_data"]
-        result = scanner.source_file_attrs(file_path, file_source)
+        result = scanner.source_file_attrs(file_path, file_source, "youtube_data")
 
         assert result.file_name == file_path.name
         assert result.file_path == file_path
@@ -266,84 +266,12 @@ class TestSourceFileAttrs:
         file_source = mock_source_config.file["youtube_data"]
 
         with pytest.raises(ValueError) as exc_info:
-            scanner.source_file_attrs(file_path, file_source)
+            scanner.source_file_attrs(file_path, file_source, "youtube_data")
 
         assert "Invalid file name format" in str(exc_info.value)
 
 
 @pytest.mark.unit
-class TestApplyVersionBasedFolderNaming:
-    """Test _apply_version_based_folder_naming method."""
-
-    def test_apply_version_to_folder_name(self, youtube_file_in_temp_dir: Path) -> None:
-        """Test that version is appended to storage folder name."""
-        from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
-
-        # Create file with version
-        file_input = ManagedFileInput(
-            file_name=youtube_file_in_temp_dir.name,
-            file_path=youtube_file_in_temp_dir,
-            base_name="YouTube_Brand_M",
-            table_name="youtube_raw",
-            storage_folder_name="youtube_analytics",
-            content_owner="BrandName",
-            file_date_key="20230601",
-        )
-
-        metadata = ManagedFileMetadata.build_data_item(file_input)
-        assert metadata.file_version == "v1-1"
-        assert metadata.storage_folder_name == "youtube_analytics"
-
-        # Create file group
-        file_group = ManagedFilesToDatabase(
-            file_selector_base_name="YouTube_*_M",
-            table_name="youtube_raw",
-            files=[metadata],
-        )
-
-        # Apply version-based folder naming
-        scanner = object.__new__(ManagedFileScanner)
-        scanner._apply_version_based_folder_naming([file_group])
-
-        # Should have version appended
-        assert file_group.files[0].storage_folder_name == "youtube_analytics_v1-1"
-
-    def test_no_version_leaves_folder_unchanged(self, temp_dir: Path) -> None:
-        """Test that files without version don't get folder name modified."""
-        from datawagon.objects.managed_file_metadata import ManagedFileInput, ManagedFileMetadata
-
-        # Create file without version
-        file_path = temp_dir / "simple_file.csv"
-        file_path.write_text("test")
-
-        file_input = ManagedFileInput(
-            file_name=file_path.name,
-            file_path=file_path,
-            base_name="simple_file",
-            table_name="test_table",
-            storage_folder_name="test_folder",
-        )
-
-        metadata = ManagedFileMetadata.build_data_item(file_input)
-        assert metadata.file_version == ""
-        assert metadata.storage_folder_name == "test_folder"
-
-        # Create file group
-        file_group = ManagedFilesToDatabase(
-            file_selector_base_name="simple_file",
-            table_name="test_table",
-            files=[metadata],
-        )
-
-        # Apply version-based folder naming
-        scanner = object.__new__(ManagedFileScanner)
-        scanner._apply_version_based_folder_naming([file_group])
-
-        # Should remain unchanged
-        assert file_group.files[0].storage_folder_name == "test_folder"
-
-
-@pytest.mark.integration
 class TestMatchedFiles:
     """Test matched_files method (integration test)."""
 
@@ -370,8 +298,8 @@ class TestMatchedFiles:
         assert len(results[0].files) == 2  # Two files in the group
         assert results[0].table_name == "youtube_raw"
 
-    def test_matched_files_applies_version_naming(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
-        """Test that matched_files applies version-based folder naming."""
+    def test_matched_files_tags_report_type_and_version(self, temp_dir: Path, mock_source_config: SourceConfig) -> None:
+        """matched_files tags each file with its Report Type and Version."""
         source_dir = temp_dir / "source"
         source_dir.mkdir()
 
@@ -388,5 +316,5 @@ class TestMatchedFiles:
 
         results = scanner.matched_files(file_extension=".csv.gz")
 
-        # Version should be appended to folder name
-        assert results[0].files[0].storage_folder_name.endswith("_v1-1")
+        assert results[0].files[0].report_type == "youtube_data"
+        assert results[0].files[0].file_version == "v1-1"

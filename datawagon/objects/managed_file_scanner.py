@@ -1,8 +1,8 @@
 """File scanner for discovering and processing CSV files.
 
 This module provides the ManagedFileScanner class for scanning directories,
-matching files against patterns, extracting metadata, and organizing files
-for upload to GCS with version-based folder naming.
+matching files against patterns, extracting metadata, and grouping files
+by Report Type.
 """
 
 import fnmatch
@@ -53,8 +53,8 @@ class ManagedFileScanner:
     """Scanner for discovering and processing CSV files based on configuration.
 
     Scans local filesystem for CSV files matching patterns defined in source_config.toml,
-    extracts metadata using regex patterns, applies security validation, and organizes
-    files for GCS upload with version-based folder naming.
+    extracts metadata using regex patterns, applies security validation, and groups
+    files by Report Type.
 
     Attributes:
         csv_source_dir: Directory to scan for CSV files
@@ -163,36 +163,11 @@ class ManagedFileScanner:
 
         return [Path(match) for match in matches]
 
-    def _apply_version_based_folder_naming(self, all_files: List[ManagedFilesToDatabase]) -> None:
-        """
-        Modify storage_folder_name to include version suffix for versioned files.
-
-        Logic:
-        - If file has a version (file_version is not empty): append _{version} to storage_folder_name
-        - If file has NO version (file_version is empty): leave storage_folder_name unchanged
-
-        This ensures:
-        - Each version has a stable, permanent folder (e.g., caravan/claim_raw_v1-1/)
-        - Each folder maps to a single BigQuery external table
-        - Backward compatible with non-versioned files (e.g., caravan/claim_raw/)
-
-        Example outputs:
-        - File with v1-1 → caravan/claim_raw_v1-1/
-        - File with v1-0 → caravan/claim_raw_v1-0/
-        - File with no version → caravan/claim_raw/ (unchanged)
-        """
-        for file_group in all_files:
-            for file_metadata in file_group.files:
-                # Only append version if file has one
-                if file_metadata.file_version:
-                    file_metadata.storage_folder_name = (
-                        f"{file_metadata.storage_folder_name}_" f"{file_metadata.file_version}"
-                    )
-
     def source_file_attrs(
         self,
         file_path: Path,
         file_source: SourceFromLocalFS,
+        report_type: str,
     ) -> ManagedFileInput:
         """Extract file attributes using regex pattern matching.
 
@@ -203,6 +178,7 @@ class ManagedFileScanner:
         Args:
             file_path: Path to file to process
             file_source: Source configuration with regex pattern and group names
+            report_type: Report Type the file belongs to (the config section key)
 
         Returns:
             ManagedFileInput with extracted attributes
@@ -220,8 +196,8 @@ class ManagedFileScanner:
             "file_name": file_path.name,
             "file_path": file_path,
             "base_name": file_source.select_file_name_base,
-            "table_name": file_source.table_name,
-            "storage_folder_name": file_source.storage_folder_name,
+            "report_type": report_type,
+            "table_name": file_source.table_name or report_type,
         }
 
         if file_source.regex_pattern and file_source.regex_group_names:
@@ -245,8 +221,7 @@ class ManagedFileScanner:
         """Scan for all files matching enabled configurations.
 
         Processes all enabled file sources in configuration, scans for matching
-        files, extracts metadata, and groups by destination table. Applies
-        version-based folder naming for versioned files.
+        files, extracts metadata, and groups by Report Type.
 
         Args:
             file_extension: Optional file extension filter (e.g., ".csv.gz")
@@ -282,13 +257,10 @@ class ManagedFileScanner:
                 )
 
                 for file_path in file_list:
-                    source_file = self.source_file_attrs(file_path, file_source)
+                    source_file = self.source_file_attrs(file_path, file_source, file_id)
                     source_file_info = ManagedFileMetadata.build_data_item(source_file)
                     table_mapper.files.append(source_file_info)
 
                 all_available_files.append(table_mapper)
-
-        # Apply version-based folder naming before returning
-        self._apply_version_based_folder_naming(all_available_files)
 
         return all_available_files

@@ -150,19 +150,19 @@ DW_GCS_BUCKET=your-bucket-name
 # BigQuery settings (can also be set in datawagon-config.toml [bigquery] section)
 # Environment variables take precedence over TOML configuration
 DW_BQ_DATASET=your_dataset_name
-# DW_BQ_STORAGE_PREFIX=caravan-versioned  # Optional: defaults to "caravan-versioned"
+# DW_STORAGE_PREFIX=caravan-versioned  # Optional: defaults to "caravan-versioned"
 ```
 
-Alternatively, you can configure BigQuery settings in `datawagon-config.toml`:
+Alternatively, you can configure these settings in `datawagon-config.toml`:
 
 ```toml
-# BigQuery configuration
+storage_prefix = "caravan-versioned"  # Optional: defaults to "caravan-versioned"
+
 [bigquery]
 dataset = "your_dataset_name"
-storage_prefix = "caravan-versioned"  # Optional: defaults to "caravan-versioned"
 ```
 
-**Configuration precedence** for BigQuery settings: CLI flag > Environment variable > TOML config
+**Configuration precedence** for the dataset and storage prefix: CLI flag > Environment variable > TOML config. The deprecated Storage Prefix aliases rank below the current names, so `DW_STORAGE_PREFIX` wins over `--bq-storage-prefix`.
 
 ### 5. Configure Google Cloud Credentials
 
@@ -384,18 +384,7 @@ ORDER BY report_date DESC;
 
 **Configuration:**
 
-Control which folders are scanned with the `DW_BQ_STORAGE_PREFIX` setting:
-
-```bash
-# Only scan caravan-versioned folders (default)
-DW_BQ_STORAGE_PREFIX=caravan-versioned
-
-# Scan all folders (legacy behavior)
-DW_BQ_STORAGE_PREFIX=""
-
-# Scan a different prefix
-DW_BQ_STORAGE_PREFIX=my-custom-folder
-```
+Uploads and table creation share one storage prefix (`DW_STORAGE_PREFIX`, default `caravan-versioned`). Folders under it that don't match a configured report type and version are listed as skipped.
 
 **Drop tables:**
 
@@ -470,22 +459,21 @@ This uploads new files and automatically creates any missing BigQuery external t
 Edit `datawagon-config.toml` to define file types and patterns:
 
 ```toml
-[file.youtube_claims]
-select_file_name_base = "YouTube_*_claim_*"
-exclude_file_name_base = "YouTube_*_claim_historical_*"
+[file.claim_raw]
+is_enabled = true
+exclude_file_name_base = "adj_claim_raw"
 regex_pattern = "YouTube_(.+)_M_(\\d{8}|\\d{6})"
 regex_group_names = ["content_owner", "file_date_key"]
-storage_folder_name = "youtube_claims"
-table_name = "claims"
 ```
 
+The section key (`claim_raw`) is the report type. Storage folders and table names are derived from it.
+
 **Configuration Fields:**
-- `select_file_name_base`: Glob pattern to match files
-- `exclude_file_name_base`: Glob pattern to exclude files
+- `select_file_name_base`: Pattern to match files (defaults to the section key)
+- `exclude_file_name_base`: Pattern to exclude files
 - `regex_pattern`: Regex to extract metadata from filename
 - `regex_group_names`: Named groups from regex (e.g., `["content_owner", "file_date_key"]`)
-- `storage_folder_name`: GCS destination folder
-- `table_name`: Table identifier for tracking
+- `storage_folder_name`, `table_name`: deprecated. They are accepted with a warning if they match the derived names, and rejected if they don't.
 
 ### Special Metadata Fields
 
@@ -497,25 +485,16 @@ table_name = "claims"
 Files are uploaded with this structure:
 
 ```
-gs://your-bucket/storage_folder_name/report_date=YYYY-MM-DD/filename.csv.gz
+gs://your-bucket/{storage_prefix}/{report_type}_{version}/report_date=YYYY-MM-DD/filename.csv.gz
 ```
 
-**For versioned files**, the version is automatically appended to the folder name:
+For example, `YouTube_BrandName_M_20240101_claim_raw_v1-1.csv.gz` goes to:
 
 ```
-gs://your-bucket/storage_folder_name_v1-1/report_date=YYYY-MM-DD/filename.csv.gz
+gs://my-bucket/caravan-versioned/claim_raw_v1-1/report_date=2024-01-31/YouTube_BrandName_M_20240101_claim_raw_v1-1.csv.gz
 ```
 
-Examples:
-```
-# Non-versioned file
-gs://my-bucket/caravan-versioned/some_file/report_date=2024-01-15/file.csv.gz
-
-# Versioned file (version automatically extracted from filename)
-gs://my-bucket/caravan-versioned/claim_raw_v1-1/report_date=2024-01-15/YouTube_BrandName_M_20240115_claim_raw_v1-1.csv.gz
-```
-
-This ensures each file version has a stable folder path for BigQuery external table mapping.
+and is read by the BigQuery table `claim_raw_v1_1`. Files with no version (`_v1-1`) or no report month in the name, and files that aren't `.csv.gz`, are refused at upload.
 
 ---
 

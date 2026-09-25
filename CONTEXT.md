@@ -26,5 +26,12 @@ _Avoid_: Adj file, correction file
 **Version**:
 A revision of a Report Type's file format, marked in the file name (e.g. `v1-1`). Versions of the same Report Type are never combined.
 
+**Storage Prefix**:
+The bucket root under which every Storage Folder lives (`caravan-versioned`).
+
+**Storage Folder**:
+The bucket folder holding one Table's files, `<storage prefix>/<report type>_<version>`, partitioned by Report Month. A folder that matches no Report Type and Version is a stray, and no Table reads it.
+_Avoid_: GCS folder, destination folder
+
 **Table**:
 The queryable dataset for one Report Type at one Version (e.g. `claim_raw` v1-1). A Report Type with several Versions has several Tables.

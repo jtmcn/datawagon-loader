@@ -1,17 +1,16 @@
 
 title = "CSV Source Files Configuration"
 
+# Bucket root for all Storage Folders: {storage_prefix}/{report_type}_{version}/report_date=YYYY-MM-DD/
+storage_prefix = "caravan-versioned"
+
 # BigQuery configuration
 [bigquery]
 dataset = "youtube_analytics"
-storage_prefix = "caravan-versioned"
 
 [file.claim_raw]
 # example file: YouTube_SomeBrandName_M_20230601_claim_raw_v1-1.csv.tar.gz
 is_enabled = true
-storage_folder_name = "caravan-versioned/claim_raw"
-table_name = "claim_raw"
-select_file_name_base = "claim_raw"
 exclude_file_name_base = "adj_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})' 
 regex_group_names = ["content_owner", "file_date_key"]
@@ -19,98 +18,62 @@ regex_group_names = ["content_owner", "file_date_key"]
 
 [file.adj_claim_raw]
 is_enabled = true
-storage_folder_name = "caravan-versioned/adj_claim_raw"
-table_name = "adj_claim_raw"
-select_file_name_base = "adj_claim_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.asset_raw]
 is_enabled = true
-storage_folder_name = "caravan-versioned/asset_raw"
-table_name = "asset_raw"
-select_file_name_base = "asset_raw"
 exclude_file_name_base = "adj_asset_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.adj_asset_raw]
 is_enabled = true
-storage_folder_name = "caravan-versioned/adj_asset_raw"
-table_name = "adj_asset_raw"
-select_file_name_base = "adj_asset_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.video_raw]
 is_enabled = true
-storage_folder_name = "caravan-versioned/video_raw"
-table_name = "video_raw"
-select_file_name_base = "video_raw"
 exclude_file_name_base = "adj_video_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.adj_video_raw]
 is_enabled = true
-storage_folder_name = "caravan-versioned/adj_video_raw"
-table_name = "adj_video_raw"
-select_file_name_base = "adj_video_raw"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.red_rawdata_asset]
 is_enabled = true
-storage_folder_name = "caravan-versioned/red_rawdata_asset"
-table_name = "red_rawdata_asset"
-select_file_name_base = "red_rawdata_asset"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.red_rawdata_video]
 is_enabled = true
-storage_folder_name = "caravan-versioned/red_rawdata_video"
-select_file_name_base = "red_rawdata_video"
-table_name = "red_rawdata_video"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.red_music_rawdata_asset]
 is_enabled = true
-storage_folder_name = "caravan-versioned/red_music_rawdata_asset"
-select_file_name_base = "red_music_rawdata_asset"
-table_name = "red_music_rawdata_asset"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.red_music_rawdata_video]
 is_enabled = true
-storage_folder_name = "caravan-versioned/red_music_rawdata_video"
-select_file_name_base = "red_music_rawdata_video"
-table_name = "red_music_rawdata_video"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.monthly_shorts_non_music_ads_video_summary]
 is_enabled = true
-storage_folder_name = "caravan-versioned/monthly_shorts_non_music_ads_video_summary"
-select_file_name_base = "monthly_shorts_non_music_ads_video_summary"
-table_name = "monthly_shorts_non_music_ads_video_summary"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.monthly_shorts_non_music_subscription_video_summary]
 is_enabled = true
-storage_folder_name = "caravan-versioned/monthly_shorts_non_music_subscription_video_summary"
-select_file_name_base = "monthly_shorts_non_music_subscription_video_summary"
-table_name = "monthly_shorts_non_music_subscription_video_summary"
 regex_pattern = 'YouTube_(.+)_M_(\d{8}|\d{6})'
 regex_group_names = ["content_owner", "file_date_key"]
 
 [file.video_report]
 is_enabled = true
-storage_folder_name = "caravan-versioned/video_report"
-select_file_name_base = "video_report"
-table_name = "video_report"
 regex_pattern = 'video_report_(.+)_V_(.+)\.csv'
 regex_group_names = ["content_owner", "file_version"]
