@@ -12,7 +12,7 @@ backports-zstd==1.7.0 ; python_version >= "3.11" and python_version < "3.13"
 black==26.5.1 ; python_version >= "3.11" and python_version < "3.13"
 build==1.6.1 ; python_version >= "3.11" and python_version < "3.13"
 cachecontrol==0.14.4 ; python_version >= "3.11" and python_version < "3.13"
-certifi==2026.7.22 ; python_version >= "3.11" and python_version < "3.13"
+certifi==2026.10.19 ; python_version >= "3.11" and python_version < "3.13"
 cffi==2.1.1 ; python_version >= "3.11" and python_version < "3.13" and (platform_python_implementation != "PyPy" or sys_platform == "darwin")
 cfgv==3.5.0 ; python_version >= "3.11" and python_version < "3.13"
 charset-normalizer==3.5.1 ; python_version >= "3.11" and python_version < "3.13"

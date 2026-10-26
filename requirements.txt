@@ -5,7 +5,7 @@
 # Generated: 2026-09-14 19:47:26 UTC
 
 annotated-types==0.8.0 ; python_version >= "3.11" and python_version < "3.13"
-certifi==2026.7.22 ; python_version >= "3.11" and python_version < "3.13"
+certifi==2026.10.19 ; python_version >= "3.11" and python_version < "3.13"
 cffi==2.1.1 ; python_version >= "3.11" and python_version < "3.13" and platform_python_implementation != "PyPy"
 charset-normalizer==3.5.1 ; python_version >= "3.11" and python_version < "3.13"
 click==8.5.0 ; python_version >= "3.11" and python_version < "3.13"
